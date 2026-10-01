@@ -1,0 +1,2703 @@
+# ============================================================================
+# 每家店“双板以外各分类”的抓取配置：[<零售商id>.<分类>]
+# Shopify 店铺：collections = 抓取的分类页；hints = 只用来标注性别的分类页
+# 由 `python -m skideals discover <店铺网址>` 自动生成后人工调整：
+#   · evo 的服装标题自带 Men's/Women's/Kids'，不额外抓性别分类（省约 150 个请求）
+#   · 综合户外店（gearx/sportsbasement/ems/blackdiamond）的雪服、雪裤只用带 ski/snow 的分类，避免混进雨衣
+# 某家店不抓双板：[<零售商id>.ski] enabled = false
+# 非 Shopify 网站（REI、Christy、Peter Glenn、Sun & Ski、Skis.com）的分类配置在文件末尾
+# ============================================================================
+
+# ---------------------------------------------------------------- evo
+[evo.binding]
+collections = ["ski-bindings", "backcountry-ski-bindings", "alpine-touring-ski-bindings", "marker-alpine-touring-bindings"]
+
+[evo.boot]
+collections = ["ski-boots", "alpine-touring-boots", "backcountry-ski-boots"]
+
+[evo.pole]
+collections = ["ski-poles", "backcountry-ski-poles"]
+
+[evo.helmet]
+collections = ["ski-helmets"]
+
+[evo.goggle]
+collections = ["ski-goggles"]
+
+[evo.protection]
+collections = ["body-armor", "ski-body-armor", "ski-wrist-guards"]
+
+[evo.jacket]
+collections = ["ski-jackets"]
+
+[evo.pants]
+collections = ["ski-pants-bibs"]
+
+[evo.suit]
+collections = ["one-piece-snowsuits"]
+
+[evo.midlayer]
+collections = ["ski-mid-layers"]
+
+[evo.baselayer]
+collections = ["base-layers"]
+
+[evo.glove]
+collections = ["gloves-mittens"]
+
+[evo.sock]
+collections = ["ski-socks"]
+
+[evo.facewear]
+collections = ["ski-face-masks", "face-masks", "neck-warmers"]
+
+[evo.hat]
+collections = ["ski-hats-beanies"]
+
+[evo.backpack]
+collections = ["ski-backpacks", "backcountry-ski-backpacks", "avalanche-airbags"]
+
+[evo.bag]
+collections = ["ski-bags", "ski-travel-bags", "ski-boot-bags", "evo-ski-bags", "db-equipment-ski-bags", "water-ski-bags-cases"]
+
+[evo.avalanche]
+collections = ["avalanche-shovels", "avalanche-probes", "avalanche-beacons"]
+
+[evo.skin]
+collections = ["backcountry-climbing-skins", "backcountry-ski-climbing-skins"]
+
+[evo.tuning]
+collections = ["ski-wax", "ski-tuning-tools", "sidecut-tuning", "spiral-wax-co", "beaver-wax", "wax-london"]
+
+[evo.accessory]
+collections = ["goggle-lenses-accessories", "ski-goggle-lenses-accessories", "anon-goggle-lenses", "ski-boot-heaters-accessories", "ski-boot-dryers", "backcountry-ski-straps"]
+
+# ---------------------------------------------------------------- sportsbasement
+[sportsbasement.binding]
+collections = ["ski-bindings"]
+
+[sportsbasement.boot]
+collections = ["ski-boots-bindings", "at-ski-boots"]
+[sportsbasement.boot.hints]
+"kids-ski-boots" = { gender = "kids" }
+
+[sportsbasement.pole]
+collections = ["ski-poles-accessories"]
+
+[sportsbasement.helmet]
+collections = ["snow-helmets-goggles"]
+[sportsbasement.helmet.hints]
+"kids-snow-helmets-goggles" = { gender = "kids" }
+
+[sportsbasement.goggle]
+collections = ["snow-goggles"]
+[sportsbasement.goggle.hints]
+"youth-snow-goggles" = { gender = "kids" }
+
+[sportsbasement.jacket]
+collections = ["insulated-performance-snow-jackets"]
+[sportsbasement.jacket.hints]
+"kids-snow-jackets" = { gender = "kids" }
+"50-off-mens-snow-jackets" = { gender = "men" }
+"womens-snow-jackets" = { gender = "women" }
+
+[sportsbasement.pants]
+collections = ["snow-pants"]
+[sportsbasement.pants.hints]
+"kids-snow-pants" = { gender = "kids" }
+"mens-snow-pants" = { gender = "men" }
+"womens-snow-pants" = { gender = "women" }
+
+[sportsbasement.midlayer]
+collections = ["midlayer-jackets"]
+[sportsbasement.midlayer.hints]
+"kids-fleece-jackets" = { gender = "kids" }
+
+[sportsbasement.baselayer]
+collections = ["snow-baselayers"]
+[sportsbasement.baselayer.hints]
+"kids-baselayers" = { gender = "kids" }
+"mens-baselayers" = { gender = "men" }
+"womens-baselayers" = { gender = "women" }
+
+[sportsbasement.glove]
+collections = ["snow-gloves-mittens"]
+[sportsbasement.glove.hints]
+"kids-gloves-mittens" = { gender = "kids" }
+"mens-gloves-1" = { gender = "men" }
+"womens-gloves" = { gender = "women" }
+
+[sportsbasement.sock]
+collections = ["ski-socks", "snow-socks"]
+[sportsbasement.sock.hints]
+"kids-snow-socks" = { gender = "kids" }
+"mens-ski-socks" = { gender = "men" }
+"womens-ski-socks" = { gender = "women" }
+
+[sportsbasement.facewear]
+collections = ["winter-hats-scarves-and-balaclavas", "winter-beanies-neckwear", "neck-gaiters-balaclavas", "face-masks"]
+[sportsbasement.facewear.hints]
+"kids-winter-beanies-neckwear" = { gender = "kids" }
+
+[sportsbasement.hat]
+collections = ["snow-beanies", "winter-hats-gloves", "winter-hats-scarves-and-balaclavas", "kids-winter-beanies-neckwear"]
+[sportsbasement.hat.hints]
+"kids-winter-beanies-neckwear" = { gender = "kids" }
+
+[sportsbasement.backpack]
+collections = ["snow-backpacks"]
+
+[sportsbasement.bag]
+collections = ["ski-bags", "ski-boot-bag", "rolling-ski-bags", "single-ski-bags", "padded-ski-bags", "double-ski-bags"]
+
+[sportsbasement.avalanche]
+collections = ["avalanche-gear", "beacons"]
+
+[sportsbasement.tuning]
+collections = ["snow-wax-tuning-tools"]
+
+# ---------------------------------------------------------------- starthaus
+[starthaus.binding]
+collections = ["ski-bindings"]
+
+[starthaus.boot]
+collections = ["all-ski-boots-bindings"]
+
+[starthaus.pole]
+collections = ["ski-poles"]
+
+[starthaus.helmet]
+collections = ["ski-helmets"]
+
+[starthaus.goggle]
+collections = ["ski-goggles", "goggles"]
+
+[starthaus.protection]
+collections = ["ski-protection"]
+
+[starthaus.baselayer]
+collections = ["base-layers"]
+
+[starthaus.glove]
+collections = ["gloves"]
+
+[starthaus.sock]
+collections = ["ski-socks"]
+
+[starthaus.tuning]
+collections = ["ski-wax", "ski-tools"]
+
+# ---------------------------------------------------------------- alpineshop
+[alpineshop.binding]
+collections = ["alpine-bindings"]
+
+[alpineshop.boot]
+collections = ["ski-boots"]
+
+[alpineshop.pole]
+collections = ["ski-poles"]
+
+[alpineshop.helmet]
+collections = ["helmets"]
+
+[alpineshop.baselayer]
+collections = ["mens-baselayer", "womens-baselayer"]
+[alpineshop.baselayer.hints]
+"mens-baselayer" = { gender = "men" }
+"womens-baselayer" = { gender = "women" }
+
+[alpineshop.glove]
+collections = ["gloves-mittens"]
+
+[alpineshop.skin]
+collections = ["climbing-skins"]
+
+# ---------------------------------------------------------------- gearx
+[gearx.binding]
+collections = ["ski-bindings", "alpine-touring-bindings", "alpine-touring-binding-parts"]
+
+[gearx.boot]
+collections = ["downhill-ski-boots", "alpine-touring-boots", "pre-owned-alpine-touring-boots-1", "pre-owned-alpine-touring-boots"]
+[gearx.boot.hints]
+"womens-alpine-boots" = { gender = "women" }
+
+[gearx.pole]
+collections = ["ski-poles"]
+
+[gearx.helmet]
+collections = ["ski-helmets"]
+
+[gearx.goggle]
+collections = ["ski-goggles"]
+
+[gearx.pants]
+collections = ["kids-snow-pants", "mens-snow-pants", "womens-snow-pants"]
+[gearx.pants.hints]
+"kids-snow-pants" = { gender = "kids" }
+"mens-snow-pants" = { gender = "men" }
+"womens-snow-pants" = { gender = "women" }
+
+[gearx.suit]
+collections = ["kids-onesies"]
+[gearx.suit.hints]
+"kids-onesies" = { gender = "kids" }
+
+[gearx.midlayer]
+collections = ["kids-midlayer-tops"]
+[gearx.midlayer.hints]
+"kids-midlayer-tops" = { gender = "kids" }
+
+[gearx.baselayer]
+collections = ["kids-baselayers", "mens-baselayers", "womens-baselayers"]
+[gearx.baselayer.hints]
+"kids-baselayers" = { gender = "kids" }
+"mens-baselayers" = { gender = "men" }
+"womens-baselayers" = { gender = "women" }
+
+[gearx.glove]
+collections = ["gloves-mittens"]
+[gearx.glove.hints]
+"kids-gloves-mittens" = { gender = "kids" }
+"mens-gloves-mittens" = { gender = "men" }
+"womens-gloves-mittens" = { gender = "women" }
+
+[gearx.sock]
+collections = ["mens-ski-socks", "womens-ski-socks"]
+[gearx.sock.hints]
+"mens-ski-socks" = { gender = "men" }
+"womens-ski-socks" = { gender = "women" }
+
+[gearx.facewear]
+collections = ["balaclavas", "neck-warmers"]
+[gearx.facewear.hints]
+"kids-neck-warmers" = { gender = "kids" }
+
+[gearx.hat]
+collections = ["winter-hats-headwear"]
+[gearx.hat.hints]
+"womens-winter-hats" = { gender = "women" }
+
+[gearx.backpack]
+collections = ["ski-packs"]
+
+[gearx.bag]
+collections = ["boot-bags", "ski-bags"]
+
+[gearx.avalanche]
+collections = ["avalanche-gear", "snow-shovels", "probes", "beacons"]
+
+[gearx.skin]
+collections = ["alpine-touring-skins"]
+
+[gearx.tuning]
+collections = ["waxes", "tuning", "sluff-wax"]
+
+# ---------------------------------------------------------------- skidepot
+[skidepot.binding]
+collections = ["ski-bindings"]
+
+[skidepot.boot]
+collections = ["ski-boots"]
+
+[skidepot.pole]
+collections = ["ski-poles"]
+
+[skidepot.helmet]
+collections = ["helmets"]
+
+[skidepot.goggle]
+collections = ["goggles"]
+
+[skidepot.baselayer]
+collections = ["base-layers"]
+
+[skidepot.glove]
+collections = ["gloves", "mittens"]
+
+[skidepot.facewear]
+collections = ["neck-warmers"]
+
+[skidepot.tuning]
+collections = ["tuning", "wax"]
+
+# ---------------------------------------------------------------- aspenskiandboard
+[aspenskiandboard.binding]
+collections = ["ski-bindings", "touring-bindings"]
+[aspenskiandboard.binding.hints]
+"kids-ski-bindings" = { gender = "kids" }
+
+[aspenskiandboard.boot]
+collections = ["ski-boots"]
+[aspenskiandboard.boot.hints]
+"kids-ski-boots" = { gender = "kids" }
+"mens-ski-boots" = { gender = "men" }
+"womens-ski-boots" = { gender = "women" }
+
+[aspenskiandboard.pole]
+collections = ["ski-poles"]
+
+[aspenskiandboard.jacket]
+collections = ["mens-ski-jackets", "womens-jackets"]
+[aspenskiandboard.jacket.hints]
+"mens-ski-jackets" = { gender = "men" }
+"womens-jackets" = { gender = "women" }
+
+[aspenskiandboard.pants]
+collections = ["kids-bibs", "mens-bibs", "womens-bibs"]
+[aspenskiandboard.pants.hints]
+"kids-bibs" = { gender = "kids" }
+"mens-bibs" = { gender = "men" }
+"womens-bibs" = { gender = "women" }
+
+[aspenskiandboard.midlayer]
+collections = ["mens-fleece-jackets", "womens-fleece-jackets"]
+[aspenskiandboard.midlayer.hints]
+"mens-fleece-jackets" = { gender = "men" }
+"womens-fleece-jackets" = { gender = "women" }
+
+[aspenskiandboard.baselayer]
+collections = ["baselayers"]
+[aspenskiandboard.baselayer.hints]
+"kids-base-layers" = { gender = "kids" }
+"mens-base-layers" = { gender = "men" }
+"womens-underwear-base-layers" = { gender = "women" }
+
+[aspenskiandboard.glove]
+collections = ["gloves-mittens"]
+[aspenskiandboard.glove.hints]
+"mens-gloves-mittens" = { gender = "men" }
+"womens-gloves-mittens" = { gender = "women" }
+
+[aspenskiandboard.facewear]
+collections = ["facemasks", "black-strap-performance-balaclavas-and-outerwear"]
+
+[aspenskiandboard.hat]
+collections = ["coal-toques-beanies-hats"]
+
+[aspenskiandboard.bag]
+collections = ["ski-bags", "boot-bags"]
+
+[aspenskiandboard.tuning]
+collections = ["wax"]
+
+# ---------------------------------------------------------------- utahskigear
+[utahskigear.binding]
+collections = ["ski-bindings", "alpine-touring-ski-bindings"]
+
+[utahskigear.boot]
+collections = ["ski-boots", "backcountry-ski-boots"]
+[utahskigear.boot.hints]
+"mens-ski-boots" = { gender = "men" }
+"womens-ski-boots" = { gender = "women" }
+"youth-ski-boots" = { gender = "kids" }
+
+[utahskigear.pole]
+collections = ["ski-poles", "touring-ski-poles"]
+
+[utahskigear.helmet]
+collections = ["helmets"]
+
+[utahskigear.goggle]
+collections = ["goggles"]
+
+[utahskigear.jacket]
+collections = ["ski-jackets"]
+
+[utahskigear.pants]
+collections = ["ski-pants-1"]
+
+[utahskigear.baselayer]
+collections = ["base-layers"]
+
+[utahskigear.glove]
+collections = ["ski-gloves"]
+
+[utahskigear.sock]
+collections = ["ski-socks"]
+
+[utahskigear.facewear]
+collections = ["gaiters-balaclavas"]
+
+[utahskigear.hat]
+collections = ["ski-hats"]
+
+[utahskigear.bag]
+collections = ["ski-bags", "ski-bags-1", "heated-ski-bags"]
+
+[utahskigear.avalanche]
+collections = ["avalanche-safety-gear"]
+
+[utahskigear.skin]
+collections = ["skins"]
+
+[utahskigear.tuning]
+collections = ["ski-tuning-equipment", "tuning-supplies", "hot-wax", "race-wax", "paste-liquid-wax", "waxing-tuning-kits"]
+
+[utahskigear.accessory]
+collections = ["hand-warmers"]
+
+# ---------------------------------------------------------------- cripplecreek
+[cripplecreek.binding]
+collections = ["ski-bindings", "touring-binding-parts-and-accessories"]
+
+[cripplecreek.boot]
+collections = ["ski-boots", "alpine-touring-boots"]
+[cripplecreek.boot.hints]
+"womens-specific-touring-boots" = { gender = "women" }
+
+[cripplecreek.pole]
+collections = ["ski-poles"]
+
+[cripplecreek.sock]
+collections = ["ski-socks"]
+
+[cripplecreek.backpack]
+collections = ["avalanche-airbag-packs"]
+
+[cripplecreek.avalanche]
+collections = ["avalanche-gear", "avalanche-beacons", "avalanche-shovels", "avalanche-probes"]
+
+[cripplecreek.skin]
+collections = ["skins"]
+
+# ---------------------------------------------------------------- coloradoskishop
+[coloradoskishop.binding]
+collections = ["ski-bindings"]
+
+[coloradoskishop.boot]
+collections = ["ski-boots"]
+
+[coloradoskishop.pole]
+collections = ["shop-ski-poles"]
+
+[coloradoskishop.helmet]
+collections = ["ski-helmets", "helmets"]
+
+[coloradoskishop.goggle]
+collections = ["ski-goggles"]
+
+[coloradoskishop.jacket]
+collections = ["ski-jackets"]
+
+[coloradoskishop.pants]
+collections = ["ski-pants"]
+
+[coloradoskishop.midlayer]
+collections = ["ski-midlayers", "midlayers"]
+
+[coloradoskishop.baselayer]
+collections = ["baselayers"]
+
+[coloradoskishop.glove]
+collections = ["gloves"]
+
+[coloradoskishop.sock]
+collections = ["ski-socks"]
+
+[coloradoskishop.hat]
+collections = ["ski-hats"]
+
+[coloradoskishop.bag]
+collections = ["ski-bags"]
+
+[coloradoskishop.tuning]
+collections = ["tools-tuning"]
+
+# ---------------------------------------------------------------- gorsuch
+[gorsuch.ski]
+enabled = false
+
+[gorsuch.boot]
+collections = ["apres-ski-boots"]
+
+[gorsuch.pole]
+collections = ["ski-poles-dinnerware"]
+
+[gorsuch.helmet]
+collections = ["helmets"]
+[gorsuch.helmet.hints]
+"kids-ski-helmets" = { gender = "kids" }
+
+[gorsuch.goggle]
+collections = ["goggles"]
+
+[gorsuch.jacket]
+collections = ["kids-ski-jackets", "mens-ski-jackets", "womens-ski-jackets"]
+[gorsuch.jacket.hints]
+"kids-ski-jackets" = { gender = "kids" }
+"mens-ski-jackets" = { gender = "men" }
+"womens-ski-jackets" = { gender = "women" }
+
+[gorsuch.pants]
+collections = ["kids-ski-pants", "mens-ski-pants", "womens-ski-pants"]
+[gorsuch.pants.hints]
+"kids-ski-pants" = { gender = "kids" }
+"mens-ski-pants" = { gender = "men" }
+"womens-ski-pants" = { gender = "women" }
+
+[gorsuch.suit]
+collections = ["womens-ski-suits"]
+[gorsuch.suit.hints]
+"womens-ski-suits" = { gender = "women" }
+
+[gorsuch.midlayer]
+collections = ["mens-midlayers", "womens-ski-midlayers"]
+[gorsuch.midlayer.hints]
+"mens-midlayers" = { gender = "men" }
+"womens-ski-midlayers" = { gender = "women" }
+
+[gorsuch.glove]
+collections = ["kids-gloves-mitts", "mens-gloves-mitts", "womens-gloves-mitts"]
+[gorsuch.glove.hints]
+"kids-gloves-mitts" = { gender = "kids" }
+"mens-gloves-mitts" = { gender = "men" }
+"womens-gloves-mitts" = { gender = "women" }
+
+[gorsuch.sock]
+collections = ["kids-ski-socks", "mens-ski-socks", "womens-ski-socks"]
+[gorsuch.sock.hints]
+"kids-ski-socks" = { gender = "kids" }
+"mens-ski-socks" = { gender = "men" }
+"womens-ski-socks" = { gender = "women" }
+
+[gorsuch.facewear]
+collections = ["mens-neckwarmers", "womens-neckwarmers"]
+[gorsuch.facewear.hints]
+"mens-neckwarmers" = { gender = "men" }
+"womens-neckwarmers" = { gender = "women" }
+
+[gorsuch.bag]
+collections = ["packs-ski-bags"]
+
+# ---------------------------------------------------------------- ems
+[ems.ski]
+enabled = false
+
+[ems.helmet]
+collections = ["ski-helmets"]
+
+[ems.goggle]
+collections = ["ski-goggles"]
+
+[ems.jacket]
+collections = ["kids-ski-jackets"]
+[ems.jacket.hints]
+"kids-ski-jackets" = { gender = "kids" }
+
+[ems.pants]
+collections = ["ski-pants"]
+[ems.pants.hints]
+"kids-ski-pants" = { gender = "kids" }
+"mens-ski-pants" = { gender = "men" }
+"womens-ski-pants" = { gender = "women" }
+
+[ems.suit]
+collections = ["kids-snowsuits"]
+[ems.suit.hints]
+"kids-snowsuits" = { gender = "kids" }
+
+[ems.baselayer]
+collections = ["base-layers"]
+[ems.baselayer.hints]
+"kids-base-layers-1" = { gender = "kids" }
+"mens-base-layers" = { gender = "men" }
+"womens-base-layers" = { gender = "women" }
+
+[ems.glove]
+collections = ["ski-gloves"]
+[ems.glove.hints]
+"kids-gloves" = { gender = "kids" }
+"mens-gloves" = { gender = "men" }
+"womens-gloves" = { gender = "women" }
+
+[ems.sock]
+collections = ["ski-socks"]
+
+[ems.facewear]
+collections = ["mens-scarves-gaiters-balaclavas", "womens-scarves-gaiters-balaclavas"]
+[ems.facewear.hints]
+"mens-scarves-gaiters-balaclavas" = { gender = "men" }
+"womens-scarves-gaiters-balaclavas" = { gender = "women" }
+
+# ---------------------------------------------------------------- blackcrows
+[blackcrows.binding]
+collections = ["bindings"]
+
+[blackcrows.pole]
+collections = ["poles", "mountain-touring-poles"]
+
+[blackcrows.jacket]
+collections = ["mens-jackets", "womens-jackets"]
+[blackcrows.jacket.hints]
+"mens-jackets" = { gender = "men" }
+"womens-jackets" = { gender = "women" }
+
+[blackcrows.pants]
+collections = ["mens-pants", "womens-pants"]
+[blackcrows.pants.hints]
+"mens-pants" = { gender = "men" }
+"womens-pants" = { gender = "women" }
+
+[blackcrows.midlayer]
+collections = ["mens-midlayers", "womens-midlayers"]
+[blackcrows.midlayer.hints]
+"mens-midlayers" = { gender = "men" }
+"womens-midlayers" = { gender = "women" }
+
+[blackcrows.baselayer]
+collections = ["mens-baselayers", "womens-baselayers"]
+[blackcrows.baselayer.hints]
+"mens-baselayers" = { gender = "men" }
+"womens-baselayers" = { gender = "women" }
+
+[blackcrows.glove]
+collections = ["gloves"]
+
+[blackcrows.facewear]
+collections = ["neck-warmers"]
+
+[blackcrows.hat]
+collections = ["beanies-hats"]
+
+[blackcrows.bag]
+collections = ["ski-bags"]
+
+[blackcrows.skin]
+collections = ["skins"]
+
+# ---------------------------------------------------------------- armada
+[armada.binding]
+collections = ["ski-bindings", "touring-ski-bindings"]
+
+[armada.boot]
+collections = ["ski-boots"]
+
+[armada.pole]
+collections = ["ski-poles"]
+
+[armada.jacket]
+collections = ["mens-snowboard-ski-jacket", "womens-snowboard-ski-jacket"]
+[armada.jacket.hints]
+"mens-snowboard-ski-jacket" = { gender = "men" }
+"womens-snowboard-ski-jacket" = { gender = "women" }
+
+[armada.pants]
+collections = ["mens-snowboard-ski-pants", "womens-snowboard-ski-pants"]
+[armada.pants.hints]
+"mens-snowboard-ski-pants" = { gender = "men" }
+"womens-snowboard-ski-pants" = { gender = "women" }
+
+[armada.baselayer]
+collections = ["mens-snowboard-ski-base-layers", "womens-snowboard-ski-base-layers"]
+[armada.baselayer.hints]
+"mens-snowboard-ski-base-layers" = { gender = "men" }
+"womens-snowboard-ski-base-layers" = { gender = "women" }
+
+[armada.glove]
+collections = ["mens-snowboard-ski-gloves", "womens-snowboard-ski-gloves"]
+[armada.glove.hints]
+"mens-snowboard-ski-gloves" = { gender = "men" }
+"womens-snowboard-ski-gloves" = { gender = "women" }
+
+[armada.bag]
+collections = ["ski-bag"]
+
+[armada.skin]
+collections = ["ski-skins"]
+
+# ---------------------------------------------------------------- dps
+[dps.binding]
+collections = ["bindings", "touring-bindings"]
+
+[dps.pole]
+collections = ["poles"]
+
+[dps.glove]
+collections = ["gloves"]
+
+[dps.skin]
+collections = ["skins"]
+
+# ---------------------------------------------------------------- moment
+[moment.binding]
+collections = ["bindings", "touring-bindings"]
+
+[moment.pole]
+collections = ["poles"]
+
+[moment.hat]
+collections = ["beanies"]
+
+[moment.bag]
+collections = ["ski-bags"]
+
+[moment.skin]
+collections = ["climbing-skins"]
+
+# ---------------------------------------------------------------- 4frnt
+[4frnt.binding]
+collections = ["ski-bindings"]
+
+[4frnt.pole]
+collections = ["poles"]
+
+[4frnt.skin]
+collections = ["skins"]
+
+# ---------------------------------------------------------------- jskis
+[jskis.binding]
+collections = ["bindings"]
+
+[jskis.pole]
+collections = ["poles"]
+
+[jskis.hat]
+collections = ["beanies"]
+
+[jskis.skin]
+collections = ["skins"]
+
+# ---------------------------------------------------------------- icelantic
+[icelantic.binding]
+collections = ["bindings"]
+
+[icelantic.pole]
+collections = ["poles"]
+
+[icelantic.baselayer]
+collections = ["sg-mens-baselayer-bottom", "sg-womens-baselayer-top"]
+[icelantic.baselayer.hints]
+"sg-mens-baselayer-bottom" = { gender = "men" }
+"sg-womens-baselayer-top" = { gender = "women" }
+
+# ---------------------------------------------------------------- liberty
+[liberty.binding]
+collections = ["bindings"]
+
+[liberty.hat]
+collections = ["beanies"]
+
+# ---------------------------------------------------------------- blackdiamond
+[blackdiamond.ski]
+enabled = false
+
+[blackdiamond.binding]
+collections = ["alpine-touring-bindings"]
+
+[blackdiamond.pole]
+collections = ["poles"]
+
+[blackdiamond.pants]
+collections = ["ski-pants"]
+[blackdiamond.pants.hints]
+"mens-ski-pants" = { gender = "men" }
+"womens-ski-pants" = { gender = "women" }
+
+[blackdiamond.midlayer]
+collections = ["midlayer-collection"]
+
+[blackdiamond.baselayer]
+collections = ["base-layers-and-fleece"]
+[blackdiamond.baselayer.hints]
+"mens-baselayer-tops" = { gender = "men" }
+"womens-baselayer-tops" = { gender = "women" }
+
+[blackdiamond.glove]
+collections = ["gloves", "snow-gloves", "ski-gloves"]
+[blackdiamond.glove.hints]
+"mens-gloves" = { gender = "men" }
+"womens-gloves" = { gender = "women" }
+
+[blackdiamond.hat]
+collections = ["mens-beanies", "womens-beanies"]
+[blackdiamond.hat.hints]
+"mens-beanies" = { gender = "men" }
+"womens-beanies" = { gender = "women" }
+
+[blackdiamond.backpack]
+collections = ["ski-packs", "jetforce-avalanche-airbag-packs"]
+
+[blackdiamond.avalanche]
+collections = ["shovels-and-probes", "avalanche-beacons"]
+
+[blackdiamond.skin]
+collections = ["climbing-skins"]
+
+# ================================================================ 非 Shopify 网站
+# ---- REI（adapter = "rei"）：双板以外的分类。双板的配置在 retailers.toml。
+# 零售商级别的键会合并进每个分类，所以每张表都显式写 category_paths（可为空列表）、gender_paths（可为 {}）和 max_detail_pages。
+# 没有主列表时（category_paths = []），性别子分类的并集就是全部商品；同时出现在 men 和 women 列表里的 = unisex。
+# REI 不卖护具（protection）。中间层用它的抓绒外套 + 保暖外套分类（通用户外分类，但就是滑雪穿的中间层）。
+
+[rei.binding]
+category_paths = ["/c/downhill-ski-bindings", "/c/alpine-touring-ski-bindings"]
+gender_paths = {}
+max_detail_pages = 15
+
+[rei.boot]
+category_paths = []
+max_detail_pages = 30
+[rei.boot.gender_paths]
+men = ["/c/mens-downhill-ski-boots", "/c/mens-alpine-touring-ski-boots"]
+women = ["/c/womens-downhill-ski-boots", "/c/womens-alpine-touring-ski-boots"]
+kids = "/c/kids-downhill-ski-boots"
+
+[rei.pole]
+category_paths = ["/c/backcountry-ski-poles"]
+max_detail_pages = 8
+[rei.pole.gender_paths]
+men = "/c/mens-ski-poles"
+women = "/c/womens-ski-poles"
+kids = "/c/kids-ski-poles"
+
+[rei.helmet]
+category_paths = []
+max_detail_pages = 12
+[rei.helmet.gender_paths]
+men = "/c/mens-snowsports-helmets"
+women = "/c/womens-snowsports-helmets"
+kids = "/c/kids-snowsports-helmets"
+
+[rei.goggle]
+category_paths = []
+max_detail_pages = 15
+[rei.goggle.gender_paths]
+men = "/c/mens-snowsports-goggles"
+women = "/c/womens-snowsports-goggles"
+kids = "/c/kids-snowsports-goggles"
+
+[rei.jacket]
+category_paths = []
+exclude_paths = ["/c/cross-country-ski-jackets"]
+max_detail_pages = 30
+[rei.jacket.gender_paths]
+men = "/c/mens-ski-jackets"
+women = "/c/womens-ski-jackets"
+kids = "/c/kids-ski-jackets"
+
+[rei.pants]
+category_paths = []
+exclude_paths = ["/c/cross-country-ski-pants"]
+max_detail_pages = 25
+[rei.pants.gender_paths]
+men = "/c/mens-ski-pants"
+women = "/c/womens-ski-pants"
+kids = "/c/kids-ski-pants"
+
+[rei.suit]
+category_paths = []
+max_detail_pages = 5
+[rei.suit.gender_paths]
+women = "/c/womens-snowsuits"
+kids = ["/c/kids-snowsuits", "/c/kids-buntings"]
+
+[rei.midlayer]
+# 抓绒外套 + 保暖（羽绒/棉）外套：不是滑雪专用分类，但就是滑雪穿的中间层（雪服里面那一层）
+category_paths = []
+max_detail_pages = 20
+[rei.midlayer.gender_paths]
+men = ["/c/mens-fleece-jackets", "/c/mens-insulated-jackets"]
+women = ["/c/womens-fleece-jackets", "/c/womens-insulated-jackets"]
+kids = ["/c/kids-fleece-jackets", "/c/kids-insulated-jackets"]
+
+[rei.baselayer]
+category_paths = []
+max_detail_pages = 12
+[rei.baselayer.gender_paths]
+men = "/c/mens-base-layers"
+women = "/c/womens-base-layers"
+kids = "/c/kids-base-layers"
+
+[rei.glove]
+category_paths = []
+max_detail_pages = 15
+[rei.glove.gender_paths]
+men = "/c/mens-ski-gloves-and-mittens"
+women = "/c/womens-ski-gloves-and-mittens"
+kids = "/c/kids-ski-gloves-and-mittens"
+
+[rei.sock]
+category_paths = []
+max_detail_pages = 8
+[rei.sock.gender_paths]
+men = "/c/mens-ski-socks"
+women = "/c/womens-ski-socks"
+kids = "/c/kids-ski-socks"
+
+[rei.facewear]
+category_paths = []
+max_detail_pages = 8
+[rei.facewear.gender_paths]
+men = ["/c/mens-neck-gaiters", "/c/mens-balaclavas"]
+women = ["/c/womens-neck-gaiters", "/c/womens-balaclavas"]
+kids = ["/c/kids-neck-gaiters", "/c/kids-balaclavas"]
+
+[rei.hat]
+category_paths = []
+max_detail_pages = 8
+[rei.hat.gender_paths]
+men = ["/c/mens-beanies", "/c/mens-snow-headbands"]
+women = ["/c/womens-beanies", "/c/womens-snow-headbands"]
+kids = "/c/kids-beanies"
+
+[rei.backpack]
+category_paths = ["/c/ski-backpacks"]
+max_detail_pages = 8
+[rei.backpack.gender_paths]
+women = "/c/ski-backpacks/f/g-womens"
+
+[rei.bag]
+category_paths = ["/c/ski-bags", "/c/ski-boot-bags", "/c/ski-gear-bags"]
+gender_paths = {}
+max_detail_pages = 5
+
+[rei.avalanche]
+category_paths = ["/c/avalanche-safety-gear"]
+gender_paths = {}
+max_detail_pages = 8
+
+[rei.skin]
+category_paths = ["/c/climbing-skins"]
+exclude_paths = ["/c/ski-crampons"]
+gender_paths = {}
+max_detail_pages = 5
+
+[rei.tuning]
+category_paths = ["/c/ski-tuning-and-tools"]
+gender_paths = {}
+max_detail_pages = 5
+
+[rei.accessory]
+category_paths = ["/c/boot-accessories", "/c/boot-dryers", "/c/hand-and-foot-warmers", "/c/goggle-accessories", "/c/snowsports-helmet-accessories", "/c/ski-carriers", "/c/ski-binding-accessories", "/c/ski-crampons", "/c/ski-locks"]
+gender_paths = {}
+max_detail_pages = 5
+
+# ---- Peter Glenn / Sun & Ski / Skis.com（非 Shopify）：双板以外的分类。双板的配置在 retailers.toml。
+# 每张表都显式写 max_detail_pages，避免零售商级别的 80 渗进服装分类。
+
+# ===== Peter Glenn =====
+[peterglenn.binding]
+max_detail_pages = 0
+categories = ["/ski/ski-bindings/"]
+
+[peterglenn.boot]
+max_detail_pages = 30
+categories = ["/ski/ski-boots/"]
+
+[peterglenn.pole]
+max_detail_pages = 5
+categories = ["/ski/poles/"]
+
+[peterglenn.helmet]
+max_detail_pages = 10
+categories = ["/ski/helmets/"]
+
+[peterglenn.goggle]
+max_detail_pages = 0
+categories = ["/ski/goggles/"]
+
+[peterglenn.jacket]
+max_detail_pages = 25
+categories = ["/ski/jackets/"]
+
+[peterglenn.pants]
+max_detail_pages = 20
+categories = ["/ski/pants/", "/ski/bibs/"]
+
+[peterglenn.suit]
+max_detail_pages = 5
+categories = ["/ski/ski-suits/"]
+
+[peterglenn.midlayer]
+max_detail_pages = 10
+categories = ["/ski/mid-layers/", "/ski/sweaters/"]
+
+[peterglenn.baselayer]
+max_detail_pages = 10
+categories = ["/ski/baselayers/"]
+
+[peterglenn.glove]
+max_detail_pages = 15
+categories = ["/ski/gloves/", "/ski/mittens/"]
+
+[peterglenn.sock]
+max_detail_pages = 0
+categories = ["/ski/socks/"]
+
+[peterglenn.facewear]
+max_detail_pages = 0
+categories = ["/ski/neck-gaiters/", "/snowboard/facemasks/"]
+
+[peterglenn.hat]
+max_detail_pages = 0
+categories = ["/ski/hats/", "/ski/headbands/"]
+
+[peterglenn.backpack]
+max_detail_pages = 0
+categories = ["/snowboard/backpacks/"]
+
+[peterglenn.bag]
+max_detail_pages = 0
+categories = ["/ski/bags/"]
+
+[peterglenn.accessory]
+max_detail_pages = 0
+categories = ["/ski/accessories/"]
+
+# ===== Sun & Ski Sports (all sizes come from the search API; no detail pages) =====
+[sunandski.boot]
+categories = [{ group_id = "25", filters = { name = ["Ski Boots"] } }]
+
+[sunandski.binding]
+categories = [{ group_id = "25", filters = { name = ["Ski Bindings"] } }]
+
+[sunandski.pole]
+categories = [{ group_id = "25", filters = { name = ["Ski Poles"] } }]
+
+[sunandski.helmet]
+categories = [{ group_id = "25", filters = { name = ["Snow Helmets"] } }]
+
+[sunandski.goggle]
+categories = [{ group_id = "25", filters = { name = ["Snow Goggles"] } }]
+
+[sunandski.jacket]
+categories = [{ group_id = "25", filters = { name = ["Insulated Snow Jackets"] } }]
+
+[sunandski.pants]
+categories = [{ group_id = "25", filters = { name = ["Snow Pants"] } }]
+
+[sunandski.midlayer]
+categories = [{ group_id = "25", filters = { name = ["Fleece", "Vests", "Insulated Jackets"] } }]
+
+[sunandski.baselayer]
+categories = [{ group_id = "all", filters = { name = ["Base Layer Bottoms", "Base Layer Tops"] } }]
+
+[sunandski.glove]
+categories = [{ group_id = "25", filters = { name = ["Gloves", "Mittens"] } }]
+
+[sunandski.sock]
+categories = [{ group_id = "all", filters = { name = ["Snow Socks"] } }]
+
+[sunandski.facewear]
+categories = [{ group_id = "25", filters = { name = ["Balaclavas", "Neck Gaiters"] } }]
+
+[sunandski.hat]
+categories = [{ group_id = "25", filters = { name = ["Beanies"] } }]
+
+[sunandski.backpack]
+categories = [{ group_id = "25", filters = { name = ["Backpacks"] } }]
+
+[sunandski.bag]
+categories = [{ group_id = "25", filters = { name = ["Ski Bags", "Boot Bags", "Hard Cases"] } }]
+
+[sunandski.tuning]
+categories = [{ group_id = "25", filters = { name = ["Snow Tuning & Tools"] } }]
+
+[sunandski.accessory]
+categories = [{ group_id = "25", filters = { name = ["Hand & Foot Warmers", "Snow Gear Accessories", "Snow Helmet Accessories"] } }]
+
+# ===== Skis.com (crawl-delay 2 via retailers.toml min_interval) =====
+[skiscom.boot]
+max_detail_pages = 30
+categories = [
+  { path = "/products/2514/equipment-mens-boots", gender = "men" },
+  { path = "/products/2601/equipment-womens-boots", gender = "women" },
+  { path = "/products/2678/equipment-kids-boots", gender = "kids" },
+  { path = "/products/2802/equipment-race-ski-boots", type = "race" },
+]
+
+[skiscom.binding]
+max_detail_pages = 15
+categories = [
+  { path = "/products/2677/equipment-unisex-bindings" },
+  { path = "/products/2719/equipment-youth-bindings", gender = "kids" },
+  { path = "/products/2803/equipment-race-bindings", type = "race" },
+]
+
+[skiscom.pole]
+max_detail_pages = 5
+categories = [
+  { path = "/products/2708/equipment-ski-poles" },
+  { path = "/products/2804/equipment-race-poles", type = "race" },
+]
+
+[skiscom.helmet]
+max_detail_pages = 10
+categories = [
+  { path = "/products/2457/helmets-unisex", gender = "unisex" },
+  { path = "/products/2586/helmets-womens", gender = "women" },
+  { path = "/products/2551/helmets-youth", gender = "kids" },
+]
+
+[skiscom.goggle]
+max_detail_pages = 0
+categories = [
+  { path = "/products/2434/goggles-unisex", gender = "unisex" },
+  { path = "/products/2521/goggles-womens", gender = "women" },
+  { path = "/products/2435/goggles-youth", gender = "kids" },
+]
+
+[skiscom.protection]
+max_detail_pages = 0
+categories = [{ path = "/products/2805/equipment-protective-race-gear", type = "race" }]
+
+[skiscom.jacket]
+max_detail_pages = 25
+categories = [
+  { path = "/products/2502/men-ski-snowboard-outerwear-insulated-jackets", gender = "men" },
+  { path = "/products/2575/men-ski-snowboard-outerwear-shell-jackets", gender = "men" },
+  { path = "/products/2554/men-ski-snowboard-outerwear-softshell-jackets", gender = "men" },
+  { path = "/products/2529/men-ski-snowboard-outerwear-down-synthetic-down-jackets", gender = "men" },
+  { path = "/products/2664/men-ski-snowboard-outerwear-heated-jackets", gender = "men" },
+  { path = "/products/2480/women-ski-snowboard-outerwear-insulated-jackets", gender = "women" },
+  { path = "/products/2648/women-ski-snowboard-outerwear-shell-jackets", gender = "women" },
+  { path = "/products/2484/women-ski-snowboard-outerwear-softshell-jackets", gender = "women" },
+  { path = "/products/2492/women-ski-snowboard-outerwear-down-synthetic-down-jackets", gender = "women" },
+  { path = "/products/2666/women-ski-snowboard-outerwear-heated-jackets", gender = "women" },
+  { path = "/products/2812/women-ski-snowboard-outerwear-petite-and-plus-jackets", gender = "women" },
+  { path = "/products/2442/kids-ski-snowboard-outerwear-junior-jackets", gender = "kids" },
+  { path = "/products/2599/kids-ski-snowboard-outerwear-preschool-jackets", gender = "kids" },
+]
+
+[skiscom.pants]
+max_detail_pages = 20
+categories = [
+  { path = "/products/2383/men-ski-snowboard-outerwear-pants-bibs", gender = "men" },
+  { path = "/products/2343/women-ski-snowboard-outerwear-pants-bibs", gender = "women" },
+  { path = "/products/2422/kids-ski-snowboard-outerwear-pants-bibs", gender = "kids" },
+]
+
+[skiscom.suit]
+max_detail_pages = 5
+categories = [
+  { path = "/products/2701/women-ski-snowboard-outerwear-one-piece-suits", gender = "women" },
+  { path = "/products/2689/kids-ski-snowboard-outerwear-one-piece-snowsuits", gender = "kids" },
+]
+
+[skiscom.midlayer]
+max_detail_pages = 10
+categories = [
+  { path = "/products/2486/men-mid-layer-full-zips", gender = "men" },
+  { path = "/products/2527/men-mid-layer-partial-zips", gender = "men" },
+  { path = "/products/2636/men-mid-layer-t-necks", gender = "men" },
+  { path = "/products/2639/men-mid-layer-crews", gender = "men" },
+  { path = "/products/2487/men-ski-snowboard-outerwear-fleece-jackets", gender = "men" },
+  { path = "/products/2611/women-mid-layer-full-zips", gender = "women" },
+  { path = "/products/2570/women-mid-layer-partial-zips", gender = "women" },
+  { path = "/products/2621/women-mid-layer-t-necks", gender = "women" },
+  { path = "/products/2644/women-mid-layer-crews", gender = "women" },
+  { path = "/products/2496/women-ski-snowboard-outerwear-fleece-jackets", gender = "women" },
+  { path = "/products/2462/kids-base-mid-casual-layers-fleece", gender = "kids" },
+]
+
+[skiscom.baselayer]
+max_detail_pages = 10
+categories = [
+  { path = "/products/2414/men-base-mid-casual-layers-baselayer", gender = "men" },
+  { path = "/products/2588/women-base-mid-casual-layers-baselayer", gender = "women" },
+  { path = "/products/2535/kids-base-mid-casual-layers-baselayer", gender = "kids" },
+]
+
+[skiscom.glove]
+max_detail_pages = 15
+categories = [
+  { path = "/products/2372/men-accessories-gloves-mittens", gender = "men" },
+  { path = "/products/2374/women-accessories-gloves-mittens", gender = "women" },
+  { path = "/products/2556/kids-accessories-gloves-mittens", gender = "kids" },
+]
+
+[skiscom.sock]
+max_detail_pages = 0
+categories = [
+  { path = "/products/2313/men-accessories-socks", gender = "men" },
+  { path = "/products/2316/women-accessories-socks", gender = "women" },
+  { path = "/products/2594/kids-accessories-socks", gender = "kids" },
+]
+
+[skiscom.facewear]
+max_detail_pages = 0
+categories = [
+  { path = "/products/2330/men-accessories-face-masks-neck-ups", gender = "men" },
+  { path = "/products/2332/women-accessories-face-masks-neck-ups", gender = "women" },
+  { path = "/products/2466/kids-accessories-face-masks-neck-ups", gender = "kids" },
+]
+
+[skiscom.hat]
+max_detail_pages = 0
+categories = [
+  { path = "/products/2454/men-accessories-hats", gender = "men" },
+  { path = "/products/2429/women-accessories-hats", gender = "women" },
+  { path = "/products/2388/kids-accessories-hats", gender = "kids" },
+]
+
+[skiscom.backpack]
+max_detail_pages = 0
+categories = [{ path = "/products/2460/bags-backpacks" }]
+
+[skiscom.bag]
+max_detail_pages = 0
+categories = [
+  { path = "/products/2369/bags-ski" },
+  { path = "/products/2392/bags-boot" },
+]
+
+[skiscom.tuning]
+max_detail_pages = 0
+categories = [
+  { path = "/products/2366/accessories-tuning-tools-kits" },
+  { path = "/products/2407/accessories-wax" },
+]
+
+[skiscom.accessory]
+max_detail_pages = 0
+categories = [
+  { path = "/products/2341/equipment-ski-accessories" },
+  { path = "/products/2327/equipment-ski-boot-accessories" },
+  { path = "/products/2362/equipment-ski-boot-heaters-and-dryers" },
+  { path = "/products/2432/accessories-locks" },
+]
+
+# ---- Christy Sports（adapter = "christy"）：双板以外的分类。双板的配置在 retailers.toml。
+# 每张表都要写 categories 和 max_detail_pages，否则会继承零售商级（双板）的值。
+# categories：分类页列表（gender = 该页代表的性别，type = 类型线索，include / exclude = 只对该页生效的过滤正则）
+# include / exclude（表级）：对该分类所有页生效；匹配文本是 "Christy 商品分类 | 品类 | 部门 | 标题"，不区分大小写。
+# 没有 protection（护具）：Christy 没有雪上护具分类页（只有自行车护具）。
+
+[christy.binding]    # 固定器
+max_detail_pages = 15
+exclude = "snowboard|splitboard"
+categories = [
+  { path = "/ski/bindings/" },
+  { path = "/mens/mens-ski/ski-bindings/", gender = "men" },
+  { path = "/womens/womens-ski/ski-bindings/", gender = "women" },
+  { path = "/kids/kids-ski-and-snowboard/ski-bindings/", gender = "kids" },
+  { path = "/more-activities/backcountry/at-bindings/", type = "touring" },
+]
+
+[christy.boot]    # 雪鞋
+max_detail_pages = 45
+exclude = "snowboard|splitboard|insoles?|footbeds?"
+categories = [
+  { path = "/ski/boots/" },
+  { path = "/mens/mens-ski/ski-boots/", gender = "men" },
+  { path = "/womens/womens-ski/ski-boots/", gender = "women" },
+  { path = "/kids/kids-ski-and-snowboard/ski-boots/", gender = "kids" },
+  { path = "/more-activities/backcountry/at-boots/", type = "touring" },
+]
+
+[christy.pole]    # 雪杖
+max_detail_pages = 8
+exclude = "trekking|hiking|nordic"
+categories = [
+  { path = "/ski/poles/" },
+  { path = "/more-activities/backcountry/poles/", type = "touring" },
+]
+
+[christy.helmet]    # 头盔
+max_detail_pages = 10
+exclude = '\bbike\b|cycling'
+categories = [
+  { path = "/ski/helmets/" },
+  { path = "/mens/mens-gear/helmets/", gender = "men" },
+  { path = "/womens/womens-gear/helmets/", gender = "women" },
+  { path = "/kids/kids-gear/helmets/", gender = "kids" },
+]
+
+[christy.goggle]    # 雪镜
+max_detail_pages = 0
+categories = [
+  { path = "/ski/goggles/" },
+  { path = "/mens/mens-gear/goggles/", gender = "men" },
+  { path = "/womens/womens-gear/goggles/", gender = "women" },
+  { path = "/kids/kids-gear/goggles/", gender = "kids" },
+]
+
+[christy.jacket]    # 雪服
+max_detail_pages = 25
+exclude = '(?:\bsuits?\b|snow ?suit|one[- ]?piece|\bonesie\b|jumpsuit|coverall)[^|]*$|baselayer|base layer|half[- ]zip|t-neck'
+categories = [
+  { path = "/mens/mens-clothing/snow-jackets/", gender = "men" },
+  { path = "/womens/womens-clothing/snow-jackets/", gender = "women" },
+  { path = "/kids/kids-clothing/snow-jackets/", gender = "kids" },
+]
+
+[christy.pants]    # 雪裤/背带裤
+max_detail_pages = 25
+exclude = '(?:\bsuits?\b|snow ?suit|one[- ]?piece|\bonesie\b|jumpsuit|coverall)[^|]*$|baselayer|base layer'
+categories = [
+  { path = "/mens/mens-clothing/snow-pants/", gender = "men" },
+  { path = "/womens/womens-clothing/snow-pants/", gender = "women" },
+  { path = "/kids/kids-clothing/snow-pants/", gender = "kids" },
+]
+
+[christy.suit]    # 连体服
+max_detail_pages = 5
+include = '(?:\bsuits?\b|snow ?suit|one[- ]?piece|\bonesie\b|jumpsuit|coverall)[^|]*$'
+categories = [
+  { path = "/womens/womens-clothing/snowsuits/", gender = "women" },
+  { path = "/kids/kids-clothing/snow-jackets/", gender = "kids" },
+  { path = "/kids/kids-clothing/snow-pants/", gender = "kids" },
+]
+
+[christy.midlayer]    # 中间层
+max_detail_pages = 20
+exclude = 'baselayer|base layer|underwear|logo|^(?!.*(?:fleece|half[- ]zip|quarter[- ]zip|1/4|¼|pullover|vest|hood(?:ie|y)?|insulated|puff|down\b)).*(?:l/s/casual|s/s casual|fashion/casual)'
+categories = [
+  { path = "/mens/mens-clothing/layers-and-insulation/", gender = "men" },
+  { path = "/womens/womens-clothing/layers-and-insulation/", gender = "women" },
+  { path = "/kids/kids-clothing/layers-and-insulation/", gender = "kids" },
+]
+
+[christy.baselayer]    # 保暖内衣
+max_detail_pages = 15
+include = "baselayer|base layer|underwear"
+categories = [
+  { path = "/mens/mens-clothing/layers-and-insulation/", gender = "men" },
+  { path = "/womens/womens-clothing/layers-and-insulation/", gender = "women" },
+  { path = "/kids/kids-clothing/layers-and-insulation/", gender = "kids" },
+]
+
+[christy.glove]    # 手套
+max_detail_pages = 20
+exclude = '\bbike\b|cycling|golf|tennis'
+categories = [
+  { path = "/accessories/gloves-and-mittens/" },
+  { path = "/mens/mens-gear/gloves-and-mittens/", gender = "men" },
+  { path = "/womens/womens-gear/gloves-and-mittens/", gender = "women" },
+  { path = "/kids/kids-gear/gloves-and-mittens/", gender = "kids" },
+]
+
+[christy.sock]    # 滑雪袜
+max_detail_pages = 5
+include = '\bski\b|snow|heat'
+categories = [
+  { path = "/accessories/socks/" },
+  { path = "/mens/mens-clothing/socks/", gender = "men" },
+  { path = "/womens/womens-clothing/socks/", gender = "women" },
+  { path = "/kids/kids-clothing/socks/", gender = "kids" },
+]
+
+[christy.facewear]    # 护脸/围脖
+max_detail_pages = 0
+categories = [
+  { path = "/accessories/masks-and-neck-gaiters/" },
+  { path = "/mens/mens-gear/masks-and-neck-gaiters/", gender = "men" },
+  { path = "/womens/womens-gear/masks-and-neck-gaiters/", gender = "women" },
+  { path = "/kids/kids-gear/masks-and-neck-gaiters/", gender = "kids" },
+]
+
+[christy.hat]    # 帽子
+max_detail_pages = 0
+exclude = "trucker|ball caps|sun/performance|tennis"
+categories = [
+  { path = "/accessories/hats-and-beanies/" },
+  { path = "/mens/mens-gear/hats-and-beanies/", gender = "men" },
+  { path = "/womens/womens-gear/hats-and-beanies/", gender = "women" },
+  { path = "/kids/kids-gear/hats-and-beanies/", gender = "kids" },
+]
+
+[christy.backpack]    # 背包
+max_detail_pages = 0
+categories = [
+  { path = "/more-activities/backcountry/backpacks/", type = "touring" },
+  { path = "/ski/bagsand-packs-and-travel/", include = "a/t bags|day packs|hydration" },
+]
+
+[christy.bag]    # 雪板包/雪鞋包
+max_detail_pages = 0
+exclude = "a/t bags|day packs|hydration|snowboard bags"
+categories = [
+  { path = "/ski/bagsand-packs-and-travel/" },
+]
+
+[christy.avalanche]    # 雪崩装备
+max_detail_pages = 0
+categories = [
+  { path = "/more-activities/backcountry/beaconsand-probes-and-shovels/" },
+]
+
+[christy.skin]    # 止滑带
+max_detail_pages = 5
+exclude = "splitboard"
+categories = [
+  { path = "/more-activities/backcountry/skins/" },
+]
+
+[christy.tuning]    # 打蜡工具
+max_detail_pages = 0
+include = 'tools|\bwax|tun|edge|\bfile|brush|scraper|iron|vise|sharpen|stone'
+exclude = "snowboard"
+categories = [
+  { path = "/ski/tuning-equipment/" },
+  { path = "/accessories/tuning/" },
+]
+
+[christy.accessory]    # 其他配件
+max_detail_pages = 0
+exclude = 'gloves|mittens|\bmitts\b|socks|vests|boot bags|beacon|transceiver|\bprobes?\b|shovel|\bskins\b|balaclava|gaiter|beanie|goggles|helmet'
+categories = [
+  { path = "/ski/accessories/" },
+  { path = "/accessories/warmers-and-electronic-heating/" },
+  { path = "/more-activities/backcountry/accessories/", type = "touring" },
+]
+
+
+# ============================================================================ Zappos（skideals/adapters/zappos.py）
+# 分类页地址来自 Zappos 自己的分类导航（全部性别；每个商品自带性别）。
+[zappos.ski]
+enabled = false
+
+[zappos.jacket]
+paths = ["/ski-and-snowboard-jackets/CKvXARDH1wEYu-wB4gIDAQID.zso"]
+
+[zappos.pants]
+paths = ["/ski-and-snow-pants/CKvXARCw7AEYsuwB4gIDAQID.zso"]
+
+[zappos.glove]
+paths = ["/ski-and-snow-gloves/COfWARCH1wEY6uwB4gIDAQID.zso"]
+
+
+# ============================================================================ 2026-09-28 补充的服装品牌官网 / 雪具店
+# 由 `python -m skideals discover` 生成后逐家人工检查：只收冬季/滑雪相关分类页；混装的 outerwear 页只放在 jacket 下，
+# 里面的雪裤由分类判定（categories.assign）自动改判到“雪裤”。
+
+# ---------------------------------------------------------------- spyder
+[spyder.ski]
+enabled = false
+
+[spyder.jacket]
+collections = ["ski-jackets"]
+[spyder.jacket.hints]
+"mens-ski-jackets" = { gender = "men" }
+"womens-ski-jackets" = { gender = "women" }
+"boys-ski-jackets" = { gender = "kids" }
+"girls-ski-jackets" = { gender = "kids" }
+
+[spyder.pants]
+collections = ["ski-pants-bibs"]
+[spyder.pants.hints]
+"mens-ski-pants-bibs" = { gender = "men" }
+"womens-ski-pants-bibs" = { gender = "women" }
+"boys-ski-pants-bibs" = { gender = "kids" }
+"girls-ski-pants-bibs" = { gender = "kids" }
+
+[spyder.suit]
+collections = ["adult-race-suits", "kids-race-suits"]
+[spyder.suit.hints]
+"kids-race-suits" = { gender = "kids" }
+
+[spyder.midlayer]
+collections = ["midlayers"]
+[spyder.midlayer.hints]
+"mens-midlayers" = { gender = "men" }
+"womens-midlayers" = { gender = "women" }
+
+[spyder.baselayer]
+collections = ["ski-base-layers"]
+[spyder.baselayer.hints]
+"mens-ski-base-layers" = { gender = "men" }
+"womens-ski-base-layers" = { gender = "women" }
+"boys-ski-base-layers" = { gender = "kids" }
+"girls-ski-base-layers" = { gender = "kids" }
+
+[spyder.glove]
+collections = ["gloves"]
+[spyder.glove.hints]
+"mens-gloves-1" = { gender = "men" }
+"womens-gloves-1" = { gender = "women" }
+
+[spyder.sock]
+collections = ["socks"]
+[spyder.sock.hints]
+"mens-socks-1" = { gender = "men" }
+"womens-socks-1" = { gender = "women" }
+
+# ---------------------------------------------------------------- volcom
+[volcom.ski]
+enabled = false
+
+[volcom.jacket]
+collections = ["snow-jackets"]
+[volcom.jacket.hints]
+"mens-snow-jackets" = { gender = "men" }
+"womens-snow-jackets" = { gender = "women" }
+"kids-snow" = { gender = "kids" }
+
+[volcom.pants]
+collections = ["snow-pants"]
+[volcom.pants.hints]
+"mens-snow-pants" = { gender = "men" }
+"womens-snow-pants" = { gender = "women" }
+"kids-snow" = { gender = "kids" }
+
+[volcom.midlayer]
+collections = ["snow-layers"]
+
+[volcom.glove]
+collections = ["snow-gloves-mitts"]
+
+[volcom.hat]
+collections = ["snow-beanies"]
+
+# ---------------------------------------------------------------- outdoorresearch
+[outdoorresearch.ski]
+enabled = false
+
+[outdoorresearch.jacket]
+collections = ["mens-ski-jackets", "womens-snow-jacket"]
+[outdoorresearch.jacket.hints]
+"mens-ski-jackets" = { gender = "men" }
+"womens-snow-jacket" = { gender = "women" }
+
+[outdoorresearch.pants]
+collections = ["snow-pants", "womens-snow-pants", "mens-ski-and-snow-bibs", "womens-ski-and-snow-bibs"]
+[outdoorresearch.pants.hints]
+"womens-snow-pants" = { gender = "women" }
+"mens-ski-and-snow-bibs" = { gender = "men" }
+"womens-ski-and-snow-bibs" = { gender = "women" }
+
+[outdoorresearch.midlayer]
+collections = ["mens-down-synthetic-insulated-jackets-vests", "womens-down-synthetic-insulated-jackets-vests", "mens-fleece", "womens-fleece"]
+[outdoorresearch.midlayer.hints]
+"mens-down-synthetic-insulated-jackets-vests" = { gender = "men" }
+"womens-down-synthetic-insulated-jackets-vests" = { gender = "women" }
+"mens-fleece" = { gender = "men" }
+"womens-fleece" = { gender = "women" }
+
+[outdoorresearch.baselayer]
+collections = ["baselayer-collection"]
+[outdoorresearch.baselayer.hints]
+"mens-base-layers" = { gender = "men" }
+"womens-base-layers" = { gender = "women" }
+
+[outdoorresearch.glove]
+collections = ["ski-snowboard-gloves", "mittens"]
+[outdoorresearch.glove.hints]
+"mens-ski-gloves" = { gender = "men" }
+"womens-ski-gloves" = { gender = "women" }
+
+[outdoorresearch.facewear]
+collections = ["balaclavas", "neck-gaiters-ear-bands"]
+
+[outdoorresearch.hat]
+collections = ["beanies", "winter-caps-beanies"]
+[outdoorresearch.hat.hints]
+"mens-beanies" = { gender = "men" }
+"womens-beanies" = { gender = "women" }
+
+# ---------------------------------------------------------------- hotchillys
+[hotchillys.ski]
+enabled = false
+
+[hotchillys.baselayer]
+collections = ["mens-ski-base-layers", "womens-ski-base-layers", "youth-ski"]
+[hotchillys.baselayer.hints]
+"mens-ski-base-layers" = { gender = "men" }
+"womens-ski-base-layers" = { gender = "women" }
+"youth-ski" = { gender = "kids" }
+
+[hotchillys.sock]
+collections = ["mens-ski-socks", "womens-ski-socks", "youth-ski-socks"]
+[hotchillys.sock.hints]
+"mens-ski-socks" = { gender = "men" }
+"womens-ski-socks" = { gender = "women" }
+"youth-ski-socks" = { gender = "kids" }
+
+[hotchillys.facewear]
+collections = ["winter-face-protection"]
+
+[hotchillys.hat]
+collections = ["beanies-and-neck-gaiters"]
+
+# ---------------------------------------------------------------- smartwool
+[smartwool.ski]
+enabled = false
+
+[smartwool.midlayer]
+collections = ["mens-jackets-pullovers-and-vests", "womens-jackets-pullovers-and-vests"]
+[smartwool.midlayer.hints]
+"mens-jackets-pullovers-and-vests" = { gender = "men" }
+"womens-jackets-pullovers-and-vests" = { gender = "women" }
+
+[smartwool.baselayer]
+collections = ["base-layer"]
+[smartwool.baselayer.hints]
+"mens-base-layers" = { gender = "men" }
+"womens-base-layers" = { gender = "women" }
+"kids-base-layers" = { gender = "kids" }
+
+[smartwool.glove]
+collections = ["mens-gloves-and-mittens", "womens-gloves-and-mittens", "kids-gloves-and-mittens"]
+[smartwool.glove.hints]
+"mens-gloves-and-mittens" = { gender = "men" }
+"womens-gloves-and-mittens" = { gender = "women" }
+"kids-gloves-and-mittens" = { gender = "kids" }
+
+[smartwool.sock]
+collections = ["ski-and-snowboard-socks"]
+[smartwool.sock.hints]
+"mens-ski-and-snowboard-socks" = { gender = "men" }
+"womens-ski-and-snowboard-socks" = { gender = "women" }
+"kids-ski-socks" = { gender = "kids" }
+
+[smartwool.facewear]
+collections = ["mens-neck-gaiters-and-balaclavas", "womens-neck-gaiters-and-balaclavas", "kids-neck-gaiters-and-balaclavas"]
+[smartwool.facewear.hints]
+"mens-neck-gaiters-and-balaclavas" = { gender = "men" }
+"womens-neck-gaiters-and-balaclavas" = { gender = "women" }
+"kids-neck-gaiters-and-balaclavas" = { gender = "kids" }
+
+[smartwool.hat]
+collections = ["mens-hats-and-beanies", "womens-hats-and-beanies", "kids-hats-and-beanies"]
+[smartwool.hat.hints]
+"mens-hats-and-beanies" = { gender = "men" }
+"womens-hats-and-beanies" = { gender = "women" }
+"kids-hats-and-beanies" = { gender = "kids" }
+
+# ---------------------------------------------------------------- obermeyer
+[obermeyer.ski]
+enabled = false
+
+[obermeyer.jacket]
+collections = ["mens-jackets", "womens-jackets", "kid-boys-snow-jackets", "kid-girls-snow-jackets", "teen-boys-snow-jackets", "teen-girls-snow-jackets"]
+[obermeyer.jacket.hints]
+"mens-jackets" = { gender = "men" }
+"womens-jackets" = { gender = "women" }
+"kid-boys-snow-jackets" = { gender = "kids" }
+"kid-girls-snow-jackets" = { gender = "kids" }
+"teen-boys-snow-jackets" = { gender = "kids" }
+"teen-girls-snow-jackets" = { gender = "kids" }
+
+[obermeyer.pants]
+collections = ["mens-snow-pants-and-bibs", "womens-snow-pants-and-bibs", "kid-boys-snow-pants-and-bibs", "kid-girls-snow-pants-and-bibs", "teen-boys-snow-pants-and-bibs", "teen-girls-snow-pants-and-bibs"]
+[obermeyer.pants.hints]
+"mens-snow-pants-and-bibs" = { gender = "men" }
+"womens-snow-pants-and-bibs" = { gender = "women" }
+"kid-boys-snow-pants-and-bibs" = { gender = "kids" }
+"kid-girls-snow-pants-and-bibs" = { gender = "kids" }
+"teen-boys-snow-pants-and-bibs" = { gender = "kids" }
+"teen-girls-snow-pants-and-bibs" = { gender = "kids" }
+
+[obermeyer.suit]
+collections = ["womens-one-piece-suits-1"]
+[obermeyer.suit.hints]
+"womens-one-piece-suits-1" = { gender = "women" }
+
+[obermeyer.midlayer]
+collections = ["mens-layering", "womens-layering", "kid-boys-fleece", "kid-girls-fleece"]
+[obermeyer.midlayer.hints]
+"mens-layering" = { gender = "men" }
+"womens-layering" = { gender = "women" }
+"kid-boys-fleece" = { gender = "kids" }
+"kid-girls-fleece" = { gender = "kids" }
+
+[obermeyer.baselayer]
+collections = ["teen-boys-base-layer", "teen-girls-base-layer"]
+[obermeyer.baselayer.hints]
+"teen-boys-base-layer" = { gender = "kids" }
+"teen-girls-base-layer" = { gender = "kids" }
+
+[obermeyer.glove]
+collections = ["mens-gloves-and-mittens", "womens-gloves-and-mittens", "kid-boys-gloves-and-mittens", "kid-girls-gloves-and-mittens", "teen-boys-gloves-and-mittens", "teen-girls-gloves-and-mittens"]
+[obermeyer.glove.hints]
+"mens-gloves-and-mittens" = { gender = "men" }
+"womens-gloves-and-mittens" = { gender = "women" }
+"kid-boys-gloves-and-mittens" = { gender = "kids" }
+"kid-girls-gloves-and-mittens" = { gender = "kids" }
+"teen-boys-gloves-and-mittens" = { gender = "kids" }
+"teen-girls-gloves-and-mittens" = { gender = "kids" }
+
+[obermeyer.hat]
+collections = ["mens-hats-and-beanies", "womens-hats-and-beanies", "kids-hats-beanies", "teen-girls-hats-and-beanies", "teen-boys-hats-and-beanies"]
+[obermeyer.hat.hints]
+"mens-hats-and-beanies" = { gender = "men" }
+"womens-hats-and-beanies" = { gender = "women" }
+"kids-hats-beanies" = { gender = "kids" }
+"teen-girls-hats-and-beanies" = { gender = "kids" }
+"teen-boys-hats-and-beanies" = { gender = "kids" }
+
+# ---------------------------------------------------------------- seirus
+[seirus.ski]
+enabled = false
+
+[seirus.baselayer]
+collections = ["snowsports-base-layer"]
+
+[seirus.glove]
+collections = ["hands-feet-snowsports"]
+
+[seirus.facewear]
+collections = ["head-face-snowsports"]
+
+# ---------------------------------------------------------------- airblaster
+[airblaster.ski]
+enabled = false
+
+[airblaster.jacket]
+collections = ["mens-jackets", "womens-jackets", "youth-jackets"]
+[airblaster.jacket.hints]
+"mens-jackets" = { gender = "men" }
+"womens-jackets" = { gender = "women" }
+"youth-jackets" = { gender = "kids" }
+
+[airblaster.pants]
+collections = ["mens-pants", "womens-pants", "youth-pants-bibs"]
+[airblaster.pants.hints]
+"mens-pants" = { gender = "men" }
+"womens-pants" = { gender = "women" }
+"youth-pants-bibs" = { gender = "kids" }
+
+[airblaster.suit]
+collections = ["mens-freedom-suits", "womens-freedom-suits"]
+[airblaster.suit.hints]
+"mens-freedom-suits" = { gender = "men" }
+"womens-freedom-suits" = { gender = "women" }
+
+[airblaster.midlayer]
+collections = ["midlayers"]
+
+[airblaster.baselayer]
+collections = ["baselayers", "womens-base-layers", "ninja-suits", "youth-base-layers"]
+[airblaster.baselayer.hints]
+"womens-base-layers" = { gender = "women" }
+"youth-base-layers" = { gender = "kids" }
+"womens-ninja-suit" = { gender = "women" }
+"mens-ninja-suit" = { gender = "men" }
+
+[airblaster.facewear]
+collections = ["facemasks", "neck-gaiter"]
+
+[airblaster.hat]
+collections = ["beanies"]
+[airblaster.hat.hints]
+"youth-beanies" = { gender = "kids" }
+
+# ---------------------------------------------------------------- 686
+[686.ski]
+enabled = false
+
+[686.jacket]
+collections = ["mens-snow-jackets", "womens-snow-jackets", "boys-snow-jackets", "girls-jackets"]
+[686.jacket.hints]
+"mens-snow-jackets" = { gender = "men" }
+"womens-snow-jackets" = { gender = "women" }
+"boys-snow-jackets" = { gender = "kids" }
+"girls-jackets" = { gender = "kids" }
+
+[686.pants]
+collections = ["mens-snow-pants", "mens-snow-pants-bibs", "snow-bibs", "womens-snow-pants-bibs", "boys-snow-pants-bibs", "girls-snow-pants-bibs"]
+[686.pants.hints]
+"mens-snow-pants" = { gender = "men" }
+"mens-snow-pants-bibs" = { gender = "men" }
+"womens-snow-pants-bibs" = { gender = "women" }
+"boys-snow-pants-bibs" = { gender = "kids" }
+"girls-snow-pants-bibs" = { gender = "kids" }
+
+[686.midlayer]
+collections = ["mens-snow-hoodies-layers", "womens-snow-hoodies-layers"]
+[686.midlayer.hints]
+"mens-snow-hoodies-layers" = { gender = "men" }
+"womens-snow-hoodies-layers" = { gender = "women" }
+
+[686.glove]
+collections = ["gloves-mitts"]
+[686.glove.hints]
+"mens-snow-gloves-mitts" = { gender = "men" }
+"womens-snow-gloves-mitts" = { gender = "women" }
+"youth-gloves-mitts" = { gender = "kids" }
+
+[686.sock]
+collections = ["snow-socks"]
+[686.sock.hints]
+"mens-snow-socks" = { gender = "men" }
+"womens-snow-socks" = { gender = "women" }
+
+[686.facewear]
+collections = ["snow-masks-gaiters"]
+
+[686.hat]
+collections = ["beanies", "mens-beanies", "womens-beanies"]
+[686.hat.hints]
+"mens-beanies" = { gender = "men" }
+"womens-beanies" = { gender = "women" }
+
+[686.goggle]
+collections = ["goggles"]
+
+# ---------------------------------------------------------------- flylow
+[flylow.ski]
+enabled = false
+
+[flylow.jacket]
+collections = ["mens-jackets", "womens-jackets"]
+[flylow.jacket.hints]
+"mens-jackets" = { gender = "men" }
+"womens-jackets" = { gender = "women" }
+
+[flylow.pants]
+collections = ["mens-pants", "womens-pants", "ski-and-snowboard-bibs"]
+[flylow.pants.hints]
+"mens-pants" = { gender = "men" }
+"womens-pants" = { gender = "women" }
+
+[flylow.midlayer]
+collections = ["midlayers", "insulation", "womens-insulation"]
+[flylow.midlayer.hints]
+"mens-midlayers" = { gender = "men" }
+"womens-midlayers" = { gender = "women" }
+"womens-insulation" = { gender = "women" }
+
+[flylow.baselayer]
+collections = ["mens-baselayers", "womens-baselayers"]
+[flylow.baselayer.hints]
+"mens-baselayers" = { gender = "men" }
+"womens-baselayers" = { gender = "women" }
+
+[flylow.glove]
+collections = ["gloves"]
+
+[flylow.hat]
+collections = ["hats-winter"]
+
+# ---------------------------------------------------------------- skida
+[skida.ski]
+enabled = false
+
+[skida.glove]
+collections = ["gloves-mittens"]
+
+[skida.facewear]
+collections = ["alpine-neckwarmers", "balaclavas"]
+[skida.facewear.hints]
+"kids-baby-neckwear" = { gender = "kids" }
+
+[skida.hat]
+collections = ["alpine-nordic-hats"]
+[skida.hat.hints]
+"kids-baby" = { gender = "kids" }
+
+# ---------------------------------------------------------------- monsroyale
+[monsroyale.ski]
+enabled = false
+
+[monsroyale.midlayer]
+collections = ["mens-mid-layer-hoodies-sweaters", "mens-jackets-vests", "womens-mid-layer-hoodies-sweaters", "womens-mid-layer-jackets-vests"]
+[monsroyale.midlayer.hints]
+"mens-mid-layer-hoodies-sweaters" = { gender = "men" }
+"mens-jackets-vests" = { gender = "men" }
+"womens-mid-layer-hoodies-sweaters" = { gender = "women" }
+"womens-mid-layer-jackets-vests" = { gender = "women" }
+
+[monsroyale.baselayer]
+collections = ["merino-wool-base-layer"]
+[monsroyale.baselayer.hints]
+"mens-base-layer" = { gender = "men" }
+"womens-base-layer" = { gender = "women" }
+
+[monsroyale.glove]
+collections = ["merino-gloves"]
+
+[monsroyale.sock]
+collections = ["merino-socks"]
+
+[monsroyale.facewear]
+collections = ["balaclavas-neckwear"]
+
+[monsroyale.hat]
+collections = ["beanies"]
+
+# ---------------------------------------------------------------- turtlefur
+[turtlefur.ski]
+enabled = false
+
+[turtlefur.glove]
+collections = ["gloves-mittens"]
+[turtlefur.glove.hints]
+"womens-gloves-mittens" = { gender = "women" }
+
+[turtlefur.facewear]
+collections = ["neck-gaiters-neckwear", "balaclavas-hoods"]
+[turtlefur.facewear.hints]
+"kids-youth-balaclavas" = { gender = "kids" }
+"kids-neck-gaiters" = { gender = "kids" }
+
+[turtlefur.hat]
+collections = ["beanies-headbands"]
+[turtlefur.hat.hints]
+"womens-beanies" = { gender = "women" }
+"mens-beanie-hats" = { gender = "men" }
+"youth-hats-beanies" = { gender = "kids" }
+
+# ---------------------------------------------------------------- dakine
+[dakine.ski]
+enabled = false
+
+[dakine.goggle]
+collections = ["snow-goggles"]
+
+[dakine.jacket]
+collections = ["snowboard-ski-jackets-pants-bibs"]
+[dakine.jacket.hints]
+"mens-jackets-outerwear" = { gender = "men" }
+"womens-jackets-outerwear" = { gender = "women" }
+
+[dakine.glove]
+collections = ["snow-gloves-mitts"]
+[dakine.glove.hints]
+"mens-snow-gloves-mitts" = { gender = "men" }
+"womens-snow-gloves-mitts" = { gender = "women" }
+"kids-snow-gloves-mitts" = { gender = "kids" }
+
+[dakine.facewear]
+collections = ["balaclavas-facemasks"]
+[dakine.facewear.hints]
+"womens-balaclavas-facemasks" = { gender = "women" }
+
+[dakine.hat]
+collections = ["hats-beanies"]
+
+[dakine.backpack]
+collections = ["snow-backpacks"]
+
+[dakine.bag]
+collections = ["ski-travel-bags", "boot-bags"]
+
+# ---------------------------------------------------------------- minus33
+[minus33.ski]
+enabled = false
+
+[minus33.midlayer]
+collections = ["mens-mid-layer-tops", "womens-wool-mid-layers"]
+[minus33.midlayer.hints]
+"mens-mid-layer-tops" = { gender = "men" }
+"womens-wool-mid-layers" = { gender = "women" }
+
+[minus33.baselayer]
+collections = ["mens-wool-base-layers", "womens-wool-base-layers", "kids-wool-base-layers"]
+[minus33.baselayer.hints]
+"mens-wool-base-layers" = { gender = "men" }
+"womens-wool-base-layers" = { gender = "women" }
+"kids-wool-base-layers" = { gender = "kids" }
+
+[minus33.glove]
+collections = ["mens-gloves", "womens-gloves", "winter-gloves-mittens"]
+[minus33.glove.hints]
+"mens-gloves" = { gender = "men" }
+"womens-gloves" = { gender = "women" }
+
+[minus33.sock]
+collections = ["skiing"]
+
+[minus33.facewear]
+collections = ["wool-balaclavas", "wool-neck-gaiters"]
+
+[minus33.hat]
+collections = ["wool-beanies"]
+[minus33.hat.hints]
+"mens-beanies" = { gender = "men" }
+"womens-beanies" = { gender = "women" }
+
+# ---------------------------------------------------------------- stio
+[stio.ski]
+enabled = false
+
+[stio.jacket]
+collections = ["mens-ski-snowboard-jackets", "mens-ski-jackets", "womens-ski-jackets", "womens-ski-snowboard-shell-jackets"]
+[stio.jacket.hints]
+"mens-ski-snowboard-jackets" = { gender = "men" }
+"mens-ski-jackets" = { gender = "men" }
+"womens-ski-jackets" = { gender = "women" }
+"womens-ski-snowboard-shell-jackets" = { gender = "women" }
+
+[stio.pants]
+collections = ["mens-ski-pants-bibs", "womens-ski-pants-bibs"]
+[stio.pants.hints]
+"mens-ski-pants-bibs" = { gender = "men" }
+"womens-ski-pants-bibs" = { gender = "women" }
+
+[stio.midlayer]
+collections = ["midlayers"]
+[stio.midlayer.hints]
+"mens-midlayers" = { gender = "men" }
+"womens-midlayers" = { gender = "women" }
+
+[stio.baselayer]
+collections = ["baselayers"]
+[stio.baselayer.hints]
+"mens-baselayer" = { gender = "men" }
+"womens-baselayer" = { gender = "women" }
+
+[stio.glove]
+collections = ["gear-gloves-mittens"]
+
+[stio.facewear]
+collections = ["gear-face-coverings"]
+
+[stio.hat]
+collections = ["beanies"]
+
+# ---------------------------------------------------------------- strafe
+[strafe.ski]
+enabled = false
+
+[strafe.jacket]
+collections = ["mens-outerwear", "womens-outerwear"]
+[strafe.jacket.hints]
+"mens-outerwear" = { gender = "men" }
+"womens-outerwear" = { gender = "women" }
+
+[strafe.suit]
+collections = ["one-piece-suits"]
+[strafe.suit.hints]
+"mens-one-piece-suits" = { gender = "men" }
+"womens-one-piece-suits" = { gender = "women" }
+
+[strafe.midlayer]
+collections = ["mid-layers", "active-insulation"]
+[strafe.midlayer.hints]
+"mens-mid-layers" = { gender = "men" }
+"womens-mid-layers" = { gender = "women" }
+
+[strafe.baselayer]
+collections = ["baselayers"]
+[strafe.baselayer.hints]
+"mens-baselayers" = { gender = "men" }
+"womens-baselayers" = { gender = "women" }
+
+[strafe.facewear]
+collections = ["facemasks"]
+
+[strafe.hat]
+collections = ["beanies"]
+[strafe.hat.hints]
+"mens-beanies-toques" = { gender = "men" }
+"womens-beanies-and-toques" = { gender = "women" }
+
+# ---------------------------------------------------------------- halfdays
+[halfdays.ski]
+enabled = false
+
+[halfdays.jacket]
+collections = ["snow-jackets"]
+[halfdays.jacket.hints]
+"snow-jackets" = { gender = "women" }
+
+[halfdays.pants]
+collections = ["snow-pants", "bib-pants"]
+[halfdays.pants.hints]
+"snow-pants" = { gender = "women" }
+"bib-pants" = { gender = "women" }
+
+[halfdays.suit]
+collections = ["murphy-ski-suit"]
+[halfdays.suit.hints]
+"murphy-ski-suit" = { gender = "women" }
+
+[halfdays.midlayer]
+collections = ["fleece"]
+[halfdays.midlayer.hints]
+"fleece" = { gender = "women" }
+
+[halfdays.baselayer]
+collections = ["base-layers"]
+[halfdays.baselayer.hints]
+"base-layers" = { gender = "women" }
+
+[halfdays.sock]
+collections = ["socks"]
+[halfdays.sock.hints]
+"socks" = { gender = "women" }
+
+[halfdays.facewear]
+collections = ["gaiters"]
+[halfdays.facewear.hints]
+"gaiters" = { gender = "women" }
+
+[halfdays.hat]
+collections = ["beanies"]
+[halfdays.hat.hints]
+"beanies" = { gender = "women" }
+
+# ---------------------------------------------------------------- fera
+[fera.ski]
+enabled = false
+
+[fera.jacket]
+collections = ["ski-jackets", "mens-ski-jackets"]
+[fera.jacket.hints]
+"mens-ski-jackets" = { gender = "men" }
+"womens-outerwear" = { gender = "women" }
+
+[fera.pants]
+collections = ["womens-ski-pants", "women-s-bibs", "mens-ski-pants", "men-s-bibs"]
+[fera.pants.hints]
+"womens-ski-pants" = { gender = "women" }
+"women-s-bibs" = { gender = "women" }
+"mens-ski-pants" = { gender = "men" }
+"men-s-bibs" = { gender = "men" }
+
+# ---------------------------------------------------------------- blackstrap
+[blackstrap.ski]
+enabled = false
+
+[blackstrap.midlayer]
+collections = ["mid-layers"]
+[blackstrap.midlayer.hints]
+"mens-mid-layers" = { gender = "men" }
+"womens-mid-layers" = { gender = "women" }
+
+[blackstrap.baselayer]
+collections = ["base-layers"]
+[blackstrap.baselayer.hints]
+"mens-base-layers" = { gender = "men" }
+"womens-base-layers" = { gender = "women" }
+"kids-base-layers" = { gender = "kids" }
+
+[blackstrap.glove]
+collections = ["glove-liners"]
+
+[blackstrap.facewear]
+collections = ["balaclava-ski-masks", "neck-gaiters"]
+[blackstrap.facewear.hints]
+"mens-balaclavas" = { gender = "men" }
+"womens-balaclavas" = { gender = "women" }
+"kids-balaclavas" = { gender = "kids" }
+
+[blackstrap.hat]
+collections = ["beanies"]
+[blackstrap.hat.hints]
+"kids-beanies" = { gender = "kids" }
+
+# ---------------------------------------------------------------- stance
+[stance.ski]
+enabled = false
+
+[stance.sock]
+collections = ["snow-socks"]
+[stance.sock.hints]
+"kids-snowboard-ski" = { gender = "kids" }
+
+# ---------------------------------------------------------------- swany
+[swany.ski]
+enabled = false
+
+[swany.glove]
+collections = ["skiing-gloves-mittens-accessories"]
+[swany.glove.hints]
+"mens-us" = { gender = "men" }
+"womens-us" = { gender = "women" }
+"kids-us" = { gender = "kids" }
+"juniors" = { gender = "kids" }
+
+# ---------------------------------------------------------------- darntough
+[darntough.ski]
+enabled = false
+
+[darntough.sock]
+collections = ["snowboard-ski-socks"]
+[darntough.sock.hints]
+"mens-snowboard-ski-socks" = { gender = "men" }
+"womens-snowboard-ski-socks" = { gender = "women" }
+"kids-snowboard-ski-socks" = { gender = "kids" }
+
+# ---------------------------------------------------------------- gordini
+[gordini.ski]
+enabled = false
+
+[gordini.goggle]
+collections = ["goggles"]
+[gordini.goggle.hints]
+"goggles-kids" = { gender = "kids" }
+
+[gordini.glove]
+collections = ["gloves-and-mittens"]
+[gordini.glove.hints]
+"gloves-and-mittens-mens" = { gender = "men" }
+"gloves-and-mittens-womens" = { gender = "women" }
+"gloves-and-mittens-kids" = { gender = "kids" }
+
+[gordini.sock]
+collections = ["ski-sock"]
+
+# ---------------------------------------------------------------- coal
+[coal.ski]
+enabled = false
+
+[coal.facewear]
+collections = ["neck-warmers", "face-masks"]
+
+[coal.hat]
+collections = ["cuff-beanies", "pom-beanies", "beanies"]
+[coal.hat.hints]
+"womens-beanies" = { gender = "women" }
+"kids-beanies" = { gender = "kids" }
+
+# ---------------------------------------------------------------- jones
+[jones.ski]
+enabled = false
+
+[jones.jacket]
+collections = ["snow-jackets"]
+[jones.jacket.hints]
+"mens-snow-jacket" = { gender = "men" }
+"womens-snow-jacket" = { gender = "women" }
+
+[jones.pants]
+collections = ["snow-pants-bibs"]
+[jones.pants.hints]
+"mens-snow-pants" = { gender = "men" }
+"womens-snow-pants" = { gender = "women" }
+
+[jones.midlayer]
+collections = ["fleece-insulation"]
+[jones.midlayer.hints]
+"mens-fleece-insulation" = { gender = "men" }
+"womens-fleece-insulation" = { gender = "women" }
+
+[jones.facewear]
+collections = ["headwear-neckwarmers"]
+
+[jones.backpack]
+collections = ["backpack"]
+
+# ---------------------------------------------------------------- trew
+[trew.ski]
+enabled = false
+
+[trew.jacket]
+collections = ["mens-ski-jackets", "womens-ski-jackets"]
+[trew.jacket.hints]
+"mens-ski-jackets" = { gender = "men" }
+"womens-ski-jackets" = { gender = "women" }
+
+[trew.pants]
+collections = ["mens-ski-bibs", "womens-ski-bibs", "mens-ski-pants", "womens-ski-pants"]
+[trew.pants.hints]
+"mens-ski-bibs" = { gender = "men" }
+"womens-ski-bibs" = { gender = "women" }
+"mens-ski-pants" = { gender = "men" }
+"womens-ski-pants" = { gender = "women" }
+
+# ---------------------------------------------------------------- skiessentials
+[skiessentials.binding]
+collections = ["alpine-ski-bindings", "touring-ski-bindings"]
+
+[skiessentials.boot]
+collections = ["ski-boots", "touring-ski-boots"]
+[skiessentials.boot.hints]
+"women-alpine-ski-boots" = { gender = "women" }
+"junior-alpine-ski-boots" = { gender = "kids" }
+
+[skiessentials.pole]
+collections = ["accessories-ski-poles", "accessories-touring-poles"]
+
+[skiessentials.helmet]
+collections = ["ski-helmets"]
+
+[skiessentials.goggle]
+collections = ["ski-goggles"]
+
+[skiessentials.jacket]
+collections = ["ski-jackets"]
+
+[skiessentials.pants]
+collections = ["ski-pants-bibs"]
+
+[skiessentials.midlayer]
+collections = ["ski-mid-layer"]
+
+[skiessentials.baselayer]
+collections = ["ski-base-layer"]
+
+[skiessentials.glove]
+collections = ["ski-gloves-mittens"]
+
+[skiessentials.sock]
+collections = ["ski-socks"]
+
+[skiessentials.facewear]
+collections = ["ski-mask-neck-warmers"]
+
+[skiessentials.hat]
+collections = ["ski-hats"]
+
+[skiessentials.bag]
+collections = ["accessories-ski-bags", "ski-travel-bags", "accessories-boot-bags"]
+
+[skiessentials.tuning]
+collections = ["ski-tuning-tools-supplies"]
+
+# ---------------------------------------------------------------- theskimonster
+[theskimonster.binding]
+collections = ["ski-bindings", "alpine-touring-ski-bindings"]
+
+[theskimonster.boot]
+collections = ["ski-boots", "alpine-touring-ski-boots"]
+
+[theskimonster.pole]
+collections = ["poles"]
+
+[theskimonster.helmet]
+collections = ["helmets"]
+
+[theskimonster.goggle]
+collections = ["goggles"]
+
+[theskimonster.jacket]
+collections = ["mens-jackets", "womens-jackets"]
+[theskimonster.jacket.hints]
+"mens-jackets" = { gender = "men" }
+"womens-jackets" = { gender = "women" }
+
+[theskimonster.pants]
+collections = ["mens-pants", "womens-pants"]
+[theskimonster.pants.hints]
+"mens-pants" = { gender = "men" }
+"womens-pants" = { gender = "women" }
+
+[theskimonster.midlayer]
+collections = ["mens-mid-layers", "womens-mid-layers"]
+[theskimonster.midlayer.hints]
+"mens-mid-layers" = { gender = "men" }
+"womens-mid-layers" = { gender = "women" }
+
+[theskimonster.baselayer]
+collections = ["mens-base-layers", "womens-base-layers"]
+[theskimonster.baselayer.hints]
+"mens-base-layers" = { gender = "men" }
+"womens-base-layers" = { gender = "women" }
+
+[theskimonster.glove]
+collections = ["gloves", "mittens"]
+
+[theskimonster.sock]
+collections = ["socks"]
+
+[theskimonster.facewear]
+collections = ["face-gear"]
+
+[theskimonster.hat]
+collections = ["headwear"]
+
+[theskimonster.skin]
+collections = ["alpine-touring-skins"]
+
+# ---------------------------------------------------------------- campmor
+[campmor.ski]
+enabled = false
+
+[campmor.helmet]
+collections = ["ski-helmets"]
+
+[campmor.goggle]
+collections = ["ski-goggles"]
+
+[campmor.jacket]
+collections = ["snow-jackets"]
+
+[campmor.pants]
+collections = ["snow-pants-bibs"]
+
+[campmor.baselayer]
+collections = ["base-layer"]
+[campmor.baselayer.hints]
+"kids-base-layers" = { gender = "kids" }
+
+[campmor.sock]
+collections = ["ski-snow-socks"]
+
+# ---------------------------------------------------------------- neptune
+[neptune.binding]
+collections = ["bindings"]
+
+[neptune.boot]
+collections = ["alpine-touring-tele-boots"]
+
+[neptune.pole]
+collections = ["ski-poles"]
+
+[neptune.helmet]
+collections = ["snow-helmets"]
+
+[neptune.goggle]
+collections = ["goggles"]
+
+[neptune.midlayer]
+collections = ["mens-fleece", "womens-fleece-jackets"]
+[neptune.midlayer.hints]
+"mens-fleece" = { gender = "men" }
+"womens-fleece-jackets" = { gender = "women" }
+
+[neptune.baselayer]
+collections = ["mens-base-layer", "womens-base-layer"]
+[neptune.baselayer.hints]
+"mens-base-layer" = { gender = "men" }
+"womens-base-layer" = { gender = "women" }
+
+[neptune.backpack]
+collections = ["ski-touring-packs", "avalanche-packs"]
+
+[neptune.avalanche]
+collections = ["avalanche-safety"]
+
+[neptune.skin]
+collections = ["skins"]
+
+[neptune.tuning]
+collections = ["tuning-wax"]
+
+# ---------------------------------------------------------------- tahoemountainsports
+[tahoemountainsports.binding]
+collections = ["bindings"]
+
+[tahoemountainsports.boot]
+collections = ["ski-boots"]
+
+[tahoemountainsports.helmet]
+collections = ["snowsport-helmets"]
+
+[tahoemountainsports.goggle]
+collections = ["goggles"]
+
+[tahoemountainsports.pants]
+collections = ["mens-ski-pants", "womens-ski-pants"]
+[tahoemountainsports.pants.hints]
+"mens-ski-pants" = { gender = "men" }
+"womens-ski-pants" = { gender = "women" }
+
+[tahoemountainsports.baselayer]
+collections = ["base-layers"]
+[tahoemountainsports.baselayer.hints]
+"mens-base-layers" = { gender = "men" }
+"womens-base-layers" = { gender = "women" }
+
+[tahoemountainsports.glove]
+collections = ["gloves"]
+
+[tahoemountainsports.sock]
+collections = ["snow-socks"]
+
+[tahoemountainsports.facewear]
+collections = ["facemasks-balaclavas"]
+
+[tahoemountainsports.backpack]
+collections = ["ski-packs-1"]
+
+[tahoemountainsports.avalanche]
+collections = ["avalanche-gear"]
+
+[tahoemountainsports.skin]
+collections = ["skins"]
+
+[tahoemountainsports.tuning]
+collections = ["tuning-supplies"]
+
+# ---------------------------------------------------------------- ibex
+[ibex.ski]
+enabled = false
+
+[ibex.midlayer]
+collections = ["ibex-merino-midlayers"]
+[ibex.midlayer.hints]
+"mens-midlayers" = { gender = "men" }
+"womens-midlayers-1" = { gender = "women" }
+
+[ibex.baselayer]
+collections = ["woolies-pro-tech", "woolies-250-baselayers", "woolies-tech-baselayers", "woolies-1-base-layers", "last-chance-base-layers"]
+
+[ibex.glove]
+collections = ["gloves"]
+
+[ibex.hat]
+collections = ["toques-and-beanies"]
+
+# ---------------------------------------------------------------- kombi
+[kombi.ski]
+enabled = false
+
+[kombi.glove]
+collections = ["mens", "womens", "juniors", "childrens"]
+[kombi.glove.hints]
+"mens" = { gender = "men" }
+"womens" = { gender = "women" }
+"juniors" = { gender = "kids" }
+"childrens" = { gender = "kids" }
+
+# ---------------------------------------------------------------- duckworth
+[duckworth.ski]
+enabled = false
+
+[duckworth.midlayer]
+collections = ["mens-jackets-vests", "womens-jackets-vests"]
+[duckworth.midlayer.hints]
+"mens-jackets-vests" = { gender = "men" }
+"womens-jackets-vests" = { gender = "women" }
+
+[duckworth.baselayer]
+collections = ["mens-baselayers", "womens-baselayers"]
+[duckworth.baselayer.hints]
+"mens-baselayers" = { gender = "men" }
+"womens-baselayers" = { gender = "women" }
+
+[duckworth.hat]
+collections = ["knit-hats"]
+
+# ---------------------------------------------------------------- jans
+[jans.helmet]
+collections = ["ski-shop-ski-helmets-and-goggles"]
+
+[jans.jacket]
+collections = ["ski-shop-mens-ski-clothing-mens-ski-jackets", "clothing-womens-ski-clothing-womens-ski-jackets", "ski-shop-kids-ski-clothing-kids-ski-jackets"]
+[jans.jacket.hints]
+"ski-shop-mens-ski-clothing-mens-ski-jackets" = { gender = "men" }
+"clothing-womens-ski-clothing-womens-ski-jackets" = { gender = "women" }
+"ski-shop-kids-ski-clothing-kids-ski-jackets" = { gender = "kids" }
+
+[jans.pants]
+collections = ["mens-ski-pants", "clothing-womens-ski-clothing-womens-shell-ski-pants", "clothing-womens-ski-clothing-womens-insulated-ski-pants", "ski-shop-kids-ski-clothing-kids-ski-pants"]
+[jans.pants.hints]
+"mens-ski-pants" = { gender = "men" }
+"clothing-womens-ski-clothing-womens-shell-ski-pants" = { gender = "women" }
+"clothing-womens-ski-clothing-womens-insulated-ski-pants" = { gender = "women" }
+"ski-shop-kids-ski-clothing-kids-ski-pants" = { gender = "kids" }
+
+[jans.midlayer]
+collections = ["ski-shop-mens-ski-clothing-mens-sweaters", "clothing-womens-ski-clothing-womens-sweaters"]
+[jans.midlayer.hints]
+"ski-shop-mens-ski-clothing-mens-sweaters" = { gender = "men" }
+"clothing-womens-ski-clothing-womens-sweaters" = { gender = "women" }
+
+[jans.baselayer]
+collections = ["ski-shop-mens-ski-clothing-mens-base-layers", "clothing-womens-ski-clothing-womens-base-layers"]
+[jans.baselayer.hints]
+"ski-shop-mens-ski-clothing-mens-base-layers" = { gender = "men" }
+"clothing-womens-ski-clothing-womens-base-layers" = { gender = "women" }
+
+[jans.glove]
+collections = ["ski-shop-gloves-mittens"]
+
+[jans.sock]
+collections = ["socks"]
+
+# ---------------------------------------------------------------- aztech
+[aztech.ski]
+enabled = false
+
+[aztech.jacket]
+collections = ["mens-ski-jackets", "womens-ski-jackets"]
+[aztech.jacket.hints]
+"mens-ski-jackets" = { gender = "men" }
+"womens-ski-jackets" = { gender = "women" }
+
+[aztech.pants]
+collections = ["mens-ski-pants", "womens-ski-pants"]
+[aztech.pants.hints]
+"mens-ski-pants" = { gender = "men" }
+"womens-ski-pants" = { gender = "women" }
+
+[aztech.midlayer]
+collections = ["mens-technical-fleece", "womens-technical-fleece"]
+[aztech.midlayer.hints]
+"mens-technical-fleece" = { gender = "men" }
+"womens-technical-fleece" = { gender = "women" }
+
+# ---------------------------------------------------------------- voormi
+[voormi.ski]
+enabled = false
+
+[voormi.midlayer]
+collections = ["midlayers"]
+[voormi.midlayer.hints]
+"mens-midlayers" = { gender = "men" }
+"womens-midlayers" = { gender = "women" }
+
+[voormi.baselayer]
+collections = ["fine-micron-precision-blended-baselayers"]
+[voormi.baselayer.hints]
+"mens-baselayer-shirts" = { gender = "men" }
+"womens-baselayer-shirts" = { gender = "women" }
+
+[voormi.facewear]
+collections = ["gaiters"]
+
+[voormi.hat]
+collections = ["beanies"]
+
+# ---------------------------------------------------------------- point6
+[point6.ski]
+enabled = false
+
+[point6.baselayer]
+collections = ["base-layers-and-accessories"]
+
+[point6.sock]
+collections = ["socks-for-skiing"]
+
+[point6.facewear]
+collections = ["gaiters"]
+
+[point6.hat]
+collections = ["beanies"]
+
+# ---------------------------------------------------------------- giver
+[giver.ski]
+enabled = false
+
+[giver.glove]
+collections = ["gloves"]
+
+# ---------------------------------------------------------------- farmtofeet
+[farmtofeet.ski]
+enabled = false
+
+[farmtofeet.sock]
+collections = ["snow-sports"]
+[farmtofeet.sock.hints]
+"men-snow-sports" = { gender = "men" }
+"women-snow-sports" = { gender = "women" }
+"kids-snow-sports" = { gender = "kids" }
+
+
+# ============================================================================ Tactics（skideals/adapters/tactics.py）
+# 不带前缀的分类页是男款（面包屑 “Men's Snowboard Clothing”），womens-* 是女款；童装页是混装的（放在雪服下，按标题改判）。
+[tactics.ski]
+enabled = false
+
+[tactics.jacket]
+pages = [{ path = "/snowboard-jackets", gender = "men" }, { path = "/womens-snowboard-jackets", gender = "women" },
+         { path = "/kids-snowboard-clothing-accessories", gender = "kids" }]
+
+[tactics.pants]
+pages = [{ path = "/snowboard-pants", gender = "men" }, { path = "/womens-snowboard-pants", gender = "women" }]
+
+[tactics.baselayer]
+pages = [{ path = "/base-layer-clothing", gender = "men" }, { path = "/womens-base-layer-clothing", gender = "women" }]
+
+[tactics.glove]
+pages = [{ path = "/snowboard-gloves-mitts" }, { path = "/womens-gloves-mitts", gender = "women" }]
+
+[tactics.sock]
+pages = [{ path = "/snowboard-socks" }, { path = "/womens-snowboard-socks", gender = "women" }]
+
+[tactics.facewear]
+pages = [{ path = "/face-coverings" }, { path = "/womens-face-masks", gender = "women" }]
+
+[tactics.hat]
+pages = [{ path = "/womens-snowboard-beanies", gender = "women" }]
+
+[tactics.goggle]
+pages = [{ path = "/snowboard-goggles" }]
+
+[tactics.helmet]
+pages = [{ path = "/snowboard-helmets" }]
+
+
+# ============================================================================ Marmot 官网（skideals/adapters/marmot.py）
+[marmot.ski]
+enabled = false
+
+[marmot.jacket]
+# “滑雪”活动页里雪服、雪裤、中间层都有：放在雪服下，由分类判定按标题分开
+pages = [{ path = "/c/marmot-men-activity-skiing", gender = "men" }, { path = "/c/marmot-women-activity-skiing", gender = "women" }]
+sale_pages = ["/c/marmot-sale"]
+

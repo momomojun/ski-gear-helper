@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>滑雪装备小帮手 · SkiDeals</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='88'>❄</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="logo" href="#/">❄ 滑雪装备小帮手 <span>SkiDeals</span></a>
+  <div class="search">
+    <input id="q" type="search" placeholder="搜索品牌或型号：Bent 100、Sabre、I/O MAG…" autocomplete="off">
+  </div>
+  <nav class="nav">
+    <a href="#/" data-nav="deals">找折扣</a>
+    <a href="#/watch" data-nav="watch">关注<span id="watch-badge" class="badge hidden"></span></a>
+    <a href="#/trust" data-nav="trust">网站可信度</a>
+    <a href="#/guide" data-nav="guide">购买指南</a>
+  </nav>
+  <div class="update">
+    <button id="btn-crawl" class="btn btn-ghost" title="从各网站抓取全部分类的最新价格（约 30 分钟，可以继续浏览）">⟳ 更新数据</button>
+    <span id="last-crawl" class="muted small"></span>
+  </div>
+</header>
+
+<main id="app"><div class="loading">加载中…</div></main>
+
+<div id="drawer" class="drawer hidden" aria-hidden="true">
+  <div class="drawer-bg" data-close></div>
+  <aside class="drawer-panel" role="dialog" aria-modal="true">
+    <button class="drawer-x" data-close aria-label="关闭">✕</button>
+    <div id="drawer-body"></div>
+  </aside>
+</div>
+<div id="crawl-pop" class="crawl-pop hidden"></div>
+<div id="toast" class="toast hidden"></div>
+<script src="app.js"></script>
+</body>
+</html>

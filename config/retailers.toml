@@ -1,0 +1,988 @@
+# ============================================================================
+# 零售商注册表 —— 只有这里列出、并经过核验的网站才会被抓取价格。
+#
+# tier（可信等级，人工核验后填写）：
+#   A     = 大型 / 老牌零售商（多年经营、有实体店、口碑良好）
+#   B     = 正规的专业雪具店（有实体店或多年经营）
+#   brand = 品牌官方网店（价格通常是官方原价，可作为“原价参考”）
+# 自动核验结果（域名注册年限、网站历史、联系方式等）在网页的「网站可信度」页查看，
+# 运行 `python -m skideals check-retailers` 会重新核验全部网站。
+#
+# adapter：用哪个抓取器。shopify = 通用 Shopify 抓取器（配置 collections 即可）；
+#          其他值对应 skideals/adapters/ 下的专用抓取器。
+# 新增网站前，请先在网页「网站可信度」里检测一下，确认可信再加进来。
+# ============================================================================
+
+# ---------------------------------------------------------------- 美国 · 综合雪具零售商
+
+[[retailers]]
+id = "evo"
+name = "evo"
+country = "US"
+currency = "USD"
+url = "https://www.evo.com"
+adapter = "shopify"
+tier = "A"
+price_match = "比其他美国授权零售商的最终价再低 5%（30 天内），自家降价也补差价"
+collections = ["mens-skis", "womens-skis", "kids-skis"]
+[retailers.hints]
+"mens-skis" = { gender = "men" }
+"womens-skis" = { gender = "women" }
+"kids-skis" = { gender = "kids" }
+"all-mountain-skis" = { type = "all-mountain" }
+"powder-skis" = { type = "powder" }
+"carving-skis" = { type = "carving" }
+"alpine-touring-skis" = { type = "touring" }
+
+[[retailers]]
+id = "rei"
+name = "REI"
+country = "US"
+currency = "USD"
+url = "https://www.rei.com"
+adapter = "rei"
+tier = "A"
+price_match = "不匹配其他店；14 天内 REI 自己降价可补差价"
+price_match_ok = false   # 不接受其他店的价格匹配（只在可信度页展示政策）
+detail_mode = "discounted"   # 只对打折商品调用商品接口取每个长度的价格/库存
+max_detail_pages = 80
+
+[[retailers]]
+id = "christy"
+name = "Christy Sports"
+country = "US"
+currency = "USD"
+url = "https://www.christysports.com"
+adapter = "christy"
+tier = "A"
+price_match = "宣传有价格匹配保证（具体条款未公开，下单前问客服）"
+max_detail_pages = 80          # 只对打折商品抓商品页取长度/库存，按折扣从大到小
+page_size = 150
+categories = [
+  { path = "/ski/skis/" },
+  { path = "/mens/mens-ski/skis/", gender = "men" },
+  { path = "/womens/womens-ski/skis/", gender = "women" },
+  { path = "/kids/kids-ski-and-snowboard/skis/", gender = "kids" },
+  { path = "/more-activities/backcountry/at-skis/", type = "touring" },
+]
+
+[[retailers]]
+id = "thehouse"
+name = "The House"
+country = "US"
+currency = "USD"
+url = "https://www.the-house.com"
+adapter = "thehouse"
+tier = "caution"
+# 默认停用，两个原因（2026-09 核查）：
+#  1. 可信度：The House 的原公司 2023 年已被母公司 Camping World 清算，明尼苏达门店和仓库关闭；
+#     现在网站由 Camping World 旗下公司运营，BBB 3 年内 1,025 条投诉、Trustpilot 2.6 分。
+#  2. 抓取方式：商品列表只存在于它网页调用的 Algolia 搜索服务里（每次抓取 1 个请求，用网页里公开的只读 key），
+#     它的 robots.txt 禁止抓取自己域名下的 /search 路径——严格说不适用于 Algolia 的域名，但属于灰色地带。
+# 如果你仍想看它的价格，把下面改成 enabled = true。
+enabled = false
+max_detail_pages = 80
+listing_source = "algolia"
+categories = [ { path = "/skis" }, { path = "/ski-packages" } ]
+
+[[retailers]]
+id = "peterglenn"
+name = "Peter Glenn"
+country = "US"
+currency = "USD"
+url = "https://peterglenn.com"
+adapter = "peterglenn"
+tier = "A"
+min_interval = 3.0            # 它的 robots.txt 希望 AI 相关爬虫放慢到 10 秒；本工具虽然是个人用途，也主动放慢一些
+max_detail_pages = 80          # 只对打折商品抓商品页取长度/库存
+
+[[retailers]]
+id = "sunandski"
+name = "Sun & Ski Sports"
+country = "US"
+currency = "USD"
+url = "https://www.sunandski.com"
+adapter = "sunandski"
+tier = "A"
+# 用网站前端自己加载的 Constructor.io 公开 browse 接口（一次拿到全部尺码价格，约 15 个请求）；
+# sunandski.com 的 robots.txt 对爬虫没有任何限制
+
+[[retailers]]
+id = "buckmans"
+name = "Buckman's"
+# 默认停用：和 Skis.com 是同一家公司、同一套商品库（相同商品 ID 和价格），两个都开会把同一份库存算成“2 家有售”
+enabled = false
+country = "US"
+currency = "USD"
+url = "https://buckmans.com"
+adapter = "buckmans"
+tier = "B"
+min_interval = 2.0             # robots.txt 声明 crawl-delay: 2
+max_detail_pages = 80
+
+[[retailers]]
+id = "skiscom"
+name = "Skis.com"
+country = "US"
+currency = "USD"
+url = "https://skis.com"
+adapter = "skiscom"
+tier = "B"
+min_interval = 2.0             # robots.txt 声明 crawl-delay: 2；和 Buckman's 是同一家公司
+max_detail_pages = 80
+
+[[retailers]]
+id = "sportsbasement"
+name = "Sports Basement"
+country = "US"
+currency = "USD"
+url = "https://www.sportsbasement.com"
+adapter = "shopify"
+tier = "A"
+price_match = "匹配美国零售商同款同尺码的现货价（含运费）；另有 30 天价格保护"
+# 注意：它的 ski-demos / a-la-carte 分类是“租板”（按天收费），不是卖的板子，不要加进来
+collections = ["skis", "kids-skis"]
+[retailers.hints]
+"kids-skis" = { gender = "kids" }
+"all-mountain-skis" = { type = "all-mountain" }
+"frontside-skis" = { type = "frontside" }
+"freeride-skis" = { type = "freeride" }
+"powder-skis" = { type = "powder" }
+"alpine-touring-skis" = { type = "touring" }
+
+[[retailers]]
+id = "starthaus"
+name = "Start Haus"
+country = "US"
+currency = "USD"
+url = "https://www.starthaus.com"
+adapter = "shopify"
+tier = "B"
+collections = ["alpine-skis", "junior-ski", "junior-race-skis"]
+[retailers.hints]
+"women-skis" = { gender = "women" }
+"junior-ski" = { gender = "kids" }
+"junior-race-skis" = { gender = "kids", type = "race" }
+"all-mountain-ski" = { type = "all-mountain" }
+"groomer-ski" = { type = "frontside" }
+"powder-ski" = { type = "powder" }
+"race-skis" = { type = "race" }
+"backcountry-touring-ski" = { type = "touring" }
+
+[[retailers]]
+id = "alpineshop"
+name = "Alpine Shop (VT)"
+country = "US"
+currency = "USD"
+url = "https://alpineshopvt.com"
+adapter = "shopify"
+tier = "B"
+collections = ["skis", "ski-sale"]
+[retailers.hints]
+"powder-skis" = { type = "powder" }
+"backcountry-skiing-1" = { type = "touring" }
+
+[[retailers]]
+id = "gearx"
+name = "Outdoor Gear Exchange"
+country = "US"
+currency = "USD"
+url = "https://www.gearx.com"
+adapter = "shopify"
+tier = "B"
+price_match = "匹配美国零售商同款现货价（不含电商平台/会员网站，最多到官方原价 7 折）"
+collections = ["alpine-skis", "downhill-touring-skis", "system-skis", "pre-owned-alpine-touring-skis"]
+[retailers.hints]
+"downhill-touring-skis" = { type = "touring" }
+"system-skis" = { bindings = true }
+"pre-owned-alpine-touring-skis" = { condition = "used", type = "touring" }
+
+[[retailers]]
+id = "skidepot"
+name = "Ski Depot / RaceSkis.com"
+country = "US"
+currency = "USD"
+url = "https://ski-depot.com"
+adapter = "shopify"
+tier = "B"
+collections = ["skis", "closeout-skis"]
+[retailers.hints]
+"race-skis" = { type = "race" }
+
+[[retailers]]
+id = "aspenskiandboard"
+name = "Aspen Ski and Board"
+country = "US"
+currency = "USD"
+url = "https://www.aspenskiandboard.com"
+adapter = "shopify"
+tier = "B"
+price_match = "匹配正规网站同款同尺码现货价，需在下单前出示"
+collections = ["mens-skis", "womens-skis", "kids-skis", "skis"]
+[retailers.hints]
+"mens-skis" = { gender = "men" }
+"womens-skis" = { gender = "women" }
+"kids-skis" = { gender = "kids" }
+"system-skis" = { bindings = true }
+
+[[retailers]]
+id = "utahskigear"
+name = "Utah Ski Gear"
+country = "US"
+currency = "USD"
+url = "https://www.utahskigear.com"
+adapter = "shopify"
+tier = "B"
+collections = ["shop-all-skis-utah-ski-gear"]
+[retailers.hints]
+"womens-skis" = { gender = "women" }
+"youth-skis" = { gender = "kids" }
+"afordable-used-skis" = { condition = "used" }
+"race-skis" = { type = "race" }
+"touring-skis" = { type = "touring" }
+"twin-tip-skis" = { type = "park" }
+"all-mountain-skis" = { type = "all-mountain" }
+
+[[retailers]]
+id = "cripplecreek"
+name = "Cripple Creek Backcountry"
+country = "US"
+currency = "USD"
+url = "https://cripplecreekbc.com"
+adapter = "shopify"
+tier = "B"
+collections = ["all-skis", "alpine-skis"]
+[retailers.hints]
+"touring-skis" = { type = "touring" }
+"mountaineering-skis" = { type = "touring" }
+"used-ski-touring-setups" = { condition = "used" }
+
+[[retailers]]
+id = "coloradoskishop"
+name = "Colorado Ski Shop"
+country = "US"
+currency = "USD"
+url = "https://coloradoskishop.com"
+adapter = "shopify"
+tier = "B"
+collections = ["skis"]
+
+[[retailers]]
+id = "paragon"
+name = "Paragon Sports (NYC)"
+# 2026-09 停用：它的商品类型全是 "SKI HARDGOODS"、标题不写品类（雪杖/雪鞋/雪板混在一起），无法可靠识别双板
+enabled = false
+country = "US"
+currency = "USD"
+url = "https://paragonsports.com"
+adapter = "shopify"
+tier = "B"
+strict = true
+collections = ["skiing"]
+
+[[retailers]]
+id = "gorsuch"
+name = "Gorsuch"
+# 双板分类在网店不公开（products.json 返回 0 个），只抓服装和装备：见 categories.toml 里 [gorsuch.ski] enabled = false
+country = "US"
+currency = "USD"
+url = "https://www.gorsuch.com"
+adapter = "shopify"
+tier = "B"
+collections = ["skis"]
+
+[[retailers]]
+id = "ems"
+name = "Eastern Mountain Sports"
+country = "US"
+currency = "USD"
+url = "https://www.ems.com"
+adapter = "shopify"
+tier = "B"
+# 1967 年创立的美东户外连锁；网店只抓服装和装备（不卖双板）
+
+# ---------------------------------------------------------------- 美国 · 综合鞋服零售商（只抓滑雪服装）
+
+[[retailers]]
+id = "zappos"
+name = "Zappos"
+country = "US"
+currency = "USD"
+url = "https://www.zappos.com"
+adapter = "zappos"
+tier = "A"
+min_interval = 3.0
+# 亚马逊旗下（1999 年创立，2009 年被亚马逊收购）。滑雪服装不多，但有 The North Face、Columbia、Obermeyer、Spyder
+# 这些官网有强反爬、我们抓不了的品牌。只抓分类页（*.zso），不用站内搜索（robots.txt 禁止 /search?term=）。
+
+[[retailers]]
+id = "tactics"
+name = "Tactics"
+country = "US"
+currency = "USD"
+url = "https://www.tactics.com"
+adapter = "tactics"
+tier = "caution"
+enabled = false
+min_interval = 2.0
+# 默认停用（2026-09-29 人工调查，来源见 config/due_diligence.json）：1999 年开业的老店，但经营方连年亏损
+#（2023 年亏 315 万、2024 年亏 286 万美元），2025-03 被转手；2026 年西雅图、Eugene、Bend 门店相继关闭、只剩波特兰，
+# 当地媒体报道经营困难、门店清库存；Trustpilot 1.5（36 条），近期投诉集中在订单被取消、退款被扣钱。
+# 抓取器保留（skideals/adapters/tactics.py）：只抓和双板通用的服装、雪镜、头盔；想看它的价格把 enabled 改成 true。
+
+[[retailers]]
+id = "marmot"
+name = "Marmot 官网"
+country = "US"
+currency = "USD"
+url = "https://www.marmot.com"
+adapter = "marmot"
+tier = "brand"
+brand = "Marmot"
+min_interval = 3.0
+# Newell Brands 旗下。页面很大（一页 2–4 MB），只抓“滑雪”活动页 + Sale 页（只用来给滑雪款式补促销价），一次约 5 个请求。
+
+# ---------------------------------------------------------------- 美国 · 品牌官网（原价参考）
+
+[[retailers]]
+id = "blackcrows"
+name = "Black Crows 官网"
+country = "US"
+currency = "USD"
+url = "https://www.black-crows.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Black Crows"
+collections = ["skis", "junior-skis"]
+[retailers.hints]
+"mens-skis" = { gender = "men" }
+"womens-skis" = { gender = "women" }
+"junior-skis" = { gender = "kids" }
+
+[[retailers]]
+id = "armada"
+name = "Armada 官网"
+country = "US"
+currency = "USD"
+url = "https://www.armadasnow.com/en-us"
+adapter = "shopify"
+tier = "brand"
+brand = "Armada"
+collections = ["all-skis", "ski-series-youth-skis"]
+[retailers.hints]
+"all-mens-skis" = { gender = "men" }
+"all-womens-ski" = { gender = "women" }
+"ski-series-youth-skis" = { gender = "kids" }
+"ski-style-freestyle-skis" = { type = "park" }
+"ski-style-powder-skis" = { type = "powder" }
+"ski-style-touring-skis" = { type = "touring" }
+
+[[retailers]]
+id = "dps"
+name = "DPS 官网"
+country = "US"
+currency = "USD"
+url = "https://www.dpsskis.com"
+adapter = "shopify"
+tier = "brand"
+brand = "DPS"
+collections = ["skis"]
+[retailers.hints]
+"touring-skis-and-gear" = { type = "touring" }
+"powder-ski-collection" = { type = "powder" }
+
+[[retailers]]
+id = "moment"
+name = "Moment 官网"
+country = "US"
+currency = "USD"
+url = "https://www.momentskis.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Moment"
+collections = ["mens-skis", "womens-skis"]
+[retailers.hints]
+"mens-skis" = { gender = "men" }
+"womens-skis" = { gender = "women" }
+
+[[retailers]]
+id = "4frnt"
+name = "4FRNT 官网"
+country = "US"
+currency = "USD"
+url = "https://4frnt.com"
+adapter = "shopify"
+tier = "brand"
+brand = "4FRNT"
+collections = ["all-skis"]
+[retailers.hints]
+"powder-skis" = { type = "powder" }
+"freestyle-skis" = { type = "park" }
+"kids-skis" = { gender = "kids" }
+
+[[retailers]]
+id = "jskis"
+name = "J Skis 官网"
+country = "US"
+currency = "USD"
+url = "https://jskis.com"
+adapter = "shopify"
+tier = "brand"
+brand = "J Skis"
+collections = ["skis"]
+
+[[retailers]]
+id = "icelantic"
+name = "Icelantic 官网"
+country = "US"
+currency = "USD"
+url = "https://www.icelanticskis.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Icelantic"
+collections = ["all-skis", "sale-skis"]
+
+[[retailers]]
+id = "liberty"
+name = "Liberty 官网"
+country = "US"
+currency = "USD"
+url = "https://libertyskis.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Liberty"
+collections = ["all-skis"]
+[retailers.hints]
+"demo-ski-sale" = { condition = "demo" }
+"available-demo-skis" = { condition = "demo" }
+
+[[retailers]]
+id = "blackdiamond"
+name = "Black Diamond 官网"
+country = "US"
+currency = "USD"
+url = "https://blackdiamondequipment.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Black Diamond"
+# 手套、雪杖、雪崩装备、背包的品牌官网（不卖双板）
+
+# ---------------------------------------------------------------- 美国 · 服装 / 配件品牌官网（2026-09-28 补充）
+# 用户要求“服装多抓点，不只是滑雪装备网站会卖衣服”：这些是 Shopify 品牌官网，配置由 discover 生成后逐家人工检查
+#（雪服 / 雪裤只用 ski/snow 专用分类页，避免混进雨衣、徒步裤）。
+
+[[retailers]]
+id = "spyder"
+name = "Spyder 官网"
+country = "US"
+currency = "USD"
+url = "https://www.spyder.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Spyder"
+# Ski apparel brand founded 1978 in Boulder, CO (store registered Lafayette, CO; ships to US only). Has rain/lifestyle lines -> ski-specific collections only. Race suits go to suit.
+# 可信度自动检测（2026-09-28）：50 (谨慎/caution); domain created 1995-08-04; archive since 1996; address: -
+
+[[retailers]]
+id = "volcom"
+name = "Volcom 官网"
+country = "US"
+currency = "USD"
+url = "https://www.volcom.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Volcom"
+# Surf/skate/snow brand (founded 1991, Costa Mesa CA). Store registered Houston, TX. Only the snow collections are used (the store is mostly surf/lifestyle).
+# 可信度自动检测（2026-09-28）：95 (可信/trusted); domain created 1996-10-12; archive since 1998; address: -
+
+[[retailers]]
+id = "outdoorresearch"
+name = "Outdoor Research 官网"
+country = "US"
+currency = "USD"
+url = "https://www.outdoorresearch.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Outdoor Research"
+# Seattle outdoor brand (founded 1981). General outdoor store (rain, hiking, tactical) -> jackets/pants only from ski/snow collections; gloves from the ski-snowboard glove collection (not the all-gloves page, which has tactical/climbing/sun gloves).
+# 可信度自动检测（2026-09-28）：85 (可信/trusted); domain created 1999-05-10; archive since 2000; address: -
+
+[[retailers]]
+id = "hotchillys"
+name = "Hot Chillys 官网"
+country = "US"
+currency = "USD"
+url = "https://www.hotchillys.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Hot Chillys"
+# Base-layer brand (since the 1970s; store registered Southern Pines, NC). Uses the ski-specific base layer / sock collections (the store also has fishing/kayak/hike layers).
+# 可信度自动检测（2026-09-28）：95 (可信/trusted); domain created 1997-08-12; archive since 1999; address: -
+
+[[retailers]]
+id = "smartwool"
+name = "Smartwool 官网"
+country = "US"
+currency = "USD"
+url = "https://www.smartwool.com/en-us"
+adapter = "shopify"
+tier = "brand"
+brand = "Smartwool"
+# Merino brand founded 1994 in Steamboat Springs (store registered Denver, CO). The site redirects to the /en-us locale, so the url keeps it (like Armada).
+# 可信度自动检测（2026-09-28）：81 (可信/trusted); domain created 1996-11-05; archive since None; address: -
+
+[[retailers]]
+id = "obermeyer"
+name = "Obermeyer 官网"
+country = "US"
+currency = "USD"
+url = "https://obermeyer.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Obermeyer"
+# Aspen, CO ski apparel brand founded 1947 by Klaus Obermeyer. Large kids/teens range.
+# 可信度自动检测（2026-09-28）：95 (可信/trusted); domain created 1996-02-24; archive since 1996; address: -
+
+[[retailers]]
+id = "seirus"
+name = "Seirus 官网"
+country = "US"
+currency = "USD"
+url = "https://www.seirus.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Seirus"
+# Poway (San Diego), CA cold-weather accessories maker (since 1979). Big NFL-licensed range -> only the 'snowsports' collections are used.
+# 可信度自动检测（2026-09-28）：82 (可信/trusted); domain created 2000-11-07; archive since 2001; address: -
+
+[[retailers]]
+id = "airblaster"
+name = "Airblaster 官网"
+country = "US"
+currency = "USD"
+url = "https://myairblaster.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Airblaster"
+# Portland, OR snow outerwear brand (founded 2002; maker of the Ninja Suit). NOTE: airblaster.com is an unrelated ISP site -- the brand store is myairblaster.com. Ninja Suits (one-piece base layers) go to baselayer; Freedom Suits (one-piece shells) to suit.
+# 可信度自动检测（2026-09-28）：73 (基本可信/ok); domain created 2002-12-16; archive since 2003; address: -
+
+[[retailers]]
+id = "686"
+name = "686 官网"
+country = "US"
+currency = "USD"
+url = "https://www.686.com"
+adapter = "shopify"
+tier = "brand"
+brand = "686"
+# Snowboard/ski outerwear brand founded 1992 in Los Angeles (store registered Gardena, CA). Also sells streetwear/bike/hike -> only snow collections used.
+# 可信度自动检测（2026-09-28）：85 (可信/trusted); domain created 2003-04-18; archive since 1998; address: -
+
+[[retailers]]
+id = "flylow"
+name = "Flylow 官网"
+country = "US"
+currency = "USD"
+url = "https://flylowgear.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Flylow"
+# Denver, CO ski/backcountry outerwear brand (founded 2005). Store also sells bike/trail/fishing lines -> only ski/snow collections used for jackets & pants.
+# 可信度自动检测（2026-09-28）：70 (基本可信/ok); domain created 2003-12-01; archive since 2003; address: -
+
+[[retailers]]
+id = "skida"
+name = "Skida 官网"
+country = "US"
+currency = "USD"
+url = "https://skida.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Skida"
+# Burlington, VT headwear/neckwear brand (founded 2008). Each print is a separate product (large counts).
+# 可信度自动检测（2026-09-28）：97 (可信/trusted); domain created 1999-10-06; archive since 2001; address: 16 Kilburn St #116, Burlington, VT 05401
+
+[[retailers]]
+id = "monsroyale"
+name = "Mons Royale 官网（北美站）"
+country = "US"
+currency = "USD"
+url = "https://monsroyale.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Mons Royale"
+# NZ merino brand (Wanaka, founded 2009). This is its North American store: USD, ships to US only, registered Vancouver, BC. Bike socks/bike tops are rejected by title ('bike').
+# 可信度自动检测（2026-09-28）：80 (可信/trusted); domain created 2007-07-21; archive since 2009; address: -
+
+[[retailers]]
+id = "turtlefur"
+name = "Turtle Fur 官网"
+country = "US"
+currency = "USD"
+url = "https://turtlefur.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Turtle Fur"
+# Morrisville, VT headwear/neckwear brand (since 1982). Many colourways listed as separate products.
+# 可信度自动检测（2026-09-28）：89 (可信/trusted); domain created 1996-10-21; archive since 1998; address: 3257 ADDRESS 146 Industrial Park Drive Morrisville, VT 05661
+
+[[retailers]]
+id = "dakine"
+name = "Dakine 官网"
+country = "US"
+currency = "USD"
+url = "https://www.dakine.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Dakine"
+# Board-sports accessories brand (founded 1979; store registered Torrance, CA). Mostly surf/bike/bags; only snow collections used. Outerwear is a single mixed jackets+pants+bibs page (listed under jacket).
+# 可信度自动检测（2026-09-28）：95 (可信/trusted); domain created 1995-07-24; archive since 1995; address: -
+
+[[retailers]]
+id = "minus33"
+name = "Minus33 官网"
+country = "US"
+currency = "USD"
+url = "https://minus33.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Minus33"
+# Merino wool layers made in New Hampshire (brand since 2001; store registered Ashland, NH).
+# 可信度自动检测（2026-09-28）：83 (可信/trusted); domain created 2001-05-15; archive since None; address: 515 22 Mill St Ashland, NH 03217
+
+[[retailers]]
+id = "stio"
+name = "Stio 官网"
+country = "US"
+currency = "USD"
+url = "https://www.stio.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Stio"
+# Jackson, WY mountain apparel brand (founded 2011). General outdoor range (hike/bike/rain) -> jackets & pants only from the ski-snowboard collections.
+# 可信度自动检测（2026-09-28）：70 (基本可信/ok); domain created 2000-12-27; archive since None; address: -
+
+[[retailers]]
+id = "strafe"
+name = "Strafe 官网"
+country = "US"
+currency = "USD"
+url = "https://www.strafeouterwear.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Strafe"
+# Aspen, CO ski outerwear brand (showroom at Aspen Highlands; first line 2010). NOTE: strafe.com is an unrelated esports site, and a look-alike 'strafeouterwear.us' shop shows up in search results -- use .com only.
+# 可信度自动检测（2026-09-28）：89 (可信/trusted); domain created 2010-07-21; archive since 2011; address: 2363 Route 4, Killington, VT 05751
+
+[[retailers]]
+id = "halfdays"
+name = "Halfdays 官网"
+country = "US"
+currency = "USD"
+url = "https://www.halfdays.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Halfdays"
+# Women's ski apparel brand (launched ~2020; store registered Denver, CO). Everything is women's -> gender hints on the main collections.
+# 可信度自动检测（2026-09-28）：80 (可信/trusted); domain created 2003-05-29; archive since 2003; address: -
+
+[[retailers]]
+id = "fera"
+name = "Fera 官网"
+country = "US"
+currency = "USD"
+url = "https://ferastyle.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Fera"
+# US ski-apparel brand focused on women's insulated wear (store registered Torrance, CA). fera.com is NOT the brand (parked); the store is ferastyle.com.
+# 可信度自动检测（2026-09-28）：92 (可信/trusted); domain created 2012-03-22; archive since 2012; address: -
+
+[[retailers]]
+id = "blackstrap"
+name = "BlackStrap 官网"
+country = "US"
+currency = "USD"
+url = "https://blackstrap.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Blackstrap"
+# Balaclava/base-layer brand (store registered Eugene, OR; blackstrapindustries.com redirects here).
+# 可信度自动检测（2026-09-28）：60 (基本可信/ok); domain created 1999-09-27; archive since 2000; address: -
+
+[[retailers]]
+id = "stance"
+name = "Stance 官网"
+country = "US"
+currency = "USD"
+url = "https://www.stance.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Stance"
+# Sock brand (founded 2009, San Clemente CA; US store registered New York). Only the snow-sock collection.
+# 可信度自动检测（2026-09-28）：69 (基本可信/ok); domain created 1999-09-02; archive since None; address: -
+
+[[retailers]]
+id = "swany"
+name = "Swany 官网"
+country = "US"
+currency = "USD"
+url = "https://swanyamerica.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Swany"
+# Swany America Corp. (Johnstown, NY), US arm of the Japanese glove maker Swany.
+# 可信度自动检测（2026-09-28）：100 (可信/trusted); domain created 1997-09-09; archive since 1998; address: 122 Belzano Dr Unit B Johnstown, NY 12095
+
+[[retailers]]
+id = "darntough"
+name = "Darn Tough 官网"
+country = "US"
+currency = "USD"
+url = "https://darntough.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Darn Tough"
+# Northfield, VT merino sock maker (Cabot Hosiery Mills; Darn Tough brand since 2004; lifetime guarantee).
+# 可信度自动检测（2026-09-28）：83 (可信/trusted); domain created 2004-01-22; archive since 2004; address: -
+
+[[retailers]]
+id = "gordini"
+name = "Gordini 官网"
+country = "US"
+currency = "USD"
+url = "https://gordini.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Gordini"
+# Essex Junction, VT glove brand (decades-old; sells to all major ski shops).
+# 可信度自动检测（2026-09-28）：83 (可信/trusted); domain created 1996-09-06; archive since 2001; address: -
+
+[[retailers]]
+id = "coal"
+name = "Coal Headwear 官网"
+country = "US"
+currency = "USD"
+url = "https://coalheadwear.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Coal"
+# Seattle headwear brand (founded 2002). Caps/truckers excluded; beanies, neck warmers, gloves only.
+# 可信度自动检测（2026-09-28）：83 (可信/trusted); domain created 2003-03-31; archive since 2003; address: -
+
+[[retailers]]
+id = "jones"
+name = "Jones 官网"
+country = "US"
+currency = "USD"
+url = "https://www.jonessnowboards.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Jones"
+# Truckee, CA snowboard/splitboard brand (founded 2009 by Jeremy Jones). Outerwear, midlayers, packs are ski-usable; boards/bindings/splitboard skins are not configured.
+# 可信度自动检测（2026-09-28）：95 (可信/trusted); domain created 2008-09-25; archive since 2009; address: -
+
+[[retailers]]
+id = "trew"
+name = "Trew 官网"
+country = "US"
+currency = "USD"
+url = "https://trewgear.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Trew"
+# Pacific Northwest ski outerwear brand (founded 2008 in Hood River; store registered Portland, OR). Small catalogue but deep outlet discounts.
+# 可信度自动检测（2026-09-28）：70 (基本可信/ok); domain created 2008-06-20; archive since None; address: -
+
+[[retailers]]
+id = "ibex"
+name = "Ibex 官网"
+country = "US"
+currency = "USD"
+url = "https://ibex.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Ibex"
+# Merino brand founded 1997 in Vermont, closed 2017 and relaunched 2018 under new owners (store registered Brooklyn, NY; vendor 'ABMT Apparel'). Small catalogue.
+# 可信度自动检测（2026-09-28）：61 (基本可信/ok); domain created 1994-01-18; archive since 1996; address: -
+
+[[retailers]]
+id = "kombi"
+name = "Kombi 官网（美国站）"
+country = "US"
+currency = "USD"
+url = "https://www.kombisnow.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Kombi"
+# Glove brand founded 1961; US store registered Essex Junction, VT (kombisports.com now redirects to the CAD store kombicanada.com). Only 4 gender collections -> every product is a glove/mitt/liner.
+# 可信度自动检测（2026-09-28）：100 (可信/trusted); domain created 2011-02-02; archive since 2012; address: 6 Thompson Drive Essex Junction, VT 05452
+
+[[retailers]]
+id = "duckworth"
+name = "Duckworth 官网"
+country = "US"
+currency = "USD"
+url = "https://www.duckworthco.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Duckworth"
+# Bozeman, MT merino brand (US-grown wool). Small catalogue.
+# 可信度自动检测（2026-09-28）：56 (基本可信/ok); domain created 2010-11-25; archive since None; address: -
+
+[[retailers]]
+id = "aztech"
+name = "Aztech Mountain 官网"
+country = "US"
+currency = "USD"
+url = "https://aztechmountain.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Aztech Mountain"
+# Aspen luxury ski-apparel brand (store registered New York, NY). High prices ($500-1,500); some products carry the vendor 'Performance Ski' (its Aspen shop).
+# 可信度自动检测（2026-09-28）：83 (可信/trusted); domain created 2013-08-03; archive since None; address: 42 Hudson Street, New York, NY 10013
+
+[[retailers]]
+id = "voormi"
+name = "Voormi 官网"
+country = "US"
+currency = "USD"
+url = "https://voormi.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Voormi"
+# Pagosa Springs, CO wool-technology apparel brand (founded 2010). Its 'jackets' are wool softshells, not ski shells -> no jacket/pants config.
+# 可信度自动检测（2026-09-28）：97 (可信/trusted); domain created 2010-01-29; archive since 2011; address: 331 Hot Springs Blvd Pagosa Springs, CO 81147
+
+[[retailers]]
+id = "point6"
+name = "Point6 官网"
+country = "US"
+currency = "USD"
+url = "https://point6.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Point6"
+# Steamboat Springs, CO merino sock brand (founded 2009).
+# 可信度自动检测（2026-09-28）：80 (可信/trusted); domain created 2004-02-24; archive since 2000; address: -
+
+[[retailers]]
+id = "giver"
+name = "Give'r 官网"
+country = "US"
+currency = "USD"
+url = "https://www.give-r.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Give'r"
+# Jackson, WY leather glove brand (4-Season glove). Only the glove collection (headwear page is mostly trucker caps).
+# 可信度自动检测（2026-09-28）：66 (基本可信/ok); domain created 2011-12-08; archive since None; address: -
+
+[[retailers]]
+id = "farmtofeet"
+name = "Farm to Feet 官网"
+country = "US"
+currency = "USD"
+url = "https://www.farmtofeet.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Farm to Feet"
+# Mount Airy, NC US-made merino sock brand (Nester Hosiery, since 2013).
+# 可信度自动检测（2026-09-28）：68 (基本可信/ok); domain created 2011-05-13; archive since None; address: -
+
+# ---------------------------------------------------------------- 美国 · 专业雪具店 / 户外店（2026-09-28 补充）
+
+[[retailers]]
+id = "skiessentials"
+name = "Ski Essentials"
+country = "US"
+currency = "USD"
+url = "https://skiessentials.com"
+adapter = "shopify"
+tier = "B"
+collections = ["men-alpine-skis", "women-alpine-skis", "junior-alpine-skis"]
+[retailers.hints]
+"men-alpine-skis" = { gender = "men" }
+"women-alpine-skis" = { gender = "women" }
+"junior-alpine-skis" = { gender = "kids" }
+"touring-skis" = { type = "touring" }
+"backcountry-skis" = { type = "touring" }
+"powder-skis" = { type = "powder" }
+"park-skis" = { type = "park" }
+"race-skis" = { type = "race" }
+# Stowe, VT online ski retailer (known for its ski-test videos). IMPORTANT: use the apex domain -- www.skiessentials.com 404s the Shopify JSON endpoints, skiessentials.com serves them (its robots.txt allows).
+# 可信度自动检测（2026-09-28）：65 (基本可信/ok); domain created 2004-03-31; archive since None; address: 192 Thomas Lane Stowe, VT 05672
+
+[[retailers]]
+id = "theskimonster"
+name = "The Ski Monster"
+country = "US"
+currency = "USD"
+url = "https://theskimonster.com"
+adapter = "shopify"
+tier = "B"
+collections = ["skis"]
+[retailers.hints]
+"all-mountain-skis" = { type = "all-mountain" }
+"powder-skis" = { type = "powder" }
+"park-freestyle-skis" = { type = "park" }
+"alpine-touring-skis" = { type = "touring" }
+"ski-packages" = { bindings = true }
+# Ski & snowboard shop (Shopify store registered Boston, MA). Strong in skis/boots; apparel range is small.
+# 可信度自动检测（2026-09-28）：86 (可信/trusted); domain created 2007-02-14; archive since None; address: 10 High Street, Boston, MA 02110
+
+[[retailers]]
+id = "campmor"
+name = "Campmor"
+country = "US"
+currency = "USD"
+url = "https://www.campmor.com"
+adapter = "shopify"
+tier = "B"
+# Long-running NJ outdoor retailer (store registered Paramus, NJ). Mostly camping/hiking; tiny ski-specific outerwear range (8 snow jackets, 2 snow pants).
+# 可信度自动检测（2026-09-28）：100 (可信/trusted); domain created 1995-05-03; archive since 1996; address: 810 Route 17 North Paramus, NJ 07652
+
+[[retailers]]
+id = "neptune"
+name = "Neptune Mountaineering (Boulder)"
+country = "US"
+currency = "USD"
+url = "https://www.neptunemountaineering.com"
+adapter = "shopify"
+tier = "B"
+collections = ["skis"]
+[retailers.hints]
+"alpine-touring-skis" = { type = "touring" }
+# Boulder, CO mountaineering/backcountry shop (since 1973). No ski-specific apparel collections -> no jacket/pants/glove config (its gloves page mixes climbing gloves); strong in touring hardgoods.
+# 可信度自动检测（2026-09-28）：81 (可信/trusted); domain created 1997-05-14; archive since None; address: -
+
+[[retailers]]
+id = "tahoemountainsports"
+name = "Tahoe Mountain Sports"
+country = "US"
+currency = "USD"
+url = "https://tahoemountainsports.com"
+adapter = "shopify"
+tier = "B"
+collections = ["skis"]
+# Truckee, CA outdoor shop. General outdoor store: no ski-specific jacket collection ('winter-jackets' mixes city parkas) -> no jacket config; only ski pants, base layers, ski socks, gloves + backcountry gear.
+# 可信度自动检测（2026-09-28）：76 (可信/trusted); domain created 2003-07-31; archive since None; address: 11200 Donner Pass Road, Unit 5E Truckee, CA 96161
+
+[[retailers]]
+id = "jans"
+name = "Jans Mountain Outfitters (Park City)"
+country = "US"
+currency = "USD"
+url = "https://jans.com"
+adapter = "shopify"
+tier = "B"
+collections = ["ski-shop-skis"]
+[retailers.hints]
+"womens-skis" = { gender = "women" }
+"ski-shop-skis-kids-skis" = { gender = "kids" }
+"ski-shop-skis-touring-skis" = { type = "touring" }
+"ski-shop-skis-powder-skis" = { type = "powder" }
+"2025-26-demo-skis" = { condition = "demo" }
+# Park City, UT ski/bike/fly-fishing shop (since 1980). Only its ski-shop collections are used (bike/fly-fishing excluded; rentals are filtered by the adapter).
+# 可信度自动检测（2026-09-28）：75 (可信/trusted); domain created 1996-01-11; archive since None; address: 1600 Park Avenue Park City, UT 84060

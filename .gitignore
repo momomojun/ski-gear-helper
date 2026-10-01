@@ -1,0 +1,22 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 本地数据：抓到的价格数据库和日志只留在自己电脑上，不上传
+data/
+*.db
+*.db-wal
+*.db-shm
+*.log
+.env
+
+# 编辑器 / 系统 / 本地工具
+.claude/
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+.DS_Store

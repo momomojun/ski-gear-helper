@@ -1,0 +1,5 @@
+fastapi>=0.110
+uvicorn>=0.29
+curl_cffi>=0.7
+selectolax>=0.3.21
+pytest>=8

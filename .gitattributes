@@ -1,0 +1,5 @@
+# 仓库里统一存 LF；Windows 脚本检出（含 GitHub 的 Download ZIP）时用 CRLF，双击 start.bat 才不会出问题
+* text=auto
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.png binary
