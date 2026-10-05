@@ -1,5 +1,7 @@
 fastapi>=0.110
 uvicorn>=0.29
 curl_cffi>=0.7
-selectolax>=0.3.21
+# selectolax 1.0 删掉了项目在用的旧解析器（selectolax.parser / Modest），装到 1.x 会无法启动；
+# 以后迁移到 lexbor 解析器（from selectolax.lexbor import LexborHTMLParser）前先锁定在 1.0 以下
+selectolax>=0.3.21,<1
 pytest>=8
