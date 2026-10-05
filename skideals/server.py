@@ -15,7 +15,7 @@ from datetime import datetime, timedelta
 from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from . import alerts, catalog, crawl, db, fx, trust
@@ -46,12 +46,20 @@ def api_categories():
             "size_order": APPAREL_ORDER}
 
 
+_CATALOG_JSON: dict[str, tuple] = {}  # 分类 → (目录对象, 序列化好的 JSON)：目录没变就不用每次重新转 JSON
+
+
 @app.get("/api/catalog")
 def api_catalog(cat: str = "ski"):
     from .categories import BY_ID
     if cat not in BY_ID:
         raise HTTPException(404, "没有这个分类")
-    return catalog.build(cat)
+    data = catalog.build(cat)
+    hit = _CATALOG_JSON.get(cat)
+    if not hit or hit[0] is not data:
+        hit = (data, json.dumps(data, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+        _CATALOG_JSON[cat] = hit
+    return Response(content=hit[1], media_type="application/json")
 
 
 @app.get("/api/model")
@@ -72,12 +80,14 @@ def api_meta():
         last = conn.execute("SELECT * FROM crawl_runs WHERE status='done' ORDER BY id DESC LIMIT 1").fetchone()
         unseen = conn.execute("SELECT COUNT(*) FROM alerts WHERE seen=0").fetchone()[0]
         n_watch = conn.execute("SELECT COUNT(*) FROM watchlist").fetchone()[0]
+        n_enabled = conn.execute("SELECT COUNT(*) FROM retailers WHERE enabled=1").fetchone()[0]
         settings = db.get_settings(conn)
     return {
         "last_crawl": last["finished_at"] if last else None,
         "crawl_running": crawl.STATE["running"],
         "unseen_alerts": unseen,
         "n_watch": n_watch,
+        "retailers_enabled": n_enabled,
         "settings": settings,
         "fx": fx.current(),
         "season": crawl.current_season(),
@@ -292,6 +302,18 @@ def _auto_trust_check():
             print(f"核验 {c['id']} 失败：{e}")
 
 
+def _warm_catalogs():
+    """启动后在后台把各分类的目录先算好（每个 0.5–1 秒），第一次切换分类时就不用等了。"""
+    time.sleep(3)
+    from .categories import BY_ID
+    for cat in BY_ID:
+        try:
+            catalog.build(cat)
+        except Exception as e:
+            print(f"预热 {cat} 失败：{e}")
+        time.sleep(0.1)
+
+
 def _already_running(port: int) -> bool:
     import urllib.request
     try:
@@ -315,6 +337,7 @@ def serve(open_browser: bool = False, port: int | None = None) -> None:
         db.sync_retailers(conn, load_retailers())
     threading.Thread(target=_auto_crawl_loop, daemon=True).start()
     threading.Thread(target=_auto_trust_check, daemon=True).start()
+    threading.Thread(target=_warm_catalogs, daemon=True).start()
     print(f"\n  ❄  滑雪装备小帮手已启动：{url}\n     关闭这个窗口即可退出。\n", flush=True)
     if open_browser:
         threading.Timer(1.5, lambda: webbrowser.open(url)).start()
