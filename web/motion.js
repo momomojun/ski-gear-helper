@@ -25,14 +25,15 @@ const Motion = (() => {
     els.forEach((e) => io.observe(e));
   }
 
-  // 数字滚动：从 0 滚到目标值
+  // 数字滚动：从 0 滚到目标值。约 15 帧/秒就够顺滑——每改一次文字都要重新排版，帧数越高越费
   function countUp(el, to, fmt = (v) => Math.round(v).toLocaleString(), ms = 900) {
     if (!el) return;
     if (reduced() || !isFinite(to) || to === 0) { el.textContent = fmt(to); return; }
     const t0 = performance.now();
+    let last = 0;
     const step = (t) => {
       const p = Math.min(1, (t - t0) / ms);
-      el.textContent = fmt(to * (1 - Math.pow(1 - p, 3)));
+      if (p >= 1 || t - last >= 66) { last = t; el.textContent = fmt(to * (1 - Math.pow(1 - p, 3))); }
       if (p < 1) requestAnimationFrame(step);
     };
     requestAnimationFrame(step);

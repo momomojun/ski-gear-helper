@@ -134,7 +134,7 @@ def save_listing(conn: sqlite3.Connection, lst: Listing, seen_at: str, day: str)
     r = lst.raw
     cat = lst.category or "ski"
     sizes = json.dumps([{"cm": s.cm, "l": s.label, "n": norm_size(cat, s.label) or (str(s.cm) if s.cm else None),
-                         "a": s.available, "p": s.price, "c": s.compare_at}
+                         "a": s.available, "p": s.price, "c": s.compare_at, "u": s.url, "color": s.color}
                         for s in r.sizes], ensure_ascii=False)
     fields = dict(
         url=r.url, title=r.title, image=r.image, vendor=r.vendor, brand=lst.brand, model=lst.model, tokens=lst.tokens,
@@ -146,13 +146,19 @@ def save_listing(conn: sqlite3.Connection, lst: Listing, seen_at: str, day: str)
         category=cat, features=json.dumps(lst.features) if lst.features else None,
         specs=json.dumps(lst.specs) if lst.specs else None,
         meta=json.dumps({"pt": r.product_type, "tags": [str(t)[:80] for t in (r.tags or [])][:40],
-                         "opts": r.extra.get("options"), "src": r.extra.get("src_category")}, ensure_ascii=False),
+                         "opts": r.extra.get("options"), "src": r.extra.get("src_category"),
+                         "gender_hint": r.gender_hint, "age_partition": r.extra.get("age_partition"),
+                         "selected_color": r.extra.get("selected_color"),
+                         "age_uncertain": r.extra.get("age_uncertain")}, ensure_ascii=False),
     )
-    row = conn.execute("SELECT id, price FROM listings WHERE retailer_id=? AND external_id=?",
+    row = conn.execute("SELECT id, price, sizes_json FROM listings WHERE retailer_id=? AND external_id=?",
                        (r.retailer_id, r.external_id)).fetchone()
     if row:
         lid = row["id"]
-        if row["price"] is not None and r.price is not None and abs(row["price"] - r.price) >= 0.01:
+        if r.extra.get("age_partition") and len(json.loads(row["sizes_json"] or "[]")) > len(r.sizes):
+            # 成人/儿童首次拆分导致的起价变化，不是商品涨价或降价。
+            fields.update(prev_price=None, price_changed_at=None)
+        elif row["price"] is not None and r.price is not None and abs(row["price"] - r.price) >= 0.01:
             fields["prev_price"] = row["price"]
             fields["price_changed_at"] = seen_at
         sets = ", ".join(f"{k}=?" for k in fields)

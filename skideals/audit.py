@@ -18,7 +18,7 @@ from pathlib import Path
 
 from . import db
 from .categories import BY_ID, CATEGORIES, assign, classify
-from .normalize import slug
+from .normalize import kids_evidence, slug
 
 _HARD = {"ski", "binding", "boot", "pole", "helmet", "goggle", "backpack", "avalanche", "skin"}
 
@@ -27,13 +27,33 @@ def run(categories: list[str] | None = None, out_path: Path | None = None, limit
     cats = categories or [c.id for c in CATEGORIES]
     lines: list[str] = []
     with db.connect() as conn:
-        rows = conn.execute("SELECT l.retailer_id, l.category, l.title, l.brand, l.vendor, l.price, l.meta FROM listings l "
+        rows = conn.execute("SELECT l.retailer_id, l.category, l.title, l.brand, l.vendor, l.price, l.meta, "
+                            "l.gclass, l.sizes_json FROM listings l "
                             "JOIN retailers r ON r.id = l.retailer_id WHERE l.active = 1 AND r.enabled = 1").fetchall()
     by_cat: dict[str, list] = defaultdict(list)
     for r in rows:
         by_cat[r["category"] or "ski"].append(r)
 
     lines.append(f"== 总览：{len(rows)} 个在售商品")
+    age_errors, mixed_sizes = [], []
+    for r in rows:
+        m = json.loads(r["meta"] or "{}")
+        sizes = json.loads(r["sizes_json"] or "[]")
+        src = kids_evidence(r["title"], [s.get("l") for s in sizes], m.get("pt"), m.get("tags"),
+                            m.get("gender_hint"), r["category"], m.get("age_partition"))
+        if r["category"] == "ski" and src != "title" and any((s.get("cm") or 0) > 175 for s in sizes):
+            src = None
+        if src and r["gclass"] != "k":
+            age_errors.append((r, src))
+        labels = " | ".join(s.get("l") or "" for s in sizes)
+        if re.search(r"\badults?\b", labels, re.I) and re.search(r"\b(?:youth|kids?|junior)\b", labels, re.I):
+            mixed_sizes.append(r)
+    lines.append(f"   儿童证据与成人分组冲突：{len(age_errors)} 个")
+    for r, src in age_errors[:limit]:
+        lines.append(f"      {src:12} {r['retailer_id']:16} {r['title'][:90]}")
+    lines.append(f"   同一商品包含成人/儿童尺码（需逐规格核价）：{len(mixed_sizes)} 个")
+    for r in mixed_sizes[:limit]:
+        lines.append(f"      {r['retailer_id']:16} {r['title'][:90]}")
     brand_variants: dict[str, Counter] = defaultdict(Counter)
     for r in rows:
         if r["brand"]:

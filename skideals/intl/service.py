@@ -21,10 +21,11 @@ NOTES = {
 }
 
 
-def search_links(brand: str, model: str, category: str = "ski") -> dict:
+def search_links(brand: str, model: str, category: str = "ski", gender: str | None = None) -> dict:
     from ..categories import BY_ID
     c = BY_ID.get(category) or BY_ID["ski"]
-    kw = f"{fold(brand)} {model}".strip()
+    age_gender = {"kids": "kids", "women": "women", "men": "men"}.get(gender, "")
+    kw = f"{fold(brand)} {model} {age_gender}".strip()
     q = quote(kw)
     jp_word, cn_word = c.jp.split()[-1], c.cn.split()[0]
     kakaku_cat = f"category={c.kakaku}&" if c.kakaku else ""
@@ -42,8 +43,9 @@ def search_links(brand: str, model: str, category: str = "ski") -> dict:
             {"name": "什么值得买", "url": f"https://search.smzdm.com/?c=home&s={quote(kw + ' ' + cn_word)}"},
             {"name": "闲鱼（二手）", "url": f"https://www.goofish.com/search?q={quote(kw + ' ' + cn_word)}"},
         ],
-        # 这些美国网站有反爬保护、无法自动抓取，可以手动看一眼
+        # 补充查价：包括尚未覆盖的网站、以及已接入商家未自动收录的商品/颜色。
         "US": [
+            {"name": "Scheels", "url": f"https://www.google.com/search?q=site%3Ascheels.com+{q}"},
             {"name": "Backcountry", "url": f"https://www.google.com/search?q=site%3Abackcountry.com+{q}"},
             {"name": "Powder7", "url": f"https://www.google.com/search?q=site%3Apowder7.com+{q}"},
             {"name": "Amazon", "url": f"https://www.amazon.com/s?k={quote(kw)}"},
@@ -143,7 +145,7 @@ def get(key: str) -> dict:
         "entries": rows,
         "jp_query": dict(q) if q else None,
         "stale": stale,
-        "links": search_links(fam["b"], fam["m"], _key_parts(key)[3]) if fam else {},
+        "links": search_links(fam["b"], fam["m"], _key_parts(key)[3], fam.get("g")) if fam else {},
         "notes": NOTES,
         "fx": {"rates": rates, "day": fxr["day"], "source": fxr["source"], "fallback": fxr["fallback"]},
     }

@@ -13,6 +13,8 @@
   // 在样式生效前确定明暗主题，避免闪一下
   (function () { try { var t = localStorage.getItem("sd.theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {} })();
 </script>
+<link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
+<link rel="dns-prefetch" href="https://cdn.shopify.com">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>

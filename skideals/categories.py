@@ -418,7 +418,14 @@ def assign(source: str, title: str, product_type: str | None = None, tags: list[
             len(product_type.split()) > 1 and \
             re.search(rf"\b(?:{_POLE_PART_WORDS}|straps?|liners?|buckles?|lens(?:es)?|brakes?|covers?|replacement)\b", t, re.I):
         return "accessory", "part"
+    if product_type and re.fullmatch(r"\s*(?:body protection|protective gear)\s*", product_type, re.I):
+        return "protection", "meta"
     found = classify(t)
+    # 这些保暖层会被商家交叉放在 Jackets / Fleece，统一归类才能跨店比价；帽子等仍按自身品类。
+    if (re.search(r"patagonia", (vendor or "") + " " + t, re.I) and
+            re.search(r"\b(?:nano[- ]puff|r1[^a-z0-9]*\s*air)\b", t, re.I) and
+            found in (None, "jacket", "midlayer")):
+        return "midlayer", "title"
     if found:
         return _pick(source, found), "title"
     found = _meta_vote(source, product_type, tags)

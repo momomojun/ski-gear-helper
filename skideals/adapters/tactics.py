@@ -17,7 +17,7 @@ import math
 import re
 from collections.abc import Iterator
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser as HTMLParser
 
 from ..net import BlockedError
 from .base import Adapter, RawProduct, to_float

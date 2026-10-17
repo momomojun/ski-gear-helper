@@ -5,6 +5,7 @@ import importlib
 
 ADAPTERS: dict[str, tuple[str, str]] = {
     "shopify": ("shopify", "ShopifyAdapter"),
+    "scheels": ("scheels", "ScheelsAdapter"),
     "rei": ("rei", "ReiAdapter"),
     "christy": ("sfcc", "ChristySportsAdapter"),
     "thehouse": ("sfcc", "TheHouseAdapter"),

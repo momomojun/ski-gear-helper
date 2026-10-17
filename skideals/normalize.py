@@ -418,10 +418,36 @@ def extract_year(*texts: str | None) -> int | None:
 
 _KIDS_STRONG = re.compile(
     r"\b(kids?|kid's|kids'|junior|jr|youth|boys?|boy's|boys'|girls?|girl's|girls'|child(?:ren)?|children's|"
-    r"toddler|grom|juniors?)\b|ジュニア|キッズ|子供|こども|儿童|童款|青少年")
+    r"toddlers?|toddler's|grom|juniors?|infants?|infant's|bab(?:y|ies)(?!\s+(?:blue|pink))|baby's|tots|preschool|"
+    r"little kids|big kids|teens?|newborns?)\b|ジュニア|キッズ|ベビー|子供|こども|儿童|童款|青少年|婴儿|幼儿")
 _KIDS_WEAK = re.compile(r"\b(team|shorty|mini|tweener)\b")
+# 只有童装才用的尺码：月龄 3-6M / 12 MO、幼童 2T–5T、Youth S / YM、或者尺码里直接写着 Kids / Baby
+_KIDS_SIZE = re.compile(
+    r"^(?:\d{1,2}\s*m?\s*[-–/]\s*\d{1,2}\s*(?:m|mo|mos|months?)"           # 3-6M、3M-6M、12-18 MO
+    r"|(?:0|00|3|6|9|12|18|24)\s*(?:m|mo|mos|months?)"                      # 12M、18 MO（只认常见月龄，避开鞋码 10M）
+    r"|\d\s*t(?:\s*[-–/]\s*\d\s*t)?(?:\s*\(\d+\))?|\d\s*/\s*\d\s*t"         # 2T、3 T、3T-4T、3T (90)、5/6T
+    r"|y\s*(?:xxs|xs|s|m|l|xl)\b.*|youth\b.*)$"                             # YS、YM/ 55-59CM、Youth Small
+    r"|\b(?:kids?|toddlers?|bab(?:y|ies)|infants?|youth|juniors?)\b", re.I)
+
+_ADULT_SIZE = re.compile(r"\b(?:adults?|men'?s|women'?s|mens|womens)\b", re.I)
+
+
+def kids_by_sizes(sizes, category: str | None = None) -> bool:
+    """尺码里至少一半是童装专用尺码 → 儿童款。标题没写 Kids/Infants 的童装（或写法没认出来）靠这个兜底。"""
+    labels = [str(getattr(x, "label", x) or "").strip() for x in (sizes or [])]
+    labels = [l for l in labels if l]
+    if not labels:
+        return False
+    if any(_ADULT_SIZE.search(l) for l in labels):  # "Adult / Youth" 两种都卖（护齿、头盔）→ 不算儿童款
+        return False
+    # 月龄 M 和幼童 T 仅适用于服装；不能把雪鞋尺码或配件尺寸当成月龄。
+    if category in {"ski", "boot", "binding", "pole", "skin", "tuning", "accessory", "bag", "backpack", "avalanche"}:
+        return all(re.search(r"\b(?:kids?|youth|junior|infants?|toddlers?)\b", l, re.I) for l in labels)
+    return sum(1 for l in labels if _KIDS_SIZE.search(l)) * 2 >= len(labels)
+
+
 _WOMEN = re.compile(r"\b(women'?s?|womens|woman|ladies|lady|female|wmns|wms)\b|レディース|ウィメンズ|女款|女士|女子")
-_MEN = re.compile(r"\b(men'?s|mens|man's|male)\b|メンズ|男款|男士|男子")
+_MEN = re.compile(r"\b(men(?:'?s)?|man's|male)\b|メンズ|男款|男士|男子")
 _UNISEX = re.compile(r"\bunisex\b|ユニセックス|男女|中性")
 
 # 只有女款才有的型号线（按品牌）；只在网站没给性别时使用
@@ -450,15 +476,71 @@ def _gender_from_tags(tags: list[str] | None) -> str | None:
         return None
     kids, women = bool(_KIDS_STRONG.search(blob)), bool(_WOMEN.search(blob))
     men, unisex = bool(_MEN.search(blob)), bool(_UNISEX.search(blob))
+    if kids and not (men or women or re.search(r"\badults?\b", blob)):
+        return "kids"
     if unisex or (men and women):
         return "unisex"
-    if kids and not (men or women):
-        return "kids"
     if women:
         return "women"
     if men:
         return "men"
     return None
+
+
+def kids_evidence(title: str, sizes=(), product_type: str | None = None, tags=None,
+                  hint: str | None = None, category: str | None = None, partition: str | None = None) -> str | None:
+    """年龄证据独立于男女：抓取、旧数据整理和质量审计共用。泛化的全站标签不覆盖明确成人标题。"""
+    if partition in ("adult", "kids"):
+        return "sizes" if partition == "kids" else None
+    t = fold(title)
+    if _KIDS_STRONG.search(t):
+        return "title"
+    if kids_by_sizes(sizes, category):
+        return "sizes"
+    if any(_ADULT_SIZE.search(str(getattr(s, "label", s) or "")) for s in sizes):
+        return None
+    if _MEN.search(t) or _WOMEN.search(t) or re.search(r"\badults?\b", t):
+        return None
+    pt = fold(product_type)
+    if _KIDS_STRONG.search(pt) and not re.search(r"\badults?\b", pt):
+        return "product_type"
+    if _gender_from_tags(tags) == "kids":
+        return "tags"
+    if hint == "kids":
+        return "collection"
+    return None
+
+
+def split_age_variants(raw: RawProduct) -> list[RawProduct]:
+    """同一商品页面明确同时卖 Adult / Youth 时，按规格分别定价，不让童款最低价进入成人报价。"""
+    from dataclasses import replace
+    adults, kids, unknown = [], [], []
+    for size in raw.sizes:
+        label = size.label or ""
+        adult = bool(_ADULT_SIZE.search(label))
+        child = bool(_KIDS_STRONG.search(fold(label))) or kids_by_sizes([size], raw.category)
+        (unknown if adult == child else adults if adult else kids).append(size)
+    if not adults or not kids:
+        mixed_title = _ADULT_SIZE.search(fold(raw.title)) and _KIDS_STRONG.search(fold(raw.title))
+        mixed_option = any(_ADULT_SIZE.search(s.label or "") and _KIDS_STRONG.search(fold(s.label)) for s in raw.sizes)
+        if mixed_option or mixed_title:
+            return [replace(raw, price=None, compare_at=None, available=None,
+                            extra={**raw.extra, "age_uncertain": "成人/儿童共用页面缺少独立规格报价"})]
+        return [raw]
+    result = []
+    for suffix, sizes, hint in (("", adults, "unisex"), ("::kids", kids, "kids")):
+        in_stock = [s for s in sizes if s.available]
+        pool = [s for s in in_stock if s.price is not None] if in_stock else [s for s in sizes if s.price is not None]
+        best = min(pool, key=lambda s: s.price) if pool else None
+        result.append(replace(raw, external_id=raw.external_id + suffix, sizes=sizes,
+                              price=best.price if best else None, compare_at=best.compare_at if best else None,
+                              available=bool(in_stock) if best else None, gender_hint=hint,
+                              extra={**raw.extra, "age_partition": "kids" if suffix else "adult"}))
+    if unknown:
+        result.append(replace(raw, external_id=raw.external_id + "::age-unknown", sizes=unknown, price=None,
+                              compare_at=None, available=None,
+                              extra={**raw.extra, "age_uncertain": "规格未注明年龄，不能使用页面起价"}))
+    return result
 
 
 def detect_gender(title: str, tags: list[str] | None, hint: str | None, brand: str | None,
@@ -644,11 +726,17 @@ def clean_model(title: str, brand: str | None, vendor: str | None,
     if category in _CUT_AFTER:
         # 保留到品类词为止（品类词本身也去掉）；如果品类词在最前面（"Gloves Hestra ..."）就不截
         m = re.search(rf"\b(?:{_CUT_AFTER[category]})\b", head, re.I)
-        if m and m.start() > 0 and split_tokens(head[:m.start()]):
-            head = head[:m.start()]
+        # 品类词前面只剩 "Ski"/"Snow" 这种泛词（"One Way Ski Poles RD 16 GS"）也不截，否则型号整个丢掉
+        pre = re.sub(r"\b(?:ski|skiing|snow|alpine|nordic|xc|backcountry|touring)\b", " ",
+                     head[:m.start()] if m else "", flags=re.I)
+        if m and m.start() > 0 and split_tokens(pre):
+            # "Heli Ski Glove Liner" 是内衬手套，不是 Heli 手套本身：品类词后面紧跟的 Liner 要留下
+            tail = re.match(r"[\s-]*(liners?)\b", head[m.end():], re.I)
+            head = head[:m.start()] + (" Liner" if tail else "")
     head = _YEAR_RANGE.sub(" ", head)
     head = re.sub(r"(?<![\d.])(20[12]\d)(?![\d.])", " ", head)
     head = re.sub(r"(?<![\d.])([12]\d)\s*[/\-–]\s*([123]\d)(?![\d.])", " ", head)
+    head = re.sub(r"\bfor\s+(?:men|women|kids|boys|girls)\b", " ", head, flags=re.I)
     head = _GENDER_PHRASE.sub(" ", head)
     # "Men's" 在前面去掉 's 之后变成了 "Men"，这里把单独的性别词也从展示名里去掉
     head = re.sub(r"\b(?:men|women|mens|womens|unisex|ladies|kids|youth|boys|girls|toddlers?|infants?)\b", " ", head,
@@ -671,6 +759,20 @@ def clean_model(title: str, brand: str | None, vendor: str | None,
 
     if category not in ("ski", "tuning"):  # 打蜡用品的颜色是温度档（Toko Red / Blue 蜡是两种东西），不能去掉
         head = _strip_colors(head, anywhere=category == "binding")
+
+    # R1 Air 的商家写法不同；只规范明确款型，Crew / 半拉链 / Jacket / Hoody 继续分开。
+    if brand == "Patagonia" and category == "midlayer" and re.search(r"\br1[^a-z0-9]*\s*air\b", fold(title)):
+        ht = fold(head)
+        if re.search(r"\b(?:zip[- ]?neck|(?:1/4|quarter|half)[- ]?zip)\b", ht):
+            head = "R1 Air Zip Neck"
+        elif re.search(r"\b(?:full[- ]?zip)\b", ht) and re.search(r"\bhood(?:y|ie)\b", ht):
+            head = "R1 Air Full Zip Hoody"
+        elif re.search(r"\b(?:jacket|jkt)\b", ht) and not re.search(r"\bhood", ht):
+            head = "R1 Air Jacket"
+        elif re.search(r"\bcrew(?:neck)?\b", ht):
+            head = "R1 Air Crew"
+        elif re.search(r"\bvest\b", ht):
+            head = "R1 Air Vest"
 
     raw_tokens = split_tokens(head)
     had_w = False
@@ -787,6 +889,11 @@ def normalize(raw: RawProduct) -> Listing:
     cms = [s.cm for s in raw.sizes if s.cm]
     max_cm = max(cms) if cms else None
     gender, gsrc, gclass = detect_gender(raw.title, raw.tags, raw.gender_hint, brand, tokens, had_w, max_cm)
+    age_src = kids_evidence(raw.title, raw.sizes, raw.product_type, raw.tags, raw.gender_hint, "ski", raw.extra.get("age_partition"))
+    if age_src and (age_src == "title" or not max_cm or max_cm <= 175):
+        gender, gsrc, gclass = "kids", age_src, "k"
+    if raw.extra.get("age_partition") == "adult":
+        gender, gsrc, gclass = "unisex", "sizes", "a"
     year = extract_year(raw.title, raw.extra.get("year_text"))
     waist, waist_src = extract_waist(raw.body_text, tokens, gclass)
     ski_type, type_src = detect_type(raw.type_hints, raw.product_type, raw.tags, raw.title)
@@ -830,6 +937,13 @@ def _normalize_gear(raw: RawProduct) -> Listing:
             gender, gsrc, gclass = "women", "title", "w"
         else:
             gender, gsrc, gclass = "unisex", "default", "a"
+    age_src = kids_evidence(raw.title, raw.sizes, raw.product_type, raw.tags, raw.gender_hint, cat, raw.extra.get("age_partition"))
+    if age_src:
+        gender, gsrc, gclass = "kids", age_src, "k"
+    elif gclass == "k" and gsrc != "title" and any(_ADULT_SIZE.search(s.label or "") for s in raw.sizes):
+        gender, gsrc, gclass = "unisex", "sizes", "a"
+    if raw.extra.get("age_partition") == "adult":
+        gender, gsrc, gclass = ("women", "sizes", "w") if _WOMEN.search(fold(raw.title)) else ("unisex", "sizes", "a")
     text = " ".join([raw.title, raw.product_type or "", " ".join(t for t in raw.tags if len(t) < 60)])
     feats = features(cat, text, (raw.body_text or "")[:800])
     spec = specs(cat, raw.title + " " + (raw.body_text or "")[:2000])

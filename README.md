@@ -4,7 +4,7 @@
 
 **Ski Gear Helper** —— 在自己电脑上运行的滑雪装备比价工具
 
-把 **69 家美国雪具网站**、**22 类装备**的价格放进同一个页面：同款自动对齐、只看你的尺码有没有货、看清真假折扣；<br>
+把 **73 家美国雪具 / 户外来源**（含部分覆盖）、**22 类装备**的价格放进同一个页面：同款自动对齐、按年龄和尺码比价；<br>
 双板还附**日本 / 中国参考价**，并帮你**识别山寨雪具网站**。
 
 [![tests](https://github.com/momomojun/ski-gear-helper/actions/workflows/tests.yml/badge.svg)](https://github.com/momomojun/ski-gear-helper/actions/workflows/tests.yml)
@@ -24,7 +24,7 @@
 在美国买雪具，同一块板在 evo、REI、Christy Sports 和品牌官网的价格能差一两百美元；打折季热门尺码一两天就断货；
 搜“ski outlet”还会搜到冒充正规店的山寨网站（比如冒充 Utah Ski Gear 的 `utahskigearonline.shop`）。一家家翻太累，于是做了这个小工具：
 
-- 🔍 **一处比价**：69 家核验过的网站、2.5 万款商品，同一款在不同网站的报价合并成一张卡片
+- 🔍 **一处比价**：73 个启用来源；儿童与成人独立分组，同一款在不同网站的报价合并成一张卡片
 - 📏 **按尺码看有货**：只显示你的长度 / 鞋码 / S·M·L **有货**的报价——打折常常只剩冷门尺码
 - 📉 **看清真假折扣**：记录价格历史，标出历史低价、刚降价、“原价虚高”
 - 🎿 **固定器怎么配**：套装和分开买哪个划算；按板子腰宽挑刹车宽度合适、有货的固定器
@@ -136,6 +136,10 @@ python3 -m venv .venv
 
 **美国（自动抓取）**
 
+新增服装来源：**Half-Moon Outfitters、Trail Creek Outfitters、Appalachian Outfitters**（Patagonia 官方门店目录交叉核验）及 **SCHEELS**。SCHEELS 当前补抓 R1 Air 半拉链、Jacket 两个款型的公开商品页，覆盖各自颜色/尺码；目录没有公开商品链接时不调用受限 API，因此不代表全站。
+
+价格仅指**已收录最低**。按尺码筛选时必须有该尺码的可验证价格；价格未知不套用其他尺码起价。详情、尺码购买链接和关注提醒使用同一规格价格。修复与验收记录见 [数据质量修复](docs/数据质量修复.md)。
+
 | 类型 | 网站 |
 |---|---|
 | 大型零售商 | evo、REI、Christy Sports、Sports Basement、Peter Glenn、Sun & Ski Sports、**Zappos**（只抓滑雪服装：有 The North Face、Columbia、Helly Hansen、Arc'teryx 这些官网抓不了的品牌） |
@@ -144,7 +148,7 @@ python3 -m venv .venv
 | 服装 / 配件品牌官网 | Marmot、Spyder、Obermeyer、Volcom、Outdoor Research、Smartwool、Flylow、Stio、Strafe、Halfdays、Fera、686、Airblaster、Jones、Trew、Mons Royale、Minus33、Hot Chillys、Blackstrap、Ibex、Voormi、Duckworth、Aztech、Seirus、Swany、Gordini、Kombi、Give'r、Skida、Turtle Fur、Coal、Dakine、Stance、Darn Tough、Point6、Farm to Feet |
 
 - 每家网站**每个分类去哪一页抓**写在 `config/categories.toml`；Shopify 店的配置用 `discover` 命令自动生成、再人工检查
-- **人工调查**：收录的 73 家网站都整理了公开资料（总部、成立年份、股权变化、BBB、Trustpilot、常见投诉、退货/运费/价格匹配政策，附来源链接），
+- **公开资料核查**：登记网站的身份与政策证据分项记录（总部、成立、经营、评论、退货/运费等，未核实项目保留未知；新增渠道先核实商家身份与域名），
   数据在 `config/due_diligence.json`；调查中还发现了冒充 Strafe、Flylow 的山寨域名（已失效）
 - **默认停用**（配置里保留，想看可以自己打开）：**The House**（2023 年原公司被清算、BBB 3 年 1,025 条投诉，另外抓取方式属灰色地带，见下文）、
   **Buckman's**（和 Skis.com 同一家公司、同一套库存）、**Paragon**（商品数据不区分品类）、
@@ -293,7 +297,7 @@ ski-gear-helper/
 ## 参与改进
 
 欢迎提 Issue 或 Pull Request：发现分错类、品牌写法乱、某个网站抓不到了，或者想推荐新的网站。
-改分类 / 识别规则时请附上真实的商品标题，并在 `tests/` 里加一条测试（`python -m pytest -q` 全部通过再提交）。
+改分类 / 识别规则时请附上真实的商品标题，并在 `tests/` 里加一条测试。运行 `python -m pytest -q`；前端报价回归另运行 `node --test tests/test_frontend_prices.cjs`（仅测试需要 Node，应用运行无需 Node）。
 
 ## 免责声明
 
@@ -308,14 +312,14 @@ ski-gear-helper/
 
 **Ski Gear Helper (滑雪装备小帮手)** is a self-hosted price comparison tool for ski gear that runs on your own computer. The UI is in Chinese.
 
-- **One page, 69 vetted US retailers, 22 categories** (skis, bindings, boots, poles, helmets, goggles, jackets, pants, base layers, gloves, avalanche gear, …), about 25,000 products. The same model is matched across stores and merged into one card.
+- **One page, 73 configured US sources, 22 categories** (some stores have partial coverage). Adult and child products are separated using titles, sizes and structured metadata. Size-specific prices and purchase links stay aligned; unknown size prices are excluded from verified size comparisons.
 - **Size-aware**: shows only offers that are in stock in your ski length / boot mondo / apparel size.
 - **Price history** to spot fake "sale" prices; flags all-time lows, fresh price drops and inflated "original" prices.
 - **Binding helper**: package vs. buying the skis and bindings separately; bindings whose brake width fits your ski's waist.
 - **Japan / China reference prices** (kakaku.com auto-lookup; China recorded manually) with ECB exchange rates.
 - **Website trust checker** for fake ski outlet stores: domain age, Wayback Machine history, brand / retailer impersonation, too-good-to-be-true pricing, Shopify store location. Every retailer in the registry also has a manual due-diligence record with sources.
 - **Polite crawling**: obeys robots.txt (including Crawl-delay), ≥ 1.5 s between requests to the same site, never bypasses CAPTCHAs or anti-bot challenges, never logs in. No scraped data is included in this repository.
-- Stack: Python 3.11+, FastAPI, SQLite, curl_cffi, selectolax, vanilla JS (no build step).
+- Stack: Python 3.11+, FastAPI, SQLite, curl_cffi, selectolax (lexbor), vanilla JS (no build step).
 
 **Quick start** — Windows: double-click `start.bat`. macOS / Linux:
 

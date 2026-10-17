@@ -17,7 +17,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser as HTMLParser
 
 from ..net import BlockedError, FetchError
 from .base import Adapter, RawProduct, SizeOption, to_float

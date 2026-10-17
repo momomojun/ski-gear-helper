@@ -28,7 +28,7 @@ import re
 from collections.abc import Iterator
 from urllib.parse import urljoin
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser as HTMLParser
 
 from ..categories import APPAREL_ORDER, BY_ID, norm_size
 from .base import NOT_SKI_RE, Adapter, RawProduct, SizeOption, to_float

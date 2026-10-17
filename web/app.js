@@ -8,11 +8,12 @@ const GENDER = { men: "男款", women: "女款", unisex: "中性", kids: "儿童
 const TYPE = { all_mountain: "全山", frontside: "道内/刻滑", race: "竞技", freeride: "粉雪/野雪",
   park: "公园/自由式", touring: "登山/野外", none: "未分类" };
 const COND = { new: "全新", demo: "试滑板", used: "二手", blem: "瑕疵/开箱" };
-const TIER = { A: "大型零售商", B: "专业雪具店", brand: "品牌官网", caution: "需谨慎" };
+const TIER = { A: "大型零售商", B: "户外用品店", brand: "品牌官网", caution: "需谨慎" };
 const COLORS = ["#2F6BFF", "#E5484D", "#12A594", "#F5A524", "#8E4EC6", "#0091FF", "#D6409F", "#46A758"];
 const GITHUB = "https://github.com/momomojun/ski-gear-helper";
 const BASE_F = { minOff: 0, priceMin: "", priceMax: "", brands: [], years: [], conds: ["new"], retailers: [],
-  inStock: true, sort: "off", feats: [], sizes: [] };
+  inStock: true, sort: "off", feats: [], sizes: [], quick: "" };
+const QUICK = { lo: "只看历史低价", drop: "只看近期降价" };  // 首屏统计卡片上的快捷筛选
 const CAT_F = {  // 各分类特有的筛选项
   ski: { lenMin: "", lenMax: "", bind: "flat", types: [], waistMin: "", waistMax: "" },
   pole: { lenMin: "", lenMax: "" },
@@ -126,11 +127,16 @@ function offerPass(o, f, skip, cat) {
   if (skip !== "years" && f.years.length && !f.years.includes(yearBucket(o.y))) return null;
   if (f.inStock && !o.a) return null;
   if (skip !== "sizes" && sizeFilterActive(cat, f)) {  // 只看“我的尺码”有货的报价，价格按这个尺码算
-    const zs = o.z.filter((z) => sizeMatch(cat, f, z) && (z[1] || !f.inStock));
+    const zs = o.z.filter((z) => sizeMatch(cat, f, z) && (z[1] || !f.inStock) && Number.isFinite(z[2]) && z[2] > 0);
     if (!zs.length) return null;
-    return { o, p: Math.min(...zs.map((z) => z[2] ?? o.p)), fit: zs.map((z) => z[0]) };
+    const bestSize = zs.reduce((a, b) => b[2] < a[2] ? b : a);
+    return { o, p: bestSize[2], a: bestSize[1], u: bestSize[3] || o.u, color: bestSize[4], fit: zs.map((z) => z[0]) };
   }
   return { o, p: o.p };
+}
+function offerMsrp(fam, offer) {
+  const reference = fam.msrp[String(offer.y)] ?? fam.msrp.None;
+  return reference && offer.c ? Math.min(reference, offer.c) : reference ?? offer.c;
 }
 function bandHit(bands, labels, v) {
   return labels.some((lab) => { const b = bands.find((x) => x[0] === lab); return b && v >= b[1] && v <= b[2]; });
@@ -171,7 +177,9 @@ function famPass(fam, f, skip) {
   if (!offers.length) return null;
   let best = offers[0];
   for (const x of offers) if (x.p < best.p) best = x;
-  const msrp = fam.msrp[String(best.o.y)] ?? fam.msrp.None ?? best.o.c;
+  if (f.quick === "lo" && !best.o.lo) return null;  // 历史低价 / 近期降价：看这款当前最便宜那条报价
+  if (f.quick === "drop" && !(best.o.pp && best.o.pp > best.o.p)) return null;
+  const msrp = offerMsrp(fam, best.o);
   const off = msrp && msrp > best.p ? Math.round((1 - best.p / msrp) * 100) : 0;
   const plo = num(f.priceMin), phi = num(f.priceMax);
   if ((plo && best.p < plo) || (phi && best.p > phi) || (f.minOff && off < f.minOff)) return null;
@@ -280,32 +288,32 @@ function heroHTML(loading = false) {
         <h1 class="hero-title" id="hero-title">今天的<em>${esc(name)}</em>好价</h1>
         <p class="hero-lead">${retailers ? retailers + " 家" : ""}美国网站每天自动比价，${S.meta?.last_crawl ? `${esc(ago(S.meta.last_crawl))}更新` : "等待第一次更新"}。${tip.text}</p>
       </div>
-      <dl class="hero-stats">
-        <div class="stat"><dt>${ic("layers", 14)}在售型号</dt><dd data-to="${st.n}">${num(st.n)}</dd></div>
-        <div class="stat deal"><dt>${ic("tag", 14)}最大折扣</dt><dd>${st.maxOff ? "−" + st.maxOff + "%" : "—"}</dd></div>
-        <div class="stat good"><dt>${ic("trophy", 14)}历史低价</dt><dd data-to="${st.lo}">${num(st.lo)}</dd></div>
-        <div class="stat"><dt>${ic("trendDown", 14)}近期降价</dt><dd data-to="${st.drop}">${num(st.drop)}</dd></div>
-      </dl>
+      <div class="hero-stats" role="group" aria-label="${esc(name)}统计：点一下直接筛选">
+        <button class="stat" data-quick="" title="显示全部在售型号"><span class="stat-l">${ic("layers", 14)}在售型号</span><span class="stat-v" data-to="${st.n}">${num(st.n)}</span></button>
+        <button class="stat deal" data-act="sort-off" title="按折扣从大到小排序"><span class="stat-l">${ic("tag", 14)}最大折扣</span><span class="stat-v">${st.maxOff ? "−" + st.maxOff + "%" : "—"}</span></button>
+        <button class="stat good" data-quick="lo" aria-pressed="false" title="只看现价 = 我们记录到的最低价的型号"><span class="stat-l">${ic("trophy", 14)}历史低价</span><span class="stat-v" data-to="${st.lo}">${num(st.lo)}</span></button>
+        <button class="stat" data-quick="drop" aria-pressed="false" title="只看最近 3 周降过价的型号"><span class="stat-l">${ic("trendDown", 14)}近期降价</span><span class="stat-v" data-to="${st.drop}">${num(st.drop)}</span></button>
+      </div>
     </div></div>${RIDGE}</section>`;
 }
 function sizeFilterHTML(f) {
   const cat = S.catId;
   if (cat === "ski" || cat === "pole") {
-    return `<div class="fgroup"><h4>我的长度 (cm) ${cat === "ski" ? '<button class="link-btn small" data-act="open-sizer">尺码助手</button>' : ""}</h4>
-      <div class="range"><input id="lenMin" inputmode="numeric" placeholder="最短" value="${esc(f.lenMin)}">–<input id="lenMax" inputmode="numeric" placeholder="最长" value="${esc(f.lenMax)}"></div>
+    return `<div class="fgroup"><h3>我的长度 (cm) ${cat === "ski" ? '<button class="link-btn small" data-act="open-sizer">尺码助手</button>' : ""}</h3>
+      <div class="range"><input id="lenMin" inputmode="numeric" placeholder="最短" aria-label="最短长度（厘米）" value="${esc(f.lenMin)}">–<input id="lenMax" inputmode="numeric" placeholder="最长" aria-label="最长长度（厘米）" value="${esc(f.lenMax)}"></div>
       <div class="note">只显示这个长度有货的报价，价格按该长度计算。${cat === "pole" ? "雪杖长度 ≈ 身高 × 0.7。" : ""}</div></div>`;
   }
   if (cat === "boot") {
-    return `<div class="fgroup"><h4>我的鞋码 (Mondo) <span class="hint">≈ 脚长 cm</span></h4>
-      <div class="range"><input id="mondo" inputmode="decimal" placeholder="如 26.5" value="${esc(f.mondo)}"></div>
+    return `<div class="fgroup"><h3>我的鞋码 (Mondo) <span class="hint">≈ 脚长 cm</span></h3>
+      <div class="range"><input id="mondo" inputmode="decimal" placeholder="如 26.5" aria-label="我的鞋码（Mondo）" value="${esc(f.mondo)}"></div>
       <div class="note">26.0 和 26.5 是同一个鞋壳，会一起显示；只显示这个码有货的报价。</div></div>`;
   }
   if (cat === "binding") {
-    return `<div class="fgroup"><h4>我的雪板腰宽 (mm)</h4>
-      <div class="range"><input id="brakeFor" inputmode="numeric" placeholder="如 94" value="${esc(f.brakeFor)}"></div>
+    return `<div class="fgroup"><h3>我的雪板腰宽 (mm)</h3>
+      <div class="range"><input id="brakeFor" inputmode="numeric" placeholder="如 94" aria-label="我的雪板腰宽（毫米）" value="${esc(f.brakeFor)}"></div>
       <div class="note">只显示刹车宽度在 腰宽 ~ 腰宽+20mm 且有货的报价（刹车比雪板窄就装不上）。</div></div>`;
   }
-  return `<div class="fgroup"><h4>尺码</h4><div class="chips" id="f-sizes"></div><div class="note">只显示这个尺码有货的报价。“S/M”这种两码合一的，选 S 或 M 都会显示。</div></div>`;
+  return `<div class="fgroup"><h3>尺码</h3><div class="chips" id="f-sizes"></div><div class="note">只显示这个尺码有货的报价。“S/M”这种两码合一的，选 S 或 M 都会显示。</div></div>`;
 }
 function dealsShell(animate = true) {
   const f = S.f, g = S.g, cat = S.catId;
@@ -316,18 +324,18 @@ function dealsShell(animate = true) {
     `<button class="chip ${sel.includes(val ?? lab) ? "on" : ""}" data-${attr}="${esc(val ?? lab)}" aria-pressed="${sel.includes(val ?? lab)}">${esc(lab)}</button>`).join("")}</div>`;
   let special = "";
   if (cat === "ski") {
-    special = `<div class="fgroup"><h4>固定器</h4>
+    special = `<div class="fgroup"><h3>固定器</h3>
         <div class="chips" id="chips-bind">${[["flat", "只看板身"], ["with", "含固定器套装"], ["any", "都看"]].map(([v, t]) => `<button class="chip ${f.bind === v ? "on" : ""}" data-bind="${v}" aria-pressed="${f.bind === v}">${t}</button>`).join("")}</div>
         <div class="note">板身和“板+固定器”价格没法直接比，默认只看板身；点开套装能看到“套装 vs 分开买”。</div></div>
-      <div class="fgroup"><h4>类型</h4><div class="checks" id="f-types"></div></div>
-      <div class="fgroup"><h4>腰宽 (mm) <span class="hint">美东冰雪建议 80–95</span></h4>
+      <div class="fgroup"><h3>类型</h3><div class="checks" id="f-types"></div></div>
+      <div class="fgroup"><h3>腰宽 (mm) <span class="hint">美东冰雪建议 80–95</span></h3>
         <div class="range"><input id="waistMin" inputmode="numeric" placeholder="最窄" aria-label="最窄腰宽" value="${esc(f.waistMin)}">–<input id="waistMax" inputmode="numeric" placeholder="最宽" aria-label="最宽腰宽" value="${esc(f.waistMax)}"></div></div>`;
   } else if (cat === "binding") {
-    special = `<div class="fgroup"><h4>最大 DIN <span class="hint">按体重/水平</span></h4>${chipGroup("chips-din", DIN_BANDS.map((b) => [b[0]]), f.dinSel, "din")}
+    special = `<div class="fgroup"><h3>最大 DIN <span class="hint">按体重/水平</span></h3>${chipGroup("chips-din", DIN_BANDS.map((b) => [b[0]]), f.dinSel, "din")}
       <div class="note">一般：体重 60kg 以下/初学选 ≤10；中级 11–13；80kg 以上或激进选 14 以上。具体 DIN 值由雪具店设定。</div></div>`;
   } else if (cat === "boot") {
-    special = `<div class="fgroup"><h4>硬度 (Flex)</h4>${chipGroup("chips-flex", FLEX_BANDS.map((b) => [b[0]]), f.flexSel, "flex")}</div>
-      <div class="fgroup"><h4>楦宽 (Last)</h4>${chipGroup("chips-last", LAST_BANDS.map((b) => [b[0], b[1]]), f.lastSel, "last")}
+    special = `<div class="fgroup"><h3>硬度 (Flex)</h3>${chipGroup("chips-flex", FLEX_BANDS.map((b) => [b[0]]), f.flexSel, "flex")}</div>
+      <div class="fgroup"><h3>楦宽 (Last)</h3>${chipGroup("chips-last", LAST_BANDS.map((b) => [b[0], b[1]]), f.lastSel, "last")}
       <div class="note">亚洲人脚多数偏宽，中楦/宽楦更容易合脚；买雪鞋最好先去店里试穿或找 bootfitter。</div></div>`;
   }
   return `
@@ -345,25 +353,26 @@ function dealsShell(animate = true) {
     </div>
     <div class="layout">
       <aside class="filters" id="filters" aria-label="筛选条件">
+        <h2 class="sr-only">筛选条件</h2>
         <div class="sheet-head"><b>筛选</b><button class="icon-btn" data-act="close-filters" aria-label="关闭筛选">${ic("x")}</button></div>
         ${sizeFilterHTML(f)}
-        <div class="fgroup"><h4>价格 (USD)</h4>
+        <div class="fgroup"><h3>价格 (USD)</h3>
           <div class="range"><input id="priceMin" inputmode="numeric" placeholder="$ 最低" aria-label="最低价格" value="${esc(f.priceMin)}">–<input id="priceMax" inputmode="numeric" placeholder="$ 最高" aria-label="最高价格" value="${esc(f.priceMax)}"></div></div>
-        <div class="fgroup"><h4>折扣力度 <span class="hint" title="绿圆 / 蓝方 / 黑钻 / 双黑钻：北美雪道难度标志，越“陡”折扣越大">相对官方原价</span></h4>
+        <div class="fgroup"><h3>折扣力度 <span class="hint" title="绿圆 / 蓝方 / 黑钻 / 双黑钻：北美雪道难度标志，越“陡”折扣越大">相对官方原价</span></h3>
           <div class="chips" id="chips-off">${offChips.map(([v, t, icn]) => `<button class="chip ${+f.minOff === v ? "on" : ""}" data-off="${v}" aria-pressed="${+f.minOff === v}">${icn ? ic(icn.split(" ")[0], 12, "pst " + icn.split(" ")[1]) : ""}${t}</button>`).join("")}</div></div>
         ${special}
-        <div class="fgroup" id="fg-feats"><h4>特征</h4><div class="chips" id="f-feats"></div></div>
-        <div class="fgroup"><h4>年份</h4><div class="checks" id="f-years"></div></div>
-        <div class="fgroup"><h4>品牌</h4><div class="checks" id="f-brands"></div></div>
-        <div class="fgroup"><h4>成色</h4><div class="checks" id="f-conds">${Object.entries(COND).map(([k, t]) => `<label class="chk"><input type="checkbox" data-cond="${k}" ${f.conds.includes(k) ? "checked" : ""}> ${t}</label>`).join("")}</div></div>
-        <div class="fgroup"><h4>网站</h4><div class="checks" id="f-retailers"></div></div>
+        <div class="fgroup" id="fg-feats"><h3>特征</h3><div class="chips" id="f-feats"></div></div>
+        <div class="fgroup"><h3>年份</h3><div class="checks" id="f-years"></div></div>
+        <div class="fgroup"><h3>品牌</h3><div class="checks" id="f-brands"></div></div>
+        <div class="fgroup"><h3>成色</h3><div class="checks" id="f-conds">${Object.entries(COND).map(([k, t]) => `<label class="chk"><input type="checkbox" data-cond="${k}" ${f.conds.includes(k) ? "checked" : ""}> ${t}</label>`).join("")}</div></div>
+        <div class="fgroup"><h3>网站</h3><div class="checks" id="f-retailers"></div></div>
         <div class="fgroup reset-row">
           <label class="switch"><input type="checkbox" id="inStock" ${f.inStock ? "checked" : ""}>只看有货</label>
           <button class="link-btn small" data-act="reset">重置筛选</button>
         </div>
         <div class="sheet-foot"><button class="btn-plain" data-act="reset">重置</button><button class="btn" data-act="close-filters" id="sheet-done">查看结果</button></div>
       </aside>
-      <div class="results"><div id="grid" class="grid"></div><div id="more"></div></div>
+      <div class="results"><h2 class="sr-only">${esc(catName(cat))}列表</h2><div id="grid" class="grid"></div><div id="more"></div></div>
     </div>
     <div class="sheet-bg" data-act="close-filters"></div>
     </div>
@@ -458,7 +467,7 @@ function card(r, i) {
   const save = r.msrp && r.msrp > best.p + 1 ? r.msrp - best.p : 0;
   const label = `${fam.b || ""} ${fam.m}，${usd(best.p)}${off >= 5 ? `，便宜 ${off}%` : ""}，${stores} 家有售`;
   return `<article class="card ${S.animateGrid ? "rv" : ""}" data-k="${esc(fam.k)}" tabindex="0" role="button" aria-label="${esc(label)}">
-    <div class="card-media">${fam.img ? `<img loading="${i < 8 ? "eager" : "lazy"}" decoding="async" referrerpolicy="no-referrer" src="${esc(thumb(fam.img))}" alt="" onerror="this.outerHTML=catIc('${S.catId}',44,'noimg')">` : catIc(S.catId, 44, "noimg")}
+    <div class="card-media">${fam.img ? `<img loading="${i < 8 ? "eager" : "lazy"}" ${i < 4 ? 'fetchpriority="high"' : ""} decoding="async" referrerpolicy="no-referrer" src="${esc(thumb(fam.img))}" alt="" onerror="this.outerHTML=catIc('${S.catId}',44,'noimg')">` : catIc(S.catId, 44, "noimg")}
       ${off >= 5 ? `<span class="off ${off >= 50 ? "big" : ""}">−${off}%</span>` : ""}${o.lo ? `<span class="flag-lo">${ic("trophy", 12)}<span>历史低价</span></span>` : ""}</div>
     <div class="card-body">
       <div class="card-brand"><span class="bn">${brandLabel(fam.b)}</span><span class="g g-${fam.g}">${GENDER[fam.g]}</span></div>
@@ -473,7 +482,8 @@ let moreObs = null;
 function renderGrid() {
   const rs = results();
   const nRet = Object.keys(S.cat.retailers).length;
-  $("#count").innerHTML = `<b>${rs.length.toLocaleString()}</b> 款符合筛选 · ${nRet} 家网站`;
+  $("#count").innerHTML = `<b>${rs.length.toLocaleString()}</b> 款符合筛选 · ${nRet} 家网站` +
+    (S.f.quick ? ` <button class="qchip" data-quick="${S.f.quick}" aria-label="取消：${QUICK[S.f.quick]}">${QUICK[S.f.quick]}${ic("x", 13)}</button>` : "");
   const done = $("#sheet-done");
   if (done) done.textContent = `查看 ${rs.length.toLocaleString()} 款`;
   const grid = $("#grid");
@@ -522,7 +532,7 @@ async function renderDeals() {
   const cat = S.catId;
   const fromSkeleton = !S.data[cat];
   if (fromSkeleton) {
-    $("#app").innerHTML = `<div class="enter">${heroHTML(true)}<div class="page">${S.cats.length ? catBar() : ""}
+    $("#app").innerHTML = `<div class="enter" id="deals-page">${heroHTML(true)}<div class="page">${S.cats.length ? catBar() : ""}
       <div class="toolbar" style="height:46px"></div>
       <div class="layout"><div class="filters sk" aria-hidden="true">${'<div class="sk-line"></div>'.repeat(10)}</div><div class="grid">${skeletonGrid()}</div></div></div></div>`;
     railInit();
@@ -543,16 +553,47 @@ async function renderDeals() {
     return;
   }
   stopSnow();
-  $("#app").innerHTML = dealsShell(!fromSkeleton);
+  const html = dealsShell(!fromSkeleton), old = $("#deals-page");
+  if (fromSkeleton && old) {
+    // 加载时已经画好了首屏和分类栏：保留它们（不重新排版、最大内容绘制不往后推），只换统计数字和下面的内容
+    const neu = document.createElement("template");
+    neu.innerHTML = html;
+    const fresh = neu.content.firstElementChild;
+    const stats = [...fresh.querySelectorAll(".hero-stats .stat")];  // 先固定下来：replaceWith 会把节点从 fresh 里移走
+    old.querySelectorAll(".hero-stats .stat").forEach((b, i) => { if (stats[i]) b.replaceWith(stats[i]); });
+    const lead = old.querySelector(".hero-lead"), lead2 = fresh.querySelector(".hero-lead");
+    if (lead && lead2 && lead.innerHTML !== lead2.innerHTML) lead.replaceWith(lead2);
+    const page = old.querySelector(".page");
+    [...page.children].forEach((c) => { if (!c.classList.contains("catrail")) c.remove(); });
+    [...fresh.querySelector(".page").children].forEach((c) => { if (!c.classList.contains("catrail")) page.appendChild(c); });
+  } else $("#app").innerHTML = html;
   S.animateGrid = true;
   S.shown = PAGE;
   saveF();
-  renderFilters();
-  renderGrid();
-  const hero = $(".hero");
-  stopSnow = Motion.snow($(".hero-snow"));
-  hero.querySelectorAll("dd[data-to]").forEach((el) => Motion.countUp(el, +el.dataset.to));
+  renderGrid();  // 先出商品
+  syncQuick();
   railInit();
+  // 左侧筛选的数量统计、飘雪、数字滚动放到下一个空闲时刻：首次渲染拆成几个小任务，页面更早能点
+  const page = $("#deals-page");
+  idle(() => {
+    if ($("#deals-page") !== page) return;  // 已经切到别的分类 / 页面
+    renderFilters();
+    stopSnow = Motion.snow($(".hero-snow"));
+    page.querySelectorAll(".stat-v[data-to]").forEach((el) => Motion.countUp(el, +el.dataset.to));
+  });
+}
+const idle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 300 }) : setTimeout(fn, 60));
+function syncQuick() {
+  $$(".hero-stats [data-quick]").forEach((b) => {
+    const on = Boolean(b.dataset.quick) && b.dataset.quick === S.f.quick;
+    b.classList.toggle("on", on);
+    if (b.dataset.quick) b.setAttribute("aria-pressed", on);
+  });
+}
+function toResults() {  // 点了首屏卡片：结果在下面看不到时，滚到结果上方
+  const bar = $(".toolbar");
+  if (bar && bar.getBoundingClientRect().top > window.innerHeight * 0.55)
+    window.scrollTo({ top: bar.getBoundingClientRect().top + window.scrollY - 76, behavior: Motion.reduced() ? "auto" : "smooth" });
 }
 function railInit() {
   const rail = $("#rail");
@@ -575,12 +616,16 @@ function bindDeals() {
   const app = $("#app");
   const toggle = (arr, v) => (arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   app.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-g],[data-off],[data-bind],[data-feat],[data-size],[data-din],[data-flex],[data-last],[data-act],.card");
+    const t = e.target.closest("[data-g],[data-off],[data-bind],[data-feat],[data-size],[data-din],[data-flex],[data-last],[data-quick],[data-act],.card");
     if (!t || S.route !== "deals") return;
     const d = t.dataset;
     const pick = (sel) => $$(sel).forEach((b) => { b.classList.toggle("on", b === t); b.setAttribute("aria-pressed", b === t); });
     const flip = () => { t.classList.toggle("on"); t.setAttribute("aria-pressed", t.classList.contains("on")); };
-    if (d.g) { S.g.gender = d.g; pick("#seg-g button"); refresh(); }
+    if (d.quick !== undefined) {
+      S.f.quick = d.quick && S.f.quick !== d.quick ? d.quick : "";
+      refresh(); syncQuick(); toResults();
+    } else if (d.act === "sort-off") { S.f.sort = "off"; $("#sort").value = "off"; refresh(); toResults(); }
+    else if (d.g) { S.g.gender = d.g; pick("#seg-g button"); refresh(); }
     else if (d.off !== undefined) { S.f.minOff = +d.off; pick("#chips-off .chip"); refresh(); }
     else if (d.bind) { S.f.bind = d.bind; pick("#chips-bind .chip"); refresh(); }
     else if (d.feat) { S.f.feats = toggle(S.f.feats, d.feat); refresh(); }
@@ -644,12 +689,20 @@ function showDrawer(html) {
   }
   setTimeout(() => $("#drawer .d-close")?.focus({ preventScroll: true }), 30);
 }
-function closeDrawer() {
+function closeDrawer({ fromRoute = false } = {}) {
   const dr = $("#drawer");
-  if (dr.classList.contains("hidden")) return;
+  if (dr.classList.contains("hidden") || dr.classList.contains("closing")) return;
+  S.openingKey = null;
+  if (S.baseTitle) document.title = S.baseTitle;
+  // 网址里去掉 ?m=：是我们 pushState 进来的就退回一步（和按返回键一样），否则原地替换
+  if (!fromRoute) {
+    if (S.pushedDetail) { S.pushedDetail = false; history.back(); }
+    else history.replaceState(null, "", "#/" + parseHash().path);
+  } else S.pushedDetail = false;
   const done = () => {
     dr.classList.add("hidden"); dr.classList.remove("closing");
     dr.setAttribute("aria-hidden", "true");
+    if (!S.openingKey) $("#drawer-body").innerHTML = "";
   };
   if (Motion.reduced()) done(); else { dr.classList.add("closing"); setTimeout(done, 260); }
   document.body.style.overflow = "";
@@ -660,7 +713,14 @@ function closeDrawer() {
 const dBar = (crumb, title, price) => `<div class="d-bar">
   <div class="d-bar-title">${title ? `<b>${esc(title)}</b>` : ""}${price ? `<span class="p">${price}</span>` : ""}${crumb ? `<span>${crumb}</span>` : ""}</div>
   <button class="icon-btn d-close" data-close aria-label="关闭详情（Esc）">${ic("x")}</button></div>`;
-async function openModel(key) {
+async function openModel(key, { fromRoute = false } = {}) {
+  S.openingKey = key;
+  if (!fromRoute) {
+    // 网址里记下打开的型号：按返回键关闭详情；在详情里点相近型号时原地替换，不叠历史
+    const url = "#/" + parseHash().path + "?m=" + enc(key);
+    if (!$("#drawer").classList.contains("hidden")) history.replaceState(null, "", url);
+    else { history.pushState(null, "", url); S.pushedDetail = true; }
+  }
   showDrawer(dBar() + `<div class="d-hero"><div class="d-media sk"><div class="card-media" style="width:100%;height:100%"></div></div>
     <div>${'<div class="sk-line" style="width:30%"></div><div class="sk-line" style="width:70%;height:34px;margin:14px 0"></div>'}${'<div class="sk-line"></div>'.repeat(4)}</div></div>`);
   try {
@@ -763,8 +823,10 @@ function sizeChips(o, cat) {
   const active = sizeFilterActive(cat, f);
   return sizes.map((s) => {
     const mine = s.a && active && sizeMatch(cat, f, [s.key, 1, s.p]);
-    const priceNote = s.p && Math.abs(s.p - o.p) > 1 ? ` title="${usd(s.p)}"` : "";
-    return `<span class="sz ${s.a ? "a" : "x"} ${mine ? "mine" : ""}"${priceNote}>${esc(s.key)}</span>`;
+    const priceNote = ` title="${esc([s.p ? usd(s.p) : "", s.color].filter(Boolean).join(" · "))}"`;
+    const attrs = `class="sz ${s.a ? "a" : "x"} ${mine ? "mine" : ""}"${priceNote}`;
+    return s.a && s.u ? `<a ${attrs} href="${esc(s.u)}" target="_blank" rel="noopener noreferrer">${esc(s.key)}</a>`
+      : `<span ${attrs}>${esc(s.key)}</span>`;
   }).join("");
 }
 function specPairs(d) {  // 规格小卡片：[标签, 值]
@@ -782,14 +844,30 @@ function specPairs(d) {  // 规格小卡片：[标签, 值]
   } else if (cat === "backpack" && sp.volume) out.push(["容量", sp.volume + " L"]);
   return out;
 }
+function detailPriceScope(d) {
+  const f = S.catId === d.category && S.f ? S.f : defaultF(d.category);
+  if (!sizeFilterActive(d.category, f)) return { offers: d.offers, sized: false, missing: false };
+  const sizeOnly = { ...f, conds: [], retailers: [], years: [] };
+  const offers = d.offers.flatMap((o) => {
+    const x = offerPass(o, sizeOnly, null, d.category);
+    if (!x) return [];
+    const size = (o.sizes || []).find((s) => s.u === x.u && s.p === x.p);
+    const msrp = offerMsrp(d, { ...o, c: size?.c ?? null });
+    return [{ ...o, p: x.p, a: x.a ?? o.a, u: x.u, color: x.color, c: size?.c ?? null,
+      off: msrp > x.p ? Math.round((1 - x.p / msrp) * 100) : 0, lo: null, pp: null, pd: null }];
+  });
+  return { offers: offers.length ? offers : d.offers, sized: true, missing: !offers.length };
+}
 function bestOffer(d) {
-  const newAvail = d.offers.filter((o) => o.cd === "new" && o.a);
-  const pool = newAvail.length ? newAvail : d.offers;
-  return { best: pool.reduce((a, b) => (b.p < a.p ? b : a)), isNew: newAvail.length > 0 };
+  const scope = detailPriceScope(d);
+  const newAvail = scope.offers.filter((o) => o.cd === "new" && o.a);
+  const pool = newAvail.length ? newAvail : scope.offers;
+  return { best: pool.reduce((a, b) => (b.p < a.p ? b : a)), isNew: newAvail.length > 0,
+    sized: scope.sized, missing: scope.missing };
 }
 function detailHead(d) {
-  const { best, isNew } = bestOffer(d);
-  const msrp = d.msrp[String(best.y)] ?? d.msrp.None;
+  const { best, isNew, sized, missing } = bestOffer(d);
+  const msrp = offerMsrp(d, best);
   const tax = (S.meta?.settings?.sales_tax_pct ?? 6.25) / 100;
   const years = [...new Set(d.offers.map((o) => o.y).filter(Boolean))].sort((a, b) => b - a);
   const w = d.watch, cat = d.category;
@@ -819,7 +897,7 @@ function detailHead(d) {
       ${feats.length ? `<div class="tags" style="margin:-8px 0 18px">${feats.map((x) => `<span class="tag">${esc(x)}</span>`).join("")}</div>` : ""}
       <div class="ticket">
         <div class="ticket-main">
-          <div class="ticket-label">${ic("tag", 14)}${isNew ? "全网最低 · 全新有货" : "最低报价"}</div>
+          <div class="ticket-label">${ic("tag", 14)}${missing ? "所选尺码暂无匹配 · 任意尺码参考价" : sized ? "所选尺码 · 已收录最低" : isNew ? "已收录最低 · 全新有货" : "已收录最低报价"}</div>
           <div class="ticket-price">${usd(best.p)}</div>
           <div class="ticket-sub"><span>${esc(dRetName(best.r))}${best.y ? " · " + best.y + " 款" : ""}${best.cd !== "new" ? " · " + COND[best.cd] : ""}</span>${save ? `<s>原价 ${usd(msrp)}</s>` : ""}</div>
         </div>
@@ -830,12 +908,13 @@ function detailHead(d) {
     </div></div>`;
 }
 function offersTable(d) {
-  const minNew = Math.min(...d.offers.filter((o) => o.cd === "new" && o.a).map((o) => o.p));
-  const avail = d.offers.filter((o) => o.a).map((o) => o.p);
+  const scope = detailPriceScope(d);
+  const minNew = Math.min(...scope.offers.filter((o) => o.cd === "new" && o.a).map((o) => o.p));
+  const avail = scope.offers.filter((o) => o.a).map((o) => o.p);
   const lo = Math.min(...avail), hi = Math.max(...avail);
   const unit = d.category === "ski" || d.category === "pole" ? "长度 (cm)" : d.category === "binding" ? "刹车宽度" : "尺码";
   const LIMIT = 8;
-  const sorted = d.offers.slice().sort((a, b) => (b.a - a.a) || (a.p - b.p));
+  const sorted = scope.offers.slice().sort((a, b) => (b.a - a.a) || (a.p - b.p));
   const shown = S.detail.allOffers ? sorted : sorted.slice(0, LIMIT);
   const rows = shown.map((o) => {
     const r = dRet(o.r);
@@ -852,8 +931,8 @@ function offersTable(d) {
       <td class="o-stock">${o.a ? '<span class="in">有货</span>' : '<span class="out">无货</span>'}<small>${ago(o.last_seen)}</small></td>
       <td class="o-go"><a class="btn-buy" href="${esc(o.u)}" target="_blank" rel="noopener noreferrer">购买${ic("external", 13)}</a></td></tr>`;
   }).join("");
-  const n = new Set(d.offers.map((o) => o.r)).size;
-  return `<section class="d-sec"><div class="sec-head"><h3>${ic("store", 18)}各网站报价</h3><p>${n} 家网站 · 绿色行 = 全新有货最低价 · 蓝色尺码 = 有货，实心 = 你筛选的尺码，划线 = 无货</p></div>
+  const n = new Set(scope.offers.map((o) => o.r)).size;
+  return `<section class="d-sec"><div class="sec-head"><h3>${ic("store", 18)}各网站报价</h3><p>${n} 家网站${scope.missing ? " · 所选尺码暂无匹配，以下为全部尺码参考" : scope.sized ? " · 已按所选尺码核价" : " · 价格为任意有货尺码起价"} · 绿色行 = 全新有货最低价 · 蓝色尺码 = 有货，实心 = 你筛选的尺码，划线 = 无货</p></div>
     <div class="rtable-wrap"><table class="otable"><thead><tr><th>网站</th><th>年份</th><th>价格</th><th>价格位置<div class="range-legend"><span>${usd(lo)}</span><span>${usd(hi)}</span></div></th><th>${unit}</th><th>库存</th><th><span class="sr-only">购买链接</span></th></tr></thead><tbody>${rows}</tbody></table></div>
     ${sorted.length > LIMIT ? `<div class="offers-more"><button class="btn-plain btn-sm ${S.detail.allOffers ? "open" : ""}" data-act="all-offers">${S.detail.allOffers ? "收起" : `显示全部 ${sorted.length} 条报价${sorted.some((o) => !o.a) ? `（含 ${sorted.filter((o) => !o.a).length} 条无货）` : ""}`}${ic(S.detail.allOffers ? "chevronDown" : "chevronDown", 15)}</button></div>` : ""}
     ${priceMatchTip(d, minNew)}</section>`;
@@ -861,9 +940,10 @@ function offersTable(d) {
 function priceMatchTip(d, minNew) {
   // 最低价不在这些店，但这些店也卖这款、且接受价格匹配 → 可以拿最低价去谈（还能享受它们的退货/会员福利）
   if (!isFinite(minNew)) return "";
-  const cheapest = d.offers.find((o) => o.p === minNew && o.a && o.cd === "new");
+  const scope = detailPriceScope(d);
+  const cheapest = scope.offers.find((o) => o.p === minNew && o.a && o.cd === "new");
   const seen = new Set();
-  const tips = d.offers.filter((o) => o.a && o.cd === "new" && o.p > minNew + 1 && dRet(o.r).price_match && !seen.has(o.r) && seen.add(o.r))
+  const tips = scope.offers.filter((o) => o.a && o.cd === "new" && o.p > minNew + 1 && dRet(o.r).price_match && !seen.has(o.r) && seen.add(o.r))
     .map((o) => {
       const est = o.r === "evo" ? ` —— 按规则约可拿到 ${usd(minNew * 0.95)}` : "";
       return `<li><b>${esc(dRetName(o.r))}</b>（现价 ${usd(o.p)}）：${esc(dRet(o.r).price_match)}${est}</li>`;
@@ -908,10 +988,10 @@ function bindingSection(d) {
 function historySection(d) {
   const top = d.offers.filter((o) => o.history.length).sort((a, b) => a.p - b.p).slice(0, 6);
   const series = [];
-  if (d.daily_min.length) series.push({ name: "全网最低（全新有货）", color: "var(--sky)", w: 2.8, op: 1, main: true, pts: d.daily_min });
+  if (d.daily_min.length) series.push({ name: "已收录最低（全新有货）", color: "var(--sky)", w: 2.8, op: 1, main: true, pts: d.daily_min });
   const pal = COLORS.slice(1);
   top.forEach((o, i) => series.push({ name: `${dRetName(o.r)}${o.y ? " " + o.y : ""}`, color: pal[i % pal.length], w: 1.5, op: 0.75, pts: o.history.filter((h) => h[1]).map((h) => [h[0], h[1]]) }));
-  return `<section class="d-sec"><div class="sec-head"><h3>${ic("trendDown", 18)}价格走势</h3><p>价格有变化才记录 · 按天画阶梯线 · 把鼠标放在图上可以看每天的价格</p></div>${lineChart(series)}</section>`;
+  return `<section class="d-sec"><div class="sec-head"><h3>${ic("trendDown", 18)}价格走势</h3><p>按商品任意尺码起价记录，非所选尺码的独立历史 · 按天画阶梯线 · 鼠标移到图上查看价格</p></div>${lineChart(series)}</section>`;
 }
 function intlSection() {
   const { intl, d } = S.detail;
@@ -933,6 +1013,7 @@ function intlSection() {
   const links = (arr) => arr.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.name)}</a>`).join("");
   const years = [...new Set(d.offers.map((o) => o.y).filter(Boolean))].sort((a, b) => b - a);
   return `<section class="d-sec"><div class="sec-head"><h3>${ic("globe", 18)}国际比价</h3><p>1 美元 = ${fx.JPY?.toFixed(2)} 日元 = ${fx.CNY?.toFixed(4)} 人民币（${esc(intl.fx.source)}）</p></div>
+    <p class="note">国际参考价按各地区任意尺码起价比较，未按当前尺码筛选；请核对款型、尺码与颜色。</p>
     <div class="intl bars">${us}${jp}${cn}</div>
     <div class="linkrow"><button class="btn-plain btn-sm" data-act="jp-refresh" ${S.detail.jpLoading ? "disabled" : ""}>${ic("refresh", 15)}${S.detail.jpLoading ? "正在查询…" : "查日本最新价"}</button>
       <span class="muted small">${q ? `上次查询 ${ago(q.fetched_at)}，找到 ${q.n} 条同款` : ""}</span></div>
@@ -942,18 +1023,18 @@ function intlSection() {
       </tbody></table></div></details>` : ""}
     <div class="linkrow"><span class="lbl">中国 · 去看看</span>${links(intl.links.CN || [])}</div>
     <div class="linkrow"><span class="lbl">日本 · 其他网站</span>${links((intl.links.JP || []).slice(1))}</div>
-    <div class="linkrow"><span class="lbl">美国 · 无法自动抓取</span>${links(intl.links.US || [])}</div>
+    <div class="linkrow"><span class="lbl">美国 · 补充查价</span>${links(intl.links.US || [])}</div>
     <details ${manual.length ? "open" : ""}><summary>记一笔参考价（手动）${manual.length ? `· 已记录 ${manual.length} 条` : ""}</summary>
       ${manual.length ? `<table style="margin-top:6px"><tbody>${manual.map((e) => `<tr><td>${e.country === "CN" ? "中国" : "日本"} · ${esc(e.shop || "")}</td><td class="num">${money(e.price, e.currency)}</td><td class="num muted">≈ ${usd(e.usd)}</td><td class="small muted">${e.year || ""} ${e.bindings ? "含固定器" : ""} ${esc(e.note || "")}</td><td>${e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">链接</a>` : ""}</td><td><button class="link-btn small" data-act="intl-del" data-id="${e.id}">删除</button></td></tr>`).join("")}</tbody></table>` : ""}
       <div class="form">
-        <select id="m-country"><option value="CN">中国</option><option value="JP">日本</option></select>
-        <input id="m-shop" placeholder="平台/店铺，如 天猫旗舰店">
-        <input id="m-price" inputmode="decimal" placeholder="价格">
-        <select id="m-cur"><option value="CNY">人民币 CNY</option><option value="JPY">日元 JPY</option><option value="USD">美元 USD</option></select>
-        <select id="m-year"><option value="">年份（可选）</option>${[season(), ...years].filter((v, i, a) => a.indexOf(v) === i).map((y) => `<option>${y}</option>`).join("")}</select>
-        ${d.category === "ski" ? '<select id="m-bind"><option value="">固定器？</option><option value="0">不含固定器</option><option value="1">含固定器</option></select>' : ""}
-        <input id="m-url" placeholder="商品链接（可选）">
-        <input id="m-note" placeholder="备注（可选）">
+        <select id="m-country" aria-label="国家"><option value="CN">中国</option><option value="JP">日本</option></select>
+        <input id="m-shop" placeholder="平台/店铺，如 天猫旗舰店" aria-label="平台或店铺">
+        <input id="m-price" inputmode="decimal" placeholder="价格" aria-label="价格">
+        <select id="m-cur" aria-label="币种"><option value="CNY">人民币 CNY</option><option value="JPY">日元 JPY</option><option value="USD">美元 USD</option></select>
+        <select id="m-year" aria-label="年份"><option value="">年份（可选）</option>${[season(), ...years].filter((v, i, a) => a.indexOf(v) === i).map((y) => `<option>${y}</option>`).join("")}</select>
+        ${d.category === "ski" ? '<select id="m-bind" aria-label="是否含固定器"><option value="">固定器？</option><option value="0">不含固定器</option><option value="1">含固定器</option></select>' : ""}
+        <input id="m-url" placeholder="商品链接（可选）" aria-label="商品链接">
+        <input id="m-note" placeholder="备注（可选）" aria-label="备注">
         <button class="btn btn-sm" data-act="intl-add">保存</button>
       </div></details>
     <div class="note">美国：${esc(intl.notes.US)}<br>日本：${esc(intl.notes.JP)}<br>中国：${esc(intl.notes.CN)}<br>日本价格来自价格.com 的自动匹配（品牌+型号+性别${d.category === "ski" ? "+是否含固定器" : ""}都要一致），仍建议点链接核对年份和尺码。</div>
@@ -971,10 +1052,11 @@ function renderDetail() {
   const { best } = bestOffer(d);
   $("#drawer-body").innerHTML = dBar(`${esc(d.b || "")} · ${esc(catName(d.category))}`, d.m, usd(best.p)) +
     detailHead(d) + offersTable(d) + bindingSection(d) + intlSection() + historySection(d) + siblingsSection(d) +
-    `<p class="note d-foot">分组依据：分类 + 品牌 + 型号 + 性别大类${d.category === "ski" ? " + 是否含固定器" : ""}。同一型号不同年份放在一起，年份单独标注；如果发现分错了，可以在 skideals/normalize.py 里调整规则。</p>` +
+    `<p class="note d-foot">儿童与成人分开比较。同一型号的不同年份分别标注；颜色与尺码可能影响价格，购买前请核对商品页选项。</p>` +
     (best.u ? `<div class="d-buybar"><div><b>${usd(best.p)}</b><small>${esc(dRetName(best.r))}${best.y ? " · " + best.y + " 款" : ""}</small></div>
       <a class="btn" href="${esc(best.u)}" target="_blank" rel="noopener noreferrer">去购买${ic("external", 15)}</a></div>` : "");
   panel.scrollTop = keep;
+  document.title = `${d.b ? d.b + " " : ""}${d.m} · ${usd(best.p)} · 滑雪装备小帮手`;
   const body = $("#drawer-body");
   // 重新渲染后焦点不能丢：回到刚才按的按钮，否则放到关闭按钮上
   const back = act && body.querySelector(`[data-act="${act}"]`);
@@ -1066,8 +1148,9 @@ async function renderWatch() {
   $("#app").innerHTML = `<div class="page enter">
     <header class="p-head"><span class="eyebrow">${ic("bell", 14)}关注 & 降价提醒</span><h1>我的关注</h1>
       <p>在任意商品详情里点“关注降价”添加。每次更新数据后自动检查：降到目标价、或比上次便宜 3% 以上，就会在这里提醒${navigator.userAgent.includes("Windows") ? "，并弹 Windows 通知" : ""}。</p></header>
+    <h2 class="sr-only">关注的商品</h2>
     ${list.length ? `<div class="wlist">${cards}</div>` : `<div class="panel empty">${ic("star", 44)}<b>还没有关注的商品</b>去「找折扣」点开任意商品，点“关注降价”。<div style="margin-top:18px"><a class="btn" href="#/">${ic("tag", 16)}去找折扣</a></div></div>`}
-    <section class="panel" style="margin-top:22px"><div class="sec-head"><h3>${ic("clock", 18)}降价提醒记录</h3><p>最近的在最上面</p></div>
+    <section class="panel" style="margin-top:22px"><div class="sec-head"><h2>${ic("clock", 18)}降价提醒记录</h2><p>最近的在最上面</p></div>
       ${alerts.length ? `<ul class="alerts">${alerts.map((a) => `<li><time>${a.created_at.replace("T", " ").slice(0, 16)}</time><span>${a.seen ? "" : '<span class="badge">新</span> '}${esc(a.message)}</span>${a.url ? `<a class="btn-buy" href="${esc(a.url)}" target="_blank" rel="noopener noreferrer">去看看${ic("external", 13)}</a>` : "<span></span>"}</li>`).join("")}</ul>`
         : '<div class="empty" style="padding:28px">暂无提醒</div>'}</section>
   </div>`;
@@ -1097,9 +1180,9 @@ function ddHTML(r) {
   if (!d && !r.price_match) return "";
   const row = (k, v) => (v && !/^(unknown|not checked)/i.test(v) ? `<tr><td>${k}</td><td>${esc(v)}</td></tr>` : "");
   const sub = d?.light ? "轻量核查：只有自动检测到的事实（域名、存档、登记地），还没做完整的人工调查"
-    : "公开资料整理（2026-09），政策可能变化，下单前以官网为准";
-  return `<div class="dd"><h4>${ic("book", 16)}${d?.light ? "核查记录" : "人工调查"} <span class="sub">${sub}</span>
-      ${d?.verdict ? `<span class="tier ${d.verdict === "caution" ? "caution" : d.verdict}">${d.verdict === "caution" ? "需谨慎" : TIER[d.verdict] || d.verdict}</span>` : ""}</h4>
+    : `公开资料整理（${esc(d?.checked_at || "2026-09")}），政策可能变化，下单前以官网为准`;
+  return `<div class="dd"><h3>${ic("book", 16)}${d?.light ? "核查记录" : "人工调查"} <span class="sub">${sub}</span>
+      ${d?.verdict ? `<span class="tier ${d.verdict === "caution" ? "caution" : d.verdict}">${d.verdict === "caution" ? "需谨慎" : TIER[d.verdict] || d.verdict}</span>` : ""}</h3>
     <table><tbody>${d ? row("总部", d.hq) + row("成立", d.founded) + row("实体店", d.physical_stores) + row("股权/经营", d.ownership_notes) +
       row("BBB", d.bbb) + row("Trustpilot", d.trustpilot) + row("常见投诉", d.complaints) + row("退货", d.returns) + row("运费", d.shipping) +
       row("价格匹配", r.price_match || d.price_match) + row("结论", d.verdict_reason) : row("价格匹配", r.price_match)}</tbody></table>
@@ -1125,7 +1208,7 @@ async function renderTrust() {
     <div class="page">
     <div id="check-result"></div>
     <section class="panel">
-      <div class="sec-head"><h3>${ic("store", 18)}已收录的网站</h3><p>只有这些经过核验的网站会被抓取价格 · 点一行查看核验详情、人工调查和各分类抓取情况</p>
+      <div class="sec-head"><h2>${ic("store", 18)}已收录的网站</h2><p>只有这些经过核验的网站会被抓取价格 · 点一行查看核验详情、人工调查和各分类抓取情况</p>
         <div class="sec-tools"><input id="rt-filter" type="search" placeholder="筛选网站…" aria-label="按名称筛选网站" style="height:36px;border-radius:999px;padding:0 14px;width:180px">
           <button class="btn-plain btn-sm" data-act="recheck">${ic("refresh", 14)}重新核验全部</button></div></div>
       <div id="t-summary"></div>
@@ -1446,29 +1529,44 @@ async function loadCategories() {
 }
 async function reloadAll() {
   await Promise.all([loadMeta(), loadCategories()]);
-  route();
+  route(true);
 }
-function route() {
-  if (!$("#drawer").classList.contains("hidden")) closeDrawer();  // 切换页面时关掉详情抽屉
+function parseHash() {
+  // #/c/ski?m=<型号>：? 前面是页面，m 是打开着的型号详情
+  const h = location.hash.replace(/^#\/?/, "");
+  const i = h.indexOf("?");
+  return { path: i < 0 ? h : h.slice(0, i), m: i < 0 ? null : new URLSearchParams(h.slice(i + 1)).get("m") };
+}
+function route(force = false) {
+  const { path, m: model } = parseHash();
+  if (!force && S.lastPath === path) {
+    // 只有详情变了（返回键 / 前进键）：只开关详情抽屉，列表页不重画、滚动位置不变
+    if (model && S.openingKey !== model) openModel(model, { fromRoute: true });
+    else if (!model) closeDrawer({ fromRoute: true });
+    return;
+  }
+  S.lastPath = path;
+  if (!$("#drawer").classList.contains("hidden")) closeDrawer({ fromRoute: true });  // 切换页面时关掉详情抽屉
   setFiltersOpen(false);
   stopSnow(); stopSnow = () => {};
   S.spy?.disconnect(); S.spy = null;
-  const h = location.hash.replace(/^#\/?/, "");
-  const m = h.match(/^c\/([a-z]+)/);
+  const m = path.match(/^c\/([a-z]+)/);
   if (m && S.catInfo[m[1]]) { S.catId = m[1]; localStorage.setItem("sd.cat", S.catId); }
   if (!S.catInfo[S.catId]) S.catId = "ski";
-  S.route = ["watch", "trust", "guide"].includes(h) ? h : "deals";
+  S.route = ["watch", "trust", "guide"].includes(path) ? path : "deals";
   $$("a[data-nav]").forEach((a) => {
     const on = a.dataset.nav === S.route;
     a.classList.toggle("active", on);
     if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
   document.title = { deals: `${catName(S.catId)}好价`, watch: "我的关注", trust: "网站可信度", guide: "购买指南" }[S.route] + " · 滑雪装备小帮手";
+  S.baseTitle = document.title;
   if (S.route === "deals") renderDeals();
   else if (S.route === "watch") renderWatch();
   else if (S.route === "trust") renderTrust();
   else renderGuide();
   window.scrollTo(0, 0);
+  if (model) openModel(model, { fromRoute: true });  // 收藏的链接 / 刷新页面：直接打开这个型号
 }
 const THEMES = { auto: ["auto", "跟随系统"], light: ["sun", "浅色 · 晴天"], dark: ["moon", "深色 · 夜场"] };
 function applyTheme(t) {
@@ -1531,7 +1629,7 @@ async function init() {
     else refresh();
   }, 200);
   $("#q").addEventListener("input", onSearch);
-  window.addEventListener("hashchange", route);
+  window.addEventListener("hashchange", () => route());  // 不能直接传 route：事件对象会被当成 force
   try {
     await reloadAll();
     if (S.meta.crawl_running) { $("#btn-crawl").disabled = true; pollCrawl(); }

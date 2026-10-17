@@ -1,18 +1,18 @@
 """维护工具：标准化 / 分类规则改进后，不用重新抓网页，直接用新规则重算库里已有商品的品牌 / 型号 / 分组键 / 分类。
 
 用法：python -m skideals renormalize
-（性别、类型、腰宽这些依赖抓取时的分类页/详情页信息，数据库里没有原始材料，保持不变。
- 下次正常抓取时，所有字段都会按新规则完整重算。）
+年龄根据标题、原始尺码、商品类型和标签重新检查；其他缺少原始证据的属性保持不变。
 """
 from __future__ import annotations
 
 import json
+import uuid
 from collections import Counter, defaultdict
 
 from . import db
 from .config import load_retailers
-from .normalize import (_TOKEN_ALIASES, BrandRegistry, canonical_brand, clean_model, detect_bindings, detect_brand,
-                        known_brand, make_key,
+from .normalize import (_TOKEN_ALIASES, BrandRegistry, canonical_brand, clean_model, detect_bindings,
+                        detect_brand, kids_evidence, known_brand, make_key,
                         slug, split_tokens, use_brand_registry)
 
 
@@ -39,12 +39,12 @@ def _fix_brand(brand: str | None, title: str, store_brand: str | None) -> str | 
     return in_title if in_title and in_title != own else brand
 
 
-def _reassign(conn, log) -> Counter:
+def _reassign(conn, log, brand: str | None = None) -> Counter:
     """存了原始分类信息（meta）的商品：按“来源分类页”分批，用新的分类规则重新判定（含混装页判断）。"""
     from .categories import assign, decide_batch
     groups: dict[tuple, list] = defaultdict(list)
     for r in conn.execute("SELECT id, retailer_id, title, url, vendor, category, sizes_json, meta FROM listings "
-                          "WHERE active=1 AND meta IS NOT NULL"):
+                          "WHERE active=1 AND meta IS NOT NULL AND (? IS NULL OR brand=?)", (brand, brand)):
         m = json.loads(r["meta"])
         if m.get("src") and m["src"] != "ski":
             groups[(r["retailer_id"], m["src"])].append((r, m))
@@ -108,21 +108,42 @@ def _drop_bad_skis(conn) -> int:
     return n
 
 
-def renormalize(log=print) -> dict:
+def renormalize(log=print, brand: str | None = None) -> dict:
     reg = load_brand_registry()
     use_brand_registry(reg)
     brands = {r["id"]: r.get("brand") for r in load_retailers()}
     changed: Counter = Counter()
     with db.connect() as conn:
-        moved = _reassign(conn, log)
+        moved = _reassign(conn, log, brand)
         dropped = _drop_bad_skis(conn)
         if dropped:
             log(f"双板：下架 {dropped} 个（十年以上的老款 / 不是雪板）")
         rows = conn.execute("SELECT id, retailer_id, title, vendor, brand, model, tokens, gclass, bindings, binding_name, "
-                            "category, model_key, meta FROM listings").fetchall()
+                            "category, model_key, meta, sizes_json FROM listings WHERE (? IS NULL OR brand=?)",
+                            (brand, brand)).fetchall()
+        kids_fixed = 0
         for r in rows:
             cat = r["category"] or "ski"
             title = r["title"] or ""
+            gclass = r["gclass"]
+            # 儿童款识别规则变严了（Infants' / Toddlers' / 3-6M / 2T 尺码）→ 旧数据里被当成成人款的童装改判过来。
+            # 只往“儿童”方向改：网站分类页给的性别没存下来，其余方向重算反而会丢信息
+            meta = json.loads(r["meta"] or "{}")
+            if meta.get("age_partition") == "adult" and gclass == "k":
+                from .normalize import _WOMEN, fold
+                gender, gclass = ("women", "w") if _WOMEN.search(fold(title)) else ("unisex", "a")
+                conn.execute("UPDATE listings SET gender=?, gender_src='sizes', gclass=? WHERE id=?",
+                             (gender, gclass, r["id"]))
+            age_src = kids_evidence(title, [s.get("l") for s in json.loads(r["sizes_json"] or "[]")],
+                                    meta.get("pt"), meta.get("tags"), meta.get("gender_hint"), cat, meta.get("age_partition"))
+            lengths = [s["cm"] for s in json.loads(r["sizes_json"] or "[]") if s.get("cm")]
+            if cat == "ski" and lengths and max(lengths) > 175 and age_src != "title":
+                age_src = None
+            if gclass != "k" and age_src:
+                gclass = "k"
+                conn.execute("UPDATE listings SET gender='kids', gender_src=?, gclass='k' WHERE id=?",
+                             (age_src, r["id"]))
+                kids_fixed += 1
             store = reg.stores.get(r["retailer_id"])
             if r["vendor"] is not None:  # 新数据存了网站原始 vendor：和抓取时走完全一样的流程
                 brand = detect_brand(r["vendor"], title, store)
@@ -149,16 +170,21 @@ def renormalize(log=print) -> dict:
                 has_bind, name = detect_bindings(title, m.get("pt"), m.get("tags"))
                 if has_bind != bindings:
                     bindings, bname = has_bind, name
-                key = make_key(brand, tokens, r["gclass"], bindings)
+                key = make_key(brand, tokens, gclass, bindings)
             else:
-                key = f"{cat}|{slug(brand or 'unknown')}|{tok}|{r['gclass']}"
+                key = f"{cat}|{slug(brand or 'unknown')}|{tok}|{gclass}"
             if (key, brand, display, tok, bindings) != (r["model_key"], r["brand"], r["model"], r["tokens"], bool(r["bindings"])):
                 conn.execute("UPDATE listings SET brand=?, model=?, tokens=?, model_key=?, bindings=?, binding_name=? WHERE id=?",
                              (brand, display, tok, key, int(bindings), bname, r["id"]))
                 changed[cat] += 1
+        if changed or moved or dropped:
+            conn.execute("INSERT OR REPLACE INTO settings(key, value) VALUES('catalog_revision', ?)",
+                         (uuid.uuid4().hex,))
     total = sum(changed.values())
+    if kids_fixed:
+        log(f"改判为儿童款 {kids_fixed} 个（标题、专用尺码、商品类型或儿童标签）")
     if moved:
         log("分类重新判定：" + " · ".join(f"{k} {n}" for k, n in moved.most_common()))
     log(f"重新整理 {len(rows)} 个商品，更新了 {total} 个：" +
         (" · ".join(f"{c} {n}" for c, n in changed.most_common()) or "无变化"))
-    return {"total": len(rows), "changed": total, "by_category": dict(changed), "moved": dict(moved)}
+    return {"total": len(rows), "changed": total, "by_category": dict(changed), "moved": dict(moved), "kids": kids_fixed}

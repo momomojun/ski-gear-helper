@@ -986,3 +986,36 @@ collections = ["ski-shop-skis"]
 "2025-26-demo-skis" = { condition = "demo" }
 # Park City, UT ski/bike/fly-fishing shop (since 1980). Only its ski-shop collections are used (bike/fly-fishing excluded; rentals are filtered by the adapter).
 # 可信度自动检测（2026-09-28）：75 (可信/trusted); domain created 1996-01-11; archive since None; address: 1600 Park Avenue Park City, UT 84060
+
+# 新增户外服装渠道（2026-10-16）：Patagonia 官方门店目录交叉核验，证据见 due_diligence.json。
+[[retailers]]
+id = "halfmoon"
+name = "Half-Moon Outfitters"
+url = "https://www.halfmoonoutfitters.com"
+adapter = "shopify"
+tier = "B"
+min_interval = 2.0
+
+[[retailers]]
+id = "trailcreek"
+name = "Trail Creek Outfitters"
+url = "https://trailcreekoutfitters.com"
+adapter = "shopify"
+tier = "B"
+min_interval = 2.0
+
+[[retailers]]
+id = "appalachian"
+name = "Appalachian Outfitters"
+url = "https://www.appalachianoutfitters.com"
+adapter = "shopify"
+tier = "B"
+min_interval = 2.0
+
+[[retailers]]
+id = "scheels"
+name = "SCHEELS（部分服装）"
+url = "https://www.scheels.com"
+adapter = "scheels"
+tier = "B"
+min_interval = 2.5

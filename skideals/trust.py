@@ -21,7 +21,7 @@ import statistics
 from datetime import datetime, timezone
 from urllib.parse import urljoin, urlsplit
 
-from selectolax.parser import HTMLParser
+from selectolax.lexbor import LexborHTMLParser as HTMLParser
 
 from . import db
 from .config import CONFIG_DIR, load_retailers

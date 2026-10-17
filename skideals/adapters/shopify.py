@@ -37,6 +37,22 @@ def _strip_html(s: str | None, limit: int = 4000) -> str:
     return re.sub(r"\s+", " ", html.unescape(s)).strip()[:limit]
 
 
+def ajax_product(data: dict) -> dict:
+    """公开单品 .js 有逐变体库存，金额是美分；.json 没有 available，不能拿它判售罄。"""
+    variants = []
+    for v in data.get("variants") or []:
+        converted = dict(v)
+        for key in ("price", "compare_at_price"):
+            cents = to_float(v.get(key))
+            converted[key] = round(cents / 100, 2) if cents is not None else None
+        for i, option in enumerate(v.get("options") or [], 1):
+            converted.setdefault(f"option{i}", option)
+        variants.append(converted)
+    return {**data, "variants": variants, "product_type": data.get("type"), "body_html": data.get("description"),
+            "images": [{"src": image} if isinstance(image, str) else image for image in data.get("images") or []],
+            "options": [{"name": o} if isinstance(o, str) else o for o in data.get("options") or []]}
+
+
 class ShopifyAdapter(Adapter):
     platform = "shopify"
 
@@ -86,6 +102,16 @@ class ShopifyAdapter(Adapter):
                 member[p["id"]].add(handle)
                 if handle in main:
                     products[p["id"]] = p
+
+        # 补充商家放在混合服装集合中的已核实商品，避免把整页普通运动衫当成抓绒。
+        for handle in self.cfg.get("product_handles", []):
+            if not re.fullmatch(r"[\w-]+", handle):
+                raise ValueError(f"无效的 Shopify 商品 handle: {handle}")
+            data = self.fetcher.get_json(f"{self.base_url}/products/{handle}.js")
+            p = ajax_product(data)
+            if not p or not p.get("id"):
+                raise ValueError(f"商品数据缺失: {handle}")
+            products[p["id"]] = p
 
         for pid, p in products.items():
             if not self._keep(p):

@@ -42,7 +42,7 @@ from collections.abc import Iterator
 from functools import cached_property
 from urllib.parse import quote, urlsplit, urlunsplit
 
-from selectolax.parser import HTMLParser, Node
+from selectolax.lexbor import LexborHTMLParser as HTMLParser, LexborNode as Node
 
 from ..net import BlockedError, FetchError
 from .base import NOT_SKI_RE, Adapter, RawProduct, SizeOption, to_float

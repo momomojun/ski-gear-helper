@@ -2701,3 +2701,69 @@ enabled = false
 pages = [{ path = "/c/marmot-men-activity-skiing", gender = "men" }, { path = "/c/marmot-women-activity-skiing", gender = "women" }]
 sale_pages = ["/c/marmot-sale"]
 
+# 户外服装店：只使用已核实集合，不把品牌全量商品页当成单一装备品类。
+[halfmoon.ski]
+enabled = false
+[halfmoon.midlayer]
+collections = ["mens-fleece", "womens-fleece", "kids-fleece"]
+[halfmoon.midlayer.hints]
+"mens-fleece" = { gender = "men" }
+"womens-fleece" = { gender = "women" }
+"kids-fleece" = { gender = "kids" }
+[halfmoon.baselayer]
+collections = ["mens-baselayers-underwear", "womens-baselayer", "kids-baselayers-underwear"]
+[halfmoon.baselayer.hints]
+"mens-baselayers-underwear" = { gender = "men" }
+"womens-baselayer" = { gender = "women" }
+"kids-baselayers-underwear" = { gender = "kids" }
+[halfmoon.goggle]
+collections = ["snow-goggles"]
+
+[trailcreek.ski]
+enabled = false
+[trailcreek.midlayer]
+collections = ["mens-fleece", "womens-fleece", "kids-fleece", "mens-insulated-jackets-vests", "womens-insulated-jackets-vests", "kids-insulated-jackets-vests"]
+product_handles = ["mens-r1-air-zip"]
+[trailcreek.midlayer.hints]
+"mens-fleece" = { gender = "men" }
+"womens-fleece" = { gender = "women" }
+"kids-fleece" = { gender = "kids" }
+"mens-insulated-jackets-vests" = { gender = "men" }
+"womens-insulated-jackets-vests" = { gender = "women" }
+"kids-insulated-jackets-vests" = { gender = "kids" }
+[trailcreek.jacket]
+collections = ["mens-snow-jackets-vests", "womens-snow-jackets-vests", "kids-snow-jackets-vests"]
+[trailcreek.jacket.hints]
+"mens-snow-jackets-vests" = { gender = "men" }
+"womens-snow-jackets-vests" = { gender = "women" }
+"kids-snow-jackets-vests" = { gender = "kids" }
+[trailcreek.baselayer]
+collections = ["mens-baselayer-tops", "mens-baselayer-bottoms", "womens-baselayer-tops", "womens-baselayer-bottoms"]
+[trailcreek.baselayer.hints]
+"mens-baselayer-tops" = { gender = "men" }
+"mens-baselayer-bottoms" = { gender = "men" }
+"womens-baselayer-tops" = { gender = "women" }
+"womens-baselayer-bottoms" = { gender = "women" }
+
+[appalachian.ski]
+enabled = false
+[appalachian.baselayer]
+collections = ["mens-baselayer", "womens-baselayer"]
+[appalachian.baselayer.hints]
+"mens-baselayer" = { gender = "men" }
+"womens-baselayer" = { gender = "women" }
+[appalachian.midlayer]
+collections = ["down-jackets", "mens-jackets-vests", "womens-jackets-vests"]
+[appalachian.midlayer.hints]
+"mens-jackets-vests" = { gender = "men" }
+"womens-jackets-vests" = { gender = "women" }
+
+# SCHEELS 目录初始 HTML 暂无产品链接，目前明确补抓 R1 Air 半拉链 / Jacket；不宣称全站覆盖。
+[scheels.ski]
+enabled = false
+[scheels.midlayer]
+pages = ["/c/fleece-jackets"]
+product_urls = ["/p/15171-40246/", "/p/15171-40275/"]
+max_listing_pages = 1
+max_detail_pages = 12
+

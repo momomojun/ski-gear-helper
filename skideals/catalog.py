@@ -19,6 +19,8 @@ _GENDER_W = {"title": 3.0, "brand": 3.0, "tags": 2.0, "collection": 2.0, "defaul
 _TYPE_W = {"collection": 3.0, "product_type": 2.0, "tags": 2.0, "title": 2.0, "waist": 1.0}
 _CACHE: dict[str, dict] = {}
 _LOCK = threading.Lock()
+# 旧的 Adult/Youth 共用起价无法追溯到某一年龄规格；保留原始记录，但不用于单独年龄组的历史最低价。
+_AGE_HISTORY = "NOT (LOWER(COALESCE(sizes,'')) LIKE '%adult%' AND (LOWER(sizes) LIKE '%youth%' OR LOWER(sizes) LIKE '%junior%' OR LOWER(sizes) LIKE '%kid%'))"
 
 
 def _vote(pairs, weights, prefer=None):
@@ -45,7 +47,8 @@ def _mode_max(values):
 def _stamp(conn, category: str) -> tuple:
     row = conn.execute("SELECT MAX(last_seen), COUNT(*), SUM(active) FROM listings WHERE category=?",
                        (category,)).fetchone()
-    return tuple(row) + (db.today(),)
+    revision = conn.execute("SELECT value FROM settings WHERE key='catalog_revision'").fetchone()
+    return tuple(row) + (db.today(), revision[0] if revision else None)
 
 
 def _load(conn, category: str):
@@ -58,7 +61,7 @@ def _load(conn, category: str):
     for i in range(0, len(ids), 900):  # SQLite 变量个数有上限，分批
         chunk = ids[i:i + 900]
         q = (f"SELECT listing_id, MIN(price) mn, MAX(price) mx, COUNT(*) n, MIN(day) d0 FROM price_history "
-             f"WHERE listing_id IN ({','.join('?' * len(chunk))}) GROUP BY listing_id")
+             f"WHERE listing_id IN ({','.join('?' * len(chunk))}) AND {_AGE_HISTORY} GROUP BY listing_id")
         hist.update({r["listing_id"]: r for r in conn.execute(q, chunk)})
     return rates, retailers, hist, rows
 
@@ -74,7 +77,10 @@ def _offer(row, rates, hist, retailers) -> dict:
         # 尺码按当前规则重新规范化（旧数据里存的 n 可能是旧规则算的）；认不出的（多半是颜色/镜片名）不参与尺码筛选
         n = s.get("cm") if length_based else norm_size(cat, s.get("l"))
         if n:
-            sizes.append([n, 1 if s.get("a") else 0, fx.to_usd(s.get("p"), cur, rates) or price])
+            z = [n, 1 if s.get("a") else 0, fx.to_usd(s.get("p"), cur, rates)]
+            if s.get("u"):
+                z += [s["u"], s.get("color")]
+            sizes.append(z)
     h = hist.get(row["id"])
     o = {"id": row["id"], "r": row["retailer_id"], "p": price, "c": cmp_, "y": row["year"], "cd": row["condition"],
          "a": 1 if row["available"] else 0, "z": sizes, "u": row["url"]}
@@ -153,6 +159,8 @@ def build(category: str = "ski", force: bool = False) -> dict:
         msrp = _msrp_by_year(offers)
         for o in offers:
             m = msrp.get(o["y"]) or msrp.get(None)
+            if o["c"]:
+                m = min(m, o["c"]) if m else o["c"]
             if m and o["p"] and m > o["p"]:
                 o["off"] = round((1 - o["p"] / m) * 100)
             if m and o["c"] and o["c"] > m * 1.08:
@@ -267,7 +275,7 @@ def detail(key: str) -> dict | None:
         ids = list(rows)
         hist: dict[int, list] = defaultdict(list)
         if ids:
-            q = f"SELECT * FROM price_history WHERE listing_id IN ({','.join('?' * len(ids))}) ORDER BY day"
+            q = f"SELECT * FROM price_history WHERE listing_id IN ({','.join('?' * len(ids))}) AND {_AGE_HISTORY} ORDER BY day"
             for h in conn.execute(q, ids):
                 hist[h["listing_id"]].append([h["day"], h["price"], h["available"]])
         watch = conn.execute("SELECT * FROM watchlist WHERE model_key=?", (key,)).fetchone()
@@ -281,7 +289,9 @@ def detail(key: str) -> dict | None:
         cur = r["currency"] or "USD"
         sizes = [{"cm": s.get("cm"), "n": norm_size(r["category"] or "ski", s.get("l")), "label": s.get("l"),
                   "a": bool(s.get("a")),
-                  "p": fx.to_usd(s.get("p"), cur, rates)} for s in json.loads(r["sizes_json"] or "[]")]
+                  "p": fx.to_usd(s.get("p"), cur, rates), "c": fx.to_usd(s.get("c"), cur, rates),
+                  "u": s.get("u"), "color": s.get("color")}
+                 for s in json.loads(r["sizes_json"] or "[]")]
         points = [[d, fx.to_usd(p, cur, rates), a] for d, p, a in hist.get(o["id"], [])][-365:]
         offers.append({**o, "title": r["title"], "gender": r["gender"], "gender_src": r["gender_src"],
                        "binding_name": r["binding_name"], "first_seen": r["first_seen"], "last_seen": r["last_seen"],

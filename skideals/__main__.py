@@ -37,7 +37,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("stats", help="数据库统计")
     d = sub.add_parser("discover", help="Shopify 店铺分类自动发现")
     d.add_argument("url")
-    sub.add_parser("renormalize", help="用新规则重算已有商品的型号/分组")
+    rn = sub.add_parser("renormalize", help="用新规则重算已有商品的型号/分组")
+    rn.add_argument("--brand", help="只整理一个品牌，适合局部规则修复")
     sub.add_parser("specs", help="双板规格补全（读商品页里的腰宽）")
     a = sub.add_parser("audit", help="数据质量自检")
     a.add_argument("categories", nargs="*")
@@ -63,7 +64,7 @@ def main(argv: list[str] | None = None) -> int:
         print(discover(args.url))
     elif args.cmd == "renormalize":
         from .maintenance import renormalize
-        renormalize()
+        renormalize(brand=args.brand)
     elif args.cmd == "specs":
         from .specs import backfill
         backfill()

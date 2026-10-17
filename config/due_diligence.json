@@ -1,6 +1,40 @@
 {
  "_note": "人工尽职调查（2026-09-26，由 AI 助手用公开网页检索整理，含来源链接；政策会变化，下单前以官网为准）；2026-09-29 补充 30 家服装/配件品牌官网与 Tactics、Marmot（同样用公开网页检索整理，含来源）",
  "retailers": {
+  "scheels": {
+   "id": "scheels", "domain": "scheels.com", "checked_at": "2026-10-16",
+   "physical_stores": "SCHEELS 官网提供实体门店目录及企业介绍，可逐店核对地址。",
+   "verdict": "B",
+   "verdict_reason": "在 scheels.com 核实公司介绍、门店入口及公开商品规格价格。仅接入正常可访问的商品页，不调用被 robots 禁止的 API/搜索/变体接口。当前为少量服装款型覆盖，不代表全站。未独立核查 BBB、Trustpilot 或经营财务。",
+   "sources": ["https://www.scheels.com/about", "https://www.scheels.com/stores", "https://www.scheels.com/p/19807751651/", "https://www.scheels.com/robots.txt"]
+  },
+  "halfmoon": {
+   "id": "halfmoon", "domain": "halfmoonoutfitters.com", "checked_at": "2026-10-16",
+   "hq": "Charleston, South Carolina, USA",
+   "physical_stores": "Patagonia 官方门店目录列出 94 Folly Rd Blvd, Charleston, SC 29407，电话 (843) 556-6279，并链接到本店官网。",
+   "authorized_dealer_evidence": "Patagonia 官方门店目录直接列出此店及官网域名。",
+   "verdict": "B",
+   "verdict_reason": "已用品牌官方门店目录核实实体地址及域名，并实测公开商品价格数据。此记录核实商家身份，不保证每单履约；退货、运费及促销限制需下单前核对。未独立核查 BBB、Trustpilot 或经营财务。",
+   "sources": ["https://stores.patagonia.com/shop/23/half-moon-outfitters", "https://www.halfmoonoutfitters.com/products/pat_ms_40275"]
+  },
+  "trailcreek": {
+   "id": "trailcreek", "domain": "trailcreekoutfitters.com", "checked_at": "2026-10-16",
+   "hq": "Glen Mills, Pennsylvania, USA",
+   "physical_stores": "Patagonia 官方门店目录列出 487 Wilmington West Chester Pike, Glen Mills, PA 19342，电话 (610) 558-4006，并链接到本店官网。",
+   "authorized_dealer_evidence": "Patagonia 官方门店目录直接列出此店及官网域名。",
+   "verdict": "B",
+   "verdict_reason": "已用品牌官方门店目录核实实体地址及域名，并实测公开商品价格数据。退货、运费及促销限制需下单前核对。未独立核查 BBB、Trustpilot 或经营财务。",
+   "sources": ["https://stores.patagonia.com/shop/10707/trail-creek-outfitters-glen-mills", "https://trailcreekoutfitters.com/products/mens-r1-air-jacket"]
+  },
+  "appalachian": {
+   "id": "appalachian", "domain": "appalachianoutfitters.com", "checked_at": "2026-10-16",
+   "hq": "Peninsula, Ohio, USA",
+   "physical_stores": "Patagonia 官方门店目录列出 60 Kendall Park Road, Peninsula, OH 44264，并链接到本店官网。",
+   "authorized_dealer_evidence": "Patagonia 官方门店目录直接列出此店及官网域名。",
+   "verdict": "B",
+   "verdict_reason": "已用品牌官方门店目录核实实体地址及域名，并实测公开商品价格数据。退货、运费及促销限制需下单前核对。未独立核查 BBB、Trustpilot 或经营财务。",
+   "sources": ["https://stores.patagonia.com/shop/6/appalachian-outfitters", "https://www.appalachianoutfitters.com/products/patagonia-mens-r1-air-zip-neck-40246"]
+  },
   "evo": {
    "id": "evo",
    "domain": "evo.com",

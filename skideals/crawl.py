@@ -140,7 +140,8 @@ def crawl_category(cfg: dict, cat: str, fetcher: Fetcher, seen: set | None = Non
                 continue
             if seen is not None and raw.external_id in seen:  # 已经在前面的分类里收过（比如保暖雪服也在中间层分类页里）
                 continue
-            raws.append(raw)
+            from .normalize import split_age_variants
+            raws.extend(split_age_variants(raw))
         finals, moved = _decide_categories(rid, cat, raws)
         for raw, final in zip(raws, finals):
             if final is None:
@@ -160,9 +161,12 @@ def crawl_category(cfg: dict, cat: str, fetcher: Fetcher, seen: set | None = Non
             items.append(lst)
             if seen is not None:
                 seen.add(raw.external_id)
-        gone = _write(rid, cat, items, started, True)
+        complete = getattr(adapter, "complete", True)
+        gone = _write(rid, cat, items, started, complete)
         kept = sum(1 for lst in items if lst.category == cat)
         msg = f"{kept} 个" + (f"（另有 {moved} 个改判到别的分类）" if moved else "") + (f"，{gone} 个已下架" if gone else "")
+        if not complete:
+            kind, msg = "partial", msg + "；达到抓取预算，未抓到的商品保留原状态"
     except (BlockedError, RobotsDisallowed) as e:
         kind = "blocked" if isinstance(e, BlockedError) else "robots"
         msg = ("被网站反爬拦截" if kind == "blocked" else "robots.txt 不允许") + f"：{e.url[:80]}"
@@ -170,7 +174,7 @@ def crawl_category(cfg: dict, cat: str, fetcher: Fetcher, seen: set | None = Non
         kind = "error"
         msg = f"{type(e).__name__}: {str(e)[:200]}"
         _log(f"[{rid}/{cat}] 出错：{msg}\n{traceback.format_exc(limit=3)}")
-    if kind != "ok":  # 失败：已经抓到的部分照样保存（但不把没抓到的标记为下架）
+    if kind not in ("ok", "partial"):  # 失败：已经抓到的部分照样保存（但不把没抓到的标记为下架）
         try:
             _write(rid, cat, items, started, False)
         except Exception as e2:

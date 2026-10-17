@@ -17,6 +17,8 @@ class SizeOption:
     available: bool = True          # 是否有货
     price: float | None = None      # 这个尺码的价格（不同尺码可能不同价）
     compare_at: float | None = None # 这个尺码的原价
+    url: str | None = None          # 对应当前有货最低价的颜色/SKU 购买页
+    color: str | None = None
 
 
 @dataclass

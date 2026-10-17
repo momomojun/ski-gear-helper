@@ -23,22 +23,25 @@ def best_offer(conn, key: str, year: int | None = None, length: int | None = Non
     best = None
     for row in conn.execute(q, args):
         price = row["price"]
+        url = row["url"]
         if length:
             sizes = [s for s in json.loads(row["sizes_json"] or "[]")
-                     if s.get("cm") and abs(s["cm"] - length) <= 2 and s.get("a")]
+                     if s.get("cm") and abs(s["cm"] - length) <= 2 and s.get("a") and s.get("p")]
             if not sizes:
                 continue
-            price = min((s.get("p") or row["price"]) for s in sizes)
+            chosen = min(sizes, key=lambda s: s.get("p") or row["price"])
+            price, url = chosen.get("p") or row["price"], chosen.get("u") or url
         elif size_label:  # 服装/雪鞋：按规范化尺码（M、26.5、100mm…）匹配；"S/M" 这种两码合一也算
             want = size_label.strip().upper()
             sizes = [s for s in json.loads(row["sizes_json"] or "[]")
-                     if s.get("a") and want in str(s.get("n") or s.get("l") or "").upper().split("/")]
+                     if s.get("a") and s.get("p") and want in str(s.get("n") or s.get("l") or "").upper().split("/")]
             if not sizes:
                 continue
-            price = min((s.get("p") or row["price"]) for s in sizes)
+            chosen = min(sizes, key=lambda s: s.get("p") or row["price"])
+            price, url = chosen.get("p") or row["price"], chosen.get("u") or url
         usd = fx.to_usd(price, row["currency"] or "USD", rates)
         if usd and (best is None or usd < best["usd"]):
-            best = {"usd": usd, "retailer": row["rname"], "retailer_id": row["retailer_id"], "url": row["url"],
+            best = {"usd": usd, "retailer": row["rname"], "retailer_id": row["retailer_id"], "url": url,
                     "year": row["year"]}
     return best
 
