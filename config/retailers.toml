@@ -1019,3 +1019,329 @@ url = "https://www.scheels.com"
 adapter = "scheels"
 tier = "B"
 min_interval = 2.5
+
+# ---- 2026-10-25 新增（调研见 due_diligence.json）
+
+[[retailers]]
+id = "keen"
+name = "KEEN 官网"
+country = "US"
+currency = "USD"
+url = "https://www.keenfootwear.com"
+adapter = "shopify"
+tier = "brand"
+brand = "KEEN"
+# Portland, OR footwear brand (2003, private). One product per colour; options Size + Width (Regular/Wide). Trail collections contain a few KEEN Utility work boots.
+
+[[retailers]]
+id = "oboz"
+name = "Oboz 官网"
+country = "US"
+currency = "USD"
+url = "https://www.obozfootwear.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Oboz"
+# Bozeman, MT hiking-boot brand (2007), owned by KMD Brands. Options Colour / Size ("9.0") / Width (Regular/Wide) on some styles.
+
+[[retailers]]
+id = "lowa"
+name = "LOWA 官网（美国）"
+country = "US"
+currency = "USD"
+url = "https://us.lowa.com"
+adapter = "shopify"
+tier = "brand"
+brand = "LOWA"
+# US subsidiary of the German boot maker (Tecnica Group). Titles uppercase, women's models end in "WS"; options Size / Color / Width (MEDIUM/WIDE).
+
+[[retailers]]
+id = "lasportiva"
+name = "La Sportiva 官网（北美）"
+country = "US"
+currency = "USD"
+url = "https://www.lasportivausa.com"
+adapter = "shopify"
+tier = "brand"
+brand = "La Sportiva"
+# Official La Sportiva N.A. store (Boulder, CO). Footwear sizes are bare EU numbers (36-47), no width option; check-site's brand-impersonation flag is a false positive.
+
+[[retailers]]
+id = "nextadventure"
+name = "Next Adventure (Portland)"
+country = "US"
+currency = "USD"
+url = "https://www.nextadventure.net"
+adapter = "shopify"
+tier = "B"
+collections = ["c-skis"]   # 双板；地下室有二手/清仓，注意成色
+# Portland, OR independent outdoor/ski shop (also consignment). Small online outdoor range (~40 shoes); ownership changed 2025-26, original owners back since June 2026.
+
+# ---- 2026-10-25 新增（调研见 due_diligence.json）
+
+[[retailers]]
+id = "anon"
+name = "Anon 官网"
+country = "US"
+currency = "USD"
+url = "https://www.anonoptics.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Anon"
+# Burton's goggle/helmet brand (Burlington VT); "goggles-1"/"helmet-discount-collection" hold every colorway incl. sale items; 30-day returns ($9.95 label fee)
+
+[[retailers]]
+id = "smith"
+name = "Smith 官网"
+country = "US"
+currency = "USD"
+url = "https://www.smithoptics.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Smith"
+# Smith Optics (Ketchum ID, Revelyst/SVP); "-hidden" snow collections include past-season sale models; also sells sunglasses/bike gear (not used)
+
+[[retailers]]
+id = "on3p"
+name = "ON3P 官网"
+country = "US"
+currency = "USD"
+url = "https://www.on3pskis.com"
+adapter = "shopify"
+tier = "brand"
+brand = "ON3P"
+collections = ["2027-skis", "2026-skis", "on-sale"]
+# Independent ski maker, factory in Portland OR since 2008; small catalog, sale = previous-season skis
+
+[[retailers]]
+id = "scarpa"
+name = "SCARPA 北美官网"
+country = "US"
+currency = "USD"
+url = "https://us.scarpa.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Scarpa"
+# SCARPA North America (Boulder CO) store; touring/telemark ski boots + liners, also hiking & trail shoes; NOT scarpa.com (Italian EUR store)
+
+[[retailers]]
+id = "leki"
+name = "LEKI 美国官网"
+country = "US"
+currency = "USD"
+url = "https://lekiusa.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Leki"
+# LEKI USA (Buffalo NY), official US subsidiary: leki.com/us/en 301-redirects here; trust check falsely flags the domain as brand impersonation
+
+# ---- 2026-10-25 新增（调研见 due_diligence.json）
+
+[[retailers]]
+id = "atomic"
+name = "Atomic 官网"
+country = "US"
+currency = "USD"
+currency_override = "USD"   # /en-us 下价格已是美元，但 meta.json 报 EUR
+url = "https://www.atomic.com/en-us"
+adapter = "shopify"
+tier = "brand"
+brand = "Atomic"
+collections = ["ato-men-skis-piste", "ato-men-skis-all-mountain", "ato-men-skis-freeride", "ato-men-skis-park", "ato-men-skis-touring", "ato-men-skis-premium",
+               "ato-women-skis-piste", "ato-women-skis-all-mountain", "ato-women-skis-freeride", "ato-women-skis-park", "ato-women-skis-touring", "ato-women-skis-premium",
+               "ato-youth-skis-piste", "ato-youth-skis-all-mountain"]
+[retailers.hints]
+"ato-women-skis-piste" = { gender = "women" }
+"ato-women-skis-all-mountain" = { gender = "women" }
+"ato-women-skis-freeride" = { gender = "women" }
+"ato-women-skis-touring" = { gender = "women" }
+"ato-youth-skis-piste" = { gender = "kids" }
+"ato-youth-skis-all-mountain" = { gender = "kids" }
+# Amer Sports brand; EUR-base Shopify with US market at /en-us (USD, ships from Ogden UT). meta.json reports EUR -> needs currency override in adapter. MSRP only, no sales seen. Some ski collections also hold poles/bindings: verify.
+
+[[retailers]]
+id = "faction"
+name = "Faction 官网"
+country = "US"
+currency = "USD"
+currency_override = "USD"   # /en-us 下价格已是美元，但 meta.json 报 EUR
+url = "https://factionskis.com/en-us"
+adapter = "shopify"
+tier = "brand"
+brand = "Faction"
+collections = ["all-skis"]
+[retailers.hints]
+"junior-series" = { gender = "kids" }
+# Swiss brand (Verbier); EUR-base Shopify with US market /en-us (USD, ships to US). meta.json says EUR -> needs currency override; a few Trustpilot warranty complaints
+
+# ---- 2026-10-25 新增（调研见 due_diligence.json）
+
+[[retailers]]
+id = "proskiservice"
+name = "Pro Ski & Mountain Service"
+country = "US"
+currency = "USD"
+url = "https://www.proskiservice.com"
+adapter = "shopify"
+tier = "B"
+collections = ["alpine-skis", "backcountry-ski", "ski-kids-skiing-skis"]
+[retailers.hints]
+"mens-ski" = { gender = "men" }
+"womens-ski" = { gender = "women" }
+"ski-kids-skiing-skis" = { gender = "kids" }
+"backcountry-ski" = { type = "touring" }
+# North Bend, WA backcountry/alpine specialty shop (owner Martin Volken, Dynafit Competence Center). Apparel collections are generic outdoor, so no jacket/pants config.
+
+[[retailers]]
+id = "skicountrysports"
+name = "Ski Country Sports"
+country = "US"
+currency = "USD"
+url = "https://www.skicountrysports.com"
+adapter = "shopify"
+tier = "B"
+collections = ["skis", "kids-skis"]
+[retailers.hints]
+"womens-skis" = { gender = "women" }
+"kids-skis" = { gender = "kids" }
+# Banner Elk, NC ski & snowboard chain since 1983 (4 NC stores). Generic mens/womens-jackets mix rain shells & down sweaters; use insulated/shell/snowboard jacket collections.
+
+[[retailers]]
+id = "skibarn"
+name = "Ski Barn"
+country = "US"
+currency = "USD"
+url = "https://www.skibarn.com"
+adapter = "shopify"
+tier = "B"
+collections = ["mens-skis-all", "womens-skis-all"]
+[retailers.hints]
+"mens-skis-all" = { gender = "men" }
+"womens-skis-all" = { gender = "women" }
+# New Jersey family ski chain since 1971 (Paramus, Wayne, Lawrenceville, Shrewsbury). Generic "skis" collection mixes boots/bindings – use gendered *-skis-all.
+
+[[retailers]]
+id = "alpenglow"
+name = "Alpenglow Sports"
+country = "US"
+currency = "USD"
+url = "https://www.alpenglowsports.com"
+adapter = "shopify"
+tier = "B"
+collections = ["backcountry-skis"]
+[retailers.hints]
+"backcountry-skis" = { type = "touring" }
+# Tahoe City, CA backcountry/outdoor shop since 1979. Touring skis only; outerwear is hard/softshell (mapped to outdoor categories).
+
+# ---- 2026-10-25 新增（调研见 due_diligence.json）
+
+[[retailers]]
+id = "burton"
+name = "Burton 官网"
+country = "US"
+currency = "USD"
+url = "https://www.burton.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Burton"
+# Burton Snowboards (Burlington, VT) official US store; snowboard hardware is not mapped; helmets/goggles are Anon (Burton-owned, also listed under anon).
+
+[[retailers]]
+id = "lebent"
+name = "Le Bent 官网"
+country = "US"
+currency = "USD"
+url = "https://www.lebent.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Le Bent"
+# Australian merino sock/baselayer brand (est. 2012); this is the US store (Le Bent USA, Park City UT).
+
+[[retailers]]
+id = "icebreaker"
+name = "icebreaker 官网"
+country = "US"
+currency = "USD"
+url = "https://www.icebreaker.com"
+adapter = "shopify"
+tier = "brand"
+brand = "icebreaker"
+# NZ merino brand owned by VF Corp; North America Shopify store (na.icebreaker.com) in USD. Collection counts include colour-split products.
+
+[[retailers]]
+id = "powgloves"
+name = "POW Gloves 官网"
+country = "US"
+currency = "USD"
+url = "https://www.powgloves.com"
+adapter = "shopify"
+tier = "brand"
+brand = "POW"
+# Seattle/Mt Baker glove brand (POW Inc., also owns Holden & Spacecraft); small US Shopify store, ~97 products.
+
+[[retailers]]
+id = "syncperformance"
+name = "SYNC Performance 官网"
+country = "US"
+currency = "USD"
+url = "https://www.syncperformance.com"
+adapter = "shopify"
+tier = "brand"
+brand = "SYNC"
+# Vail-valley ski-racing apparel brand founded 2014 by ex-racers; many collections are sale/season duplicates — use the ones below.
+
+[[retailers]]
+id = "krimsonklover"
+name = "Krimson Klover 官网"
+country = "US"
+currency = "USD"
+url = "https://www.krimsonklover.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Krimson Klover"
+# Boulder CO women's ski-sweater/baselayer brand (est. 2009/10); women-only, many lifestyle items not mapped.
+
+[[retailers]]
+id = "autumn"
+name = "Autumn 官网"
+country = "US"
+currency = "USD"
+url = "https://autumnmtnwear.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Autumn"
+# Salt Lake City headwear brand (Autumn Headwear) with autumnMTN snow outerwear line; products are split per colour (beanies 250+).
+
+[[retailers]]
+id = "wigwam"
+name = "Wigwam 官网"
+country = "US"
+currency = "USD"
+url = "https://www.wigwam.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Wigwam"
+# Family-owned Sheboygan WI sock mill since 1905; only the ski/snowboard sock collection is mapped (~15 items).
+
+[[retailers]]
+id = "spacecraft"
+name = "Spacecraft 官网"
+country = "US"
+currency = "USD"
+url = "https://www.spacecraftcollective.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Spacecraft"
+# Snow headwear brand of POW Inc. (Seattle); beanies/gaiters only, catalogue includes older seasons.
+
+[[retailers]]
+id = "hestra"
+name = "Hestra 官网"
+country = "US"
+currency = "USD"
+currency_override = "USD"   # hestragloves.us 价格是美元，但 meta.json 报 SEK
+url = "https://www.hestragloves.us"
+adapter = "shopify"
+tier = "brand"
+brand = "Hestra"
+# Swedish family glove maker since 1936; US market domain of a SEK-based Shopify shop — products.json returns USD here but meta.json says SEK, so the adapter must be told to trust the config currency.

@@ -126,3 +126,33 @@ def test_snapshot_round_trip_excludes_private_tables(tmp_path, monkeypatch):
         raise AssertionError("should refuse")
     except FileExistsError:
         pass
+
+
+# ---- 2026-10-25 新增网站时发现的问题
+
+def test_pipe_colourway_does_not_turn_shoes_into_parts():
+    # KEEN 把配色写在 " | " 后面：Bungee Cord（配色）不是线缆配件，Wax Yellow 不是打蜡用品
+    assert assign("hiking_shoe", "Men's Targhee III Waterproof  |  Bungee Cord/Black")[0] == "hiking_shoe"
+    assert assign("hiking_shoe", "Women's Versacore Speed Shoe  |  Alloy/Wax Yellow")[0] == "hiking_shoe"
+
+
+def test_shopify_currency_override_wins_over_meta(monkeypatch):
+    # atomic.com/en-us：价格是美元，但 meta.json 报 EUR
+    from skideals.adapters.shopify import ShopifyAdapter
+    seen = {}
+    a = ShopifyAdapter({"id": "atomic", "url": "https://www.atomic.com/en-us", "currency": "USD",
+                        "currency_override": "USD", "collections": []}, None)
+    monkeypatch.setattr(a, "_meta", lambda: {"currency": "EUR"})
+    monkeypatch.setattr(a, "_to_raw", lambda p, h, hints, currency: seen.setdefault("c", currency))
+    list(a.fetch())
+    assert a.store_meta["currency"] == "EUR"
+    monkeypatch.setattr(a, "_collection", lambda h: [{"id": 1, "title": "Bent 100", "variants": []}])
+    a.cfg["collections"] = ["skis"]
+    list(a.fetch())
+    assert seen["c"] == "USD"
+
+
+def test_filter_facet_tags_are_not_shoe_type_evidence():
+    # Alpenglow 的筛选标签 "Best Use (Running shoes)|…" 不能让越野跑鞋被当成公路鞋丢掉
+    tags = ["Best Use (Running shoes)|Technical/Rocky", "Color (Running shoes)|Green", "footwear"]
+    assert assign("trail_shoe", "M Olympus 275", "Footwear - Men's - Run", tags)[0] == "trail_shoe"

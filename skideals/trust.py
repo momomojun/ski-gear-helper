@@ -48,6 +48,7 @@ OFFICIAL_BRAND_DOMAINS = {
     "black-crows.com", "dpsskis.com", "momentskis.com", "4frnt.com", "jskis.com", "icelanticskis.com",
     "kaestle.com", "kastle.com", "stockli.com", "libertyskis.com", "blackdiamondequipment.com", "dynafit.com",
     "scott-sports.com", "burton.com",
+    "lasportivausa.com", "anonoptics.com", "lekiusa.com",   # 品牌北美官网（"品牌名+usa" 本来会被当成冒牌域名）
 }
 LEVELS = [(75, "trusted", "可信"), (55, "ok", "基本可信"), (35, "caution", "谨慎"), (0, "danger", "高风险")]
 
@@ -365,7 +366,8 @@ def looks_like_brand_store(domain: str, shop: dict | None, age_years: float | No
     if not v or len(v) < 3:
         return None
     rest_v = v[len(name):] if v.startswith(name) else None      # vendor 比域名长：“Spyder Active Sports” vs spyder.com
-    if (name.startswith(v) and name[len(v):] in _BRAND_DOMAIN_SUFFIX) or             (len(name) >= 4 and rest_v is not None and
+    if (name.startswith(v) and name[len(v):] in _BRAND_DOMAIN_SUFFIX) or \
+            (len(name) >= 4 and rest_v is not None and
              re.fullmatch(r"(?:active)?(?:sports?|apparel|inc|usa|outerwear|clothing|gear|skis?|co|company|designs?)?", rest_v)):
         return shop["top_vendor"]
     return None

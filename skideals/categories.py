@@ -495,6 +495,12 @@ def assign(source: str, title: str, product_type: str | None = None, tags: list[
     """从“source 分类页”抓到的商品最终属于哪个分类。返回 (分类, 依据)；分类为 None 表示不要。
     依据：not-ours / xc / part / brand / title / meta / option / url / length / page（没有证据，相信分类页）。"""
     t = title or ""
+    if source in OUTDOOR:
+        # 户外店常把配色写在 " | " 后面（KEEN "Targhee III Waterproof | Bungee Cord/Black"）：
+        # 配色名里的 Cord / Wax 不能让鞋变成配件、打蜡用品
+        head = re.split(r"\s+\|\s+", t)[0]
+        if len(head.split()) >= 2:
+            t = head
     by_brand = _BRAND_CATEGORY.get(re.sub(r"[^a-z0-9]", "", (vendor or "").lower()))
     if by_brand and source != by_brand:
         return by_brand, "brand"
@@ -535,7 +541,8 @@ def assign(source: str, title: str, product_type: str | None = None, tags: list[
     outdoor = _outdoor_pick(source, t, product_type, tags)
     if outdoor:
         return outdoor
-    shoe_meta = [product_type or "", *(str(tag) for tag in tags or [] if len(str(tag)) < 80)]
+    # 筛选面板标签（Alpenglow："Best Use (Running shoes)|Technical/Rocky"）只是属性，不是商品类型
+    shoe_meta = [product_type or "", *(str(tag) for tag in tags or [] if len(str(tag)) < 80 and not re.search(r"[|(]", str(tag)))]
     # Keep independent fields independent: "Running" + "Shoe Width:D" must
     # never become the exclusion phrase "Running Shoe".
     if (_OTHER_SHOE.search(t) or any(_OTHER_SHOE.search(value) for value in shoe_meta)) and not _STRONG["boot"].search(t):
@@ -567,7 +574,8 @@ def decide_batch(source: str, results: list[tuple[str | None, str]], min_away: i
     混装页（有证据的商品里 ≥20% 指向别的分类）里“没有证据、只能相信分类页”的商品不要；“其他配件”“打蜡”页本来就杂，不算。
     户外页明确拒收的日常鞋/公路鞋等也计入混装证据，不能让剩余无证据商品回落成越野鞋。"""
     with_ev = [c for c, why in results if c is not None and why != "page"]
-    away = sum(1 for c in with_ev if c != source)
+    # 徒步鞋页里的越野跑鞋（KEEN 两边都挂）是兄弟分类之间的正常交叉，不算“混装”证据
+    away = sum(1 for c in with_ev if c != source and not (source in _OUTDOOR_SHOES and c in _OUTDOOR_SHOES))
     if source in OUTDOOR:
         rejected = sum(c is None and why != "page" for c, why in results)
         away += rejected

@@ -47,6 +47,8 @@ def search_links(brand: str, model: str, category: str = "ski", gender: str | No
         "US": [
             {"name": "Scheels", "url": f"https://www.google.com/search?q=site%3Ascheels.com+{q}"},
             {"name": "Backcountry", "url": f"https://www.google.com/search?q=site%3Abackcountry.com+{q}"},
+            # Backcountry 旗下的清仓站，和 Backcountry 一样有反爬，不能自动抓，只给搜索入口
+            {"name": "Steep & Cheap", "url": f"https://www.google.com/search?q=site%3Asteepandcheap.com+{q}"},
             {"name": "Powder7", "url": f"https://www.google.com/search?q=site%3Apowder7.com+{q}"},
             {"name": "Amazon", "url": f"https://www.amazon.com/s?k={quote(kw)}"},
             {"name": "Google 购物", "url": f"https://www.google.com/search?tbm=shop&q={quote(kw)}"},

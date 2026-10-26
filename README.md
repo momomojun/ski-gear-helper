@@ -4,7 +4,7 @@
 
 **Ski Gear Helper** —— 在自己电脑上运行的滑雪装备比价工具
 
-把 **73 家美国雪具 / 户外来源**（含部分覆盖）、**22 类滑雪装备**的价格放进同一个页面：同款自动对齐、按年龄和尺码比价；另设独立的**户外专区**，新增 5 类户外服装与鞋履。<br>
+把 **99 家美国雪具 / 户外来源**（含部分覆盖）、**22 类滑雪装备**的价格放进同一个页面：同款自动对齐、按年龄和尺码比价；另设独立的**户外专区**，新增 5 类户外服装与鞋履。<br>
 双板还附**日本 / 中国参考价**，并帮你**识别山寨雪具网站**。
 
 [![tests](https://github.com/momomojun/ski-gear-helper/actions/workflows/tests.yml/badge.svg)](https://github.com/momomojun/ski-gear-helper/actions/workflows/tests.yml)
@@ -24,7 +24,7 @@
 在美国买雪具，同一块板在 evo、REI、Christy Sports 和品牌官网的价格能差一两百美元；打折季热门尺码一两天就断货；
 搜“ski outlet”还会搜到冒充正规店的山寨网站（比如冒充 Utah Ski Gear 的 `utahskigearonline.shop`）。一家家翻太累，于是做了这个小工具：
 
-- 🔍 **一处比价**：73 个启用来源；儿童与成人独立分组，同一款在不同网站的报价合并成一张卡片
+- 🔍 **一处比价**：99 个启用来源；儿童与成人独立分组，同一款在不同网站的报价合并成一张卡片
 - 📏 **按尺码看有货**：只显示你的长度 / 鞋码 / S·M·L **有货**的报价——打折常常只剩冷门尺码
 - 📉 **看清真假折扣**：记录价格历史，标出历史低价、刚降价、“原价虚高”
 - 🎿 **固定器怎么配**：套装和分开买哪个划算；按板子腰宽挑刹车宽度合适、有货的固定器
@@ -150,16 +150,19 @@ python3 -m venv .venv
 
 **美国（自动抓取）**
 
-新增服装来源：**Half-Moon Outfitters、Trail Creek Outfitters、Appalachian Outfitters**（Patagonia 官方门店目录交叉核验）及 **SCHEELS**。SCHEELS 当前补抓 R1 Air 半拉链、Jacket 两个款型的公开商品页，覆盖各自颜色/尺码；目录没有公开商品链接时不调用受限 API，因此不代表全站。
+2026-10-25 新增 26 家（每家都核对过 robots、反爬、币种和公司背景）：滑雪专业店 **Ski Barn、Ski Country Sports、Pro Ski Service、Alpenglow Sports、Next Adventure**；品牌官网 **Atomic、Faction、ON3P、Scarpa、LEKI、Smith、Anon、Burton、Hestra、Icebreaker、Le Bent、POW、Sync、Krimson Klover、Autumn、Wigwam、Spacecraft**；户外鞋品牌 **KEEN、Oboz、LOWA、La Sportiva**；evo、EMS、Campmor、Outdoor Research 增加户外分类。
+
+更早新增的服装来源：**Half-Moon Outfitters、Trail Creek Outfitters、Appalachian Outfitters**（Patagonia 官方门店目录交叉核验）及 **SCHEELS**。SCHEELS 当前补抓 R1 Air 半拉链、Jacket 两个款型的公开商品页，覆盖各自颜色/尺码；目录没有公开商品链接时不调用受限 API，因此不代表全站。
 
 价格仅指**已收录最低**。按尺码筛选时必须有该尺码的可验证价格；价格未知不套用其他尺码起价。详情、尺码购买链接和关注提醒使用同一规格价格。修复与验收记录见 [数据质量修复](docs/数据质量修复.md)。
 
 | 类型 | 网站 |
 |---|---|
-| 大型零售商 | evo、REI、Christy Sports、Sports Basement、Peter Glenn、Sun & Ski Sports、**Zappos**（只抓滑雪服装：有 The North Face、Columbia、Helly Hansen、Arc'teryx 这些官网抓不了的品牌） |
-| 专业雪具店 / 户外店 | Skis.com、Ski Essentials、The Ski Monster、Start Haus、Alpine Shop (VT)、Outdoor Gear Exchange、Ski Depot/RaceSkis、Aspen Ski and Board、Utah Ski Gear、Cripple Creek Backcountry、Colorado Ski Shop、Neptune Mountaineering、Tahoe Mountain Sports、Jans、Campmor、Gorsuch、EMS |
-| 双板品牌官网（原价参考） | Black Crows、Armada、DPS、Moment、4FRNT、J Skis、Icelantic、Liberty、Black Diamond |
-| 服装 / 配件品牌官网 | Marmot、Spyder、Obermeyer、Volcom、Outdoor Research、Smartwool、Flylow、Stio、Strafe、Halfdays、Fera、686、Airblaster、Jones、Trew、Mons Royale、Minus33、Hot Chillys、Blackstrap、Ibex、Voormi、Duckworth、Aztech、Seirus、Swany、Gordini、Kombi、Give'r、Skida、Turtle Fur、Coal、Dakine、Stance、Darn Tough、Point6、Farm to Feet |
+| 大型零售商 | evo、REI、Christy Sports、Sports Basement、Peter Glenn、Sun & Ski Sports、SCHEELS、**Zappos**（只抓滑雪服装：有 The North Face、Columbia、Helly Hansen、Arc'teryx 这些官网抓不了的品牌） |
+| 专业雪具店 / 户外店 | Skis.com、Ski Essentials、The Ski Monster、Start Haus、Alpine Shop (VT)、Outdoor Gear Exchange、Ski Depot/RaceSkis、Aspen Ski and Board、Utah Ski Gear、Cripple Creek Backcountry、Colorado Ski Shop、Neptune Mountaineering、Tahoe Mountain Sports、Jans、Campmor、Gorsuch、EMS、Ski Barn、Ski Country Sports、Pro Ski Service、Alpenglow Sports、Next Adventure、Half-Moon Outfitters、Trail Creek Outfitters、Appalachian Outfitters |
+| 双板 / 硬货品牌官网 | Atomic、Faction、ON3P、Black Crows、Armada、DPS、Moment、4FRNT、J Skis、Icelantic、Liberty、Black Diamond、Scarpa、LEKI、Smith、Anon |
+| 服装 / 配件品牌官网 | Marmot、Spyder、Obermeyer、Volcom、Outdoor Research、Smartwool、Flylow、Stio、Strafe、Halfdays、Fera、686、Airblaster、Jones、Trew、Mons Royale、Minus33、Hot Chillys、Blackstrap、Ibex、Voormi、Duckworth、Aztech、Seirus、Swany、Gordini、Kombi、Give'r、Skida、Turtle Fur、Coal、Dakine、Stance、Darn Tough、Point6、Farm to Feet、Burton、Hestra、Icebreaker、Le Bent、POW、Sync、Krimson Klover、Autumn、Wigwam、Spacecraft |
+| 户外鞋品牌官网 | KEEN、Oboz、LOWA、La Sportiva（Scarpa、La Sportiva 用欧码，和美码报价不会自动对齐） |
 
 - 每家网站**每个分类去哪一页抓**写在 `config/categories.toml`；Shopify 店的配置用 `discover` 命令自动生成、再人工检查
 - **公开资料核查**：登记网站的身份与政策证据分项记录（总部、成立、经营、评论、退货/运费等，未核实项目保留未知；新增渠道先核实商家身份与域名），
@@ -168,7 +171,8 @@ python3 -m venv .venv
   **Buckman's**（和 Skis.com 同一家公司、同一套库存）、**Paragon**（商品数据不区分品类）、
   **Tactics**（2025 年在连续亏损后被出售，2026 年 4 家门店关了 3 家，近期投诉集中在订单被取消和退款被扣钱）
 - 抓不了的：**Backcountry / Steep & Cheap、Powder7、Amazon、Patagonia、The North Face、Columbia、Mountain Hardwear、Helly Hansen、Arc'teryx、Kjus、Sierra、Dick's、Nordstrom**（强反爬：验证码 / 挑战页，工具不绕过）；
-  **Atomic / Elan / Faction 官网**的公开数据是欧元基础价，**Orage、Picture** 是加元 / 欧元店，不代表美国售价；**Moosejaw** 已关闭——详情页提供一键搜索链接
+  **Merrell、Hoka、Saucony、Fjällräven、prAna、Ortovox、Oakley** 官网也有验证码 / 挑战页；**Elan** 官网只卖欧洲，**Orage、Norda、Picture、G3** 是加元 / 欧元店，不代表美国售价；**Moosejaw、Mountain Gear** 已关闭——详情页提供一键搜索链接（含 Steep & Cheap）
+- 能抓但需要专用抓取器、还没接入的：Rossignol / Dynastar-Lange、Giro、POC、Dynafit、K2 系（K2、Line、Völkl、Marker、Dalbello）、Topo Athletic、Danner、KÜHL、Running Warehouse、Bentgate、Skimo Co、BlueZone Sports、Mountain Shop
 - 完整名单和每家的核验结果见网页「网站可信度」页，配置在 `config/retailers.toml`
 
 **日本（自动）**：价格.com 汇总的乐天、Yahoo!购物等网店报价，按“品牌 + 型号 + 性别 + 是否含固定器 + 分类”自动匹配同款，打开型号详情时查询，缓存 3 天
@@ -180,7 +184,7 @@ python3 -m venv .venv
 礼貌、合规，宁可少抓也不给网站添麻烦：
 
 - 遵守每个网站的 `robots.txt`（支持通配符规则和 Crawl-delay）
-- 同一网站的请求串行、间隔 ≥ 1.5 秒；一次全品类更新约 2,500 个请求（69 家网站并行）
+- 同一网站的请求串行、间隔 ≥ 1.5 秒；一次全品类更新约 2,500 个请求（99 家网站并行）
 - 网页解析类网站只对打折商品抓详情页（取尺码库存），每类有页数上限
 - 不破解验证码、不登录任何账号；被反爬拦截就如实显示“被拦截”，不绕过
 - 只供个人使用：数据只存在你自己的电脑上，本仓库不包含、也不公开发布任何抓到的数据
@@ -343,7 +347,7 @@ ski-gear-helper/
 
 **Ski Gear Helper (滑雪装备小帮手)** is a self-hosted price comparison tool for ski gear that runs on your own computer. The UI is in Chinese.
 
-- **Skiing first: 73 configured US sources, 22 ski categories**, plus a separate outdoor section with five new apparel and footwear categories (partial coverage). Shared fleece and accessories retain the same price records. Adult and child products are separated using titles, sizes and structured metadata. Size-specific prices and purchase links stay aligned; unknown size prices are excluded from verified size comparisons.
+- **Skiing first: 99 enabled US sources, 22 ski categories**, plus a separate outdoor section with five new apparel and footwear categories (partial coverage). Shared fleece and accessories retain the same price records. Adult and child products are separated using titles, sizes and structured metadata. Size-specific prices and purchase links stay aligned; unknown size prices are excluded from verified size comparisons.
 - **Size-aware**: shows only offers that are in stock in your ski length / boot mondo / apparel size.
 - **Price history** to spot fake "sale" prices; flags all-time lows, fresh price drops and inflated "original" prices.
 - **Binding helper**: package vs. buying the skis and bindings separately; bindings whose brake width fits your ski's waist.

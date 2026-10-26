@@ -2,38 +2,60 @@
  "_note": "人工尽职调查（2026-09-26，由 AI 助手用公开网页检索整理，含来源链接；政策会变化，下单前以官网为准）；2026-09-29 补充 30 家服装/配件品牌官网与 Tactics、Marmot（同样用公开网页检索整理，含来源）",
  "retailers": {
   "scheels": {
-   "id": "scheels", "domain": "scheels.com", "checked_at": "2026-10-16",
+   "id": "scheels",
+   "domain": "scheels.com",
+   "checked_at": "2026-10-16",
    "physical_stores": "SCHEELS 官网提供实体门店目录及企业介绍，可逐店核对地址。",
    "verdict": "B",
    "verdict_reason": "在 scheels.com 核实公司介绍、门店入口及公开商品规格价格。仅接入正常可访问的商品页，不调用被 robots 禁止的 API/搜索/变体接口。当前为少量服装款型覆盖，不代表全站。未独立核查 BBB、Trustpilot 或经营财务。",
-   "sources": ["https://www.scheels.com/about", "https://www.scheels.com/stores", "https://www.scheels.com/p/19807751651/", "https://www.scheels.com/robots.txt"]
+   "sources": [
+    "https://www.scheels.com/about",
+    "https://www.scheels.com/stores",
+    "https://www.scheels.com/p/19807751651/",
+    "https://www.scheels.com/robots.txt"
+   ]
   },
   "halfmoon": {
-   "id": "halfmoon", "domain": "halfmoonoutfitters.com", "checked_at": "2026-10-16",
+   "id": "halfmoon",
+   "domain": "halfmoonoutfitters.com",
+   "checked_at": "2026-10-16",
    "hq": "Charleston, South Carolina, USA",
    "physical_stores": "Patagonia 官方门店目录列出 94 Folly Rd Blvd, Charleston, SC 29407，电话 (843) 556-6279，并链接到本店官网。",
    "authorized_dealer_evidence": "Patagonia 官方门店目录直接列出此店及官网域名。",
    "verdict": "B",
    "verdict_reason": "已用品牌官方门店目录核实实体地址及域名，并实测公开商品价格数据。此记录核实商家身份，不保证每单履约；退货、运费及促销限制需下单前核对。未独立核查 BBB、Trustpilot 或经营财务。",
-   "sources": ["https://stores.patagonia.com/shop/23/half-moon-outfitters", "https://www.halfmoonoutfitters.com/products/pat_ms_40275"]
+   "sources": [
+    "https://stores.patagonia.com/shop/23/half-moon-outfitters",
+    "https://www.halfmoonoutfitters.com/products/pat_ms_40275"
+   ]
   },
   "trailcreek": {
-   "id": "trailcreek", "domain": "trailcreekoutfitters.com", "checked_at": "2026-10-16",
+   "id": "trailcreek",
+   "domain": "trailcreekoutfitters.com",
+   "checked_at": "2026-10-16",
    "hq": "Glen Mills, Pennsylvania, USA",
    "physical_stores": "Patagonia 官方门店目录列出 487 Wilmington West Chester Pike, Glen Mills, PA 19342，电话 (610) 558-4006，并链接到本店官网。",
    "authorized_dealer_evidence": "Patagonia 官方门店目录直接列出此店及官网域名。",
    "verdict": "B",
    "verdict_reason": "已用品牌官方门店目录核实实体地址及域名，并实测公开商品价格数据。退货、运费及促销限制需下单前核对。未独立核查 BBB、Trustpilot 或经营财务。",
-   "sources": ["https://stores.patagonia.com/shop/10707/trail-creek-outfitters-glen-mills", "https://trailcreekoutfitters.com/products/mens-r1-air-jacket"]
+   "sources": [
+    "https://stores.patagonia.com/shop/10707/trail-creek-outfitters-glen-mills",
+    "https://trailcreekoutfitters.com/products/mens-r1-air-jacket"
+   ]
   },
   "appalachian": {
-   "id": "appalachian", "domain": "appalachianoutfitters.com", "checked_at": "2026-10-16",
+   "id": "appalachian",
+   "domain": "appalachianoutfitters.com",
+   "checked_at": "2026-10-16",
    "hq": "Peninsula, Ohio, USA",
    "physical_stores": "Patagonia 官方门店目录列出 60 Kendall Park Road, Peninsula, OH 44264，并链接到本店官网。",
    "authorized_dealer_evidence": "Patagonia 官方门店目录直接列出此店及官网域名。",
    "verdict": "B",
    "verdict_reason": "已用品牌官方门店目录核实实体地址及域名，并实测公开商品价格数据。退货、运费及促销限制需下单前核对。未独立核查 BBB、Trustpilot 或经营财务。",
-   "sources": ["https://stores.patagonia.com/shop/6/appalachian-outfitters", "https://www.appalachianoutfitters.com/products/patagonia-mens-r1-air-zip-neck-40246"]
+   "sources": [
+    "https://stores.patagonia.com/shop/6/appalachian-outfitters",
+    "https://www.appalachianoutfitters.com/products/patagonia-mens-r1-air-zip-neck-40246"
+   ]
   },
   "evo": {
    "id": "evo",
@@ -685,23 +707,22 @@
    ]
   },
   "atomic": {
+   "checked_at": "2026-10-25",
    "id": "atomic",
    "domain": "atomic.com",
-   "hq": "Altenmarkt im Pongau, Austria",
+   "hq": "Altenmarkt im Pongau, Austria (US ops/warehouse: Ogden, Utah)",
    "founded": "1955 by Alois Rohrmoser",
-   "ownership_notes": "Amer Sports since 1994.",
-   "physical_stores": "unknown (not checked)",
-   "bbb": "unknown (not checked)",
-   "trustpilot": "unknown (not checked)",
-   "complaints": "unknown (not checked)",
-   "authorized_dealer_evidence": "Official brand store – Wikipedia lists atomic.com; domain since 1994 via corporate registrar Nameshield.",
-   "returns": "unknown (not checked)",
-   "shipping": "unknown (not checked)",
-   "price_match": "unknown (not checked)",
+   "ownership_notes": "Amer Sports (NYSE: AS)",
+   "physical_stores": "No US stores; dealer network",
+   "complaints": "None notable found",
+   "authorized_dealer_evidence": "Official brand store",
+   "returns": "Free UPS returns within 30 days (US shipping page, per search snippet)",
+   "shipping": "Free UPS Ground (US only), $15 2-day, $25 next-day",
    "verdict": "brand",
-   "verdict_reason": "Official Atomic site (Amer Sports).",
+   "verdict_reason": "Official Amer Sports store with real US market (USD, ships from Utah); needs adapter currency override because meta.json says EUR",
    "sources": [
-    "https://en.wikipedia.org/wiki/Atomic_Skis"
+    "https://www.atomic.com/en-us/meta.json",
+    "https://www.atomic.com/en-us/shop/sports/essentials/bags.html"
    ]
   },
   "elan": {
@@ -748,25 +769,21 @@
    ]
   },
   "faction": {
+   "checked_at": "2026-10-25",
    "id": "faction",
    "domain": "factionskis.com",
-   "hq": "Verbier, Valais, Switzerland (The Faction Collective S.A.)",
+   "hq": "Verbier / Le Chable, Valais, Switzerland (The Faction Collective S.A.)",
    "founded": "2006 by Alex Hoye and Tony McWilliam",
-   "ownership_notes": "Private, investor-backed (raised CHF 8M and acquired United Shapes, per Venturelab); CEO Alex Hoye.",
-   "physical_stores": "unknown (not checked)",
-   "bbb": "unknown (not checked)",
-   "trustpilot": "unknown (not checked)",
-   "complaints": "unknown (not checked)",
-   "authorized_dealer_evidence": "Official brand store – site imprint page names The Faction Collective (per search result).",
-   "returns": "unknown (not checked)",
-   "shipping": "unknown (not checked)",
-   "price_match": "unknown (not checked)",
-   "verdict": "brand",
-   "verdict_reason": "Official Faction store.",
+   "ownership_notes": "Private",
+   "physical_stores": "None in US; dealers (evo etc.)",
+   "trustpilot": "Few reviews, mostly negative (warranty refusals, a cancelled international order)",
+   "complaints": "Warranty disputes",
+   "authorized_dealer_evidence": "Official brand store",
+   "verdict": "caution",
+   "verdict_reason": "Official brand store shipping to US in USD, but small negative review base and needs adapter currency fix",
    "sources": [
-    "https://en.wikipedia.org/wiki/The_Faction_Collective",
-    "https://factionskis.com/pages/imprint",
-    "https://www.venturelab.swiss/The-Faction-Collective-raised-CHF-8-million-to-fuel-RD-and-acquired-snowboard-brand-United-Shapes"
+    "https://uk.trustpilot.com/review/factionskis.com",
+    "https://factionskis.com/en-us/meta.json"
    ]
   },
   "black-crows": {
@@ -2086,6 +2103,433 @@
     "https://www.yahoo.com/news/articles/discount-shoe-retailer-zappos-permanently-090137776.html",
     "https://www.lanereport.com/177613/2024/11/zappos-footwear-e-tailer-re-opens-outlet-store-in-louisville/",
     "https://www.bloomberg.com/news/articles/2023-02-11/amazon-s-zappos-fires-20-of-workers-part-of-broader-job-cuts"
+   ]
+  },
+  "keen": {
+   "checked_at": "2026-10-25",
+   "id": "keen",
+   "domain": "keenfootwear.com",
+   "hq": "Portland, Oregon, US",
+   "founded": "2003",
+   "ownership_notes": "Privately held; US manufacturing consolidated in Shepherdsville, KY (2025)",
+   "physical_stores": "KEEN Garage flagship (Portland) plus wide wholesale distribution",
+   "authorized_dealer_evidence": "Official brand store",
+   "complaints": "None notable found; check-site 84 (trusted), median discount 40% flagged as end-of-season clearance",
+   "verdict": "brand",
+   "verdict_reason": "Official KEEN store, Shopify JSON open, strong hiking/trail range with explicit Width option",
+   "sources": [
+    "https://www.worldfootwear.com/news/keen-committed-to-not-raising-prices-in-2025-/10661.html",
+    "https://www.keenfootwear.com/meta.json"
+   ]
+  },
+  "oboz": {
+   "checked_at": "2026-10-25",
+   "id": "oboz",
+   "domain": "obozfootwear.com",
+   "hq": "212 S Wallace Ave, Bozeman, MT 59715",
+   "founded": "2007",
+   "ownership_notes": "Owned by KMD Brands (Kathmandu) since 2018; KMD strategic review ongoing in 2026, Oboz back to growth Q4 FY26",
+   "authorized_dealer_evidence": "Official brand store",
+   "complaints": "None found; check-site 100 (trusted)",
+   "verdict": "brand",
+   "verdict_reason": "Official store, pure hiking-footwear catalogue, explicit Width option",
+   "sources": [
+    "https://shop-eat-surf-outdoor.com/news/rip-curl-oboz-parent-kmd-brands-begins-strategic-review-after-recapitalization/619926/",
+    "https://shop-eat-surf-outdoor.com/?p=621360"
+   ]
+  },
+  "lowa": {
+   "checked_at": "2026-10-25",
+   "id": "lowa",
+   "domain": "us.lowa.com",
+   "hq": "Stamford, Connecticut, US (LOWA Boots LLC)",
+   "founded": "LOWA 1923 (Germany)",
+   "ownership_notes": "LOWA is part of Tecnica Group",
+   "authorized_dealer_evidence": "Official brand store (lowaboots.com redirects to us.lowa.com)",
+   "complaints": "None found; check-site 82 (trusted, shipping policy link not detected)",
+   "verdict": "brand",
+   "verdict_reason": "Official US store, Shopify JSON open, Width option",
+   "sources": [
+    "https://us.lowa.com/meta.json"
+   ]
+  },
+  "lasportiva": {
+   "checked_at": "2026-10-25",
+   "id": "lasportiva",
+   "domain": "lasportivausa.com",
+   "hq": "La Sportiva N.A. Inc., Boulder, Colorado, US",
+   "founded": "La Sportiva 1928 (Ziano di Fiemme, Italy); N.A. arm in Colorado since 1990",
+   "physical_stores": "Boulder (2100 Broadway, opened Jan 2024) and Salt Lake City",
+   "authorized_dealer_evidence": "Official brand store (About page, trade press)",
+   "complaints": "None found; automated check-site 30 is a false positive from the brand-in-domain rule",
+   "verdict": "brand",
+   "verdict_reason": "Official North American store; broad hiking/mountain-running/apparel range",
+   "sources": [
+    "https://www.lasportivausa.com/pages/about-us",
+    "https://bizwest.com/2024/01/16/la-sportiva-opens-first-u-s-retail-store-in-boulder/"
+   ]
+  },
+  "nextadventure": {
+   "checked_at": "2026-10-25",
+   "id": "nextadventure",
+   "domain": "nextadventure.net",
+   "hq": "426 SE Grand Ave, Portland, OR 97214",
+   "founded": "~1995 (30 years per 2025 coverage)",
+   "ownership_notes": "Announced closure 2025, sold to local investors Oct 2025, original owners returned June 2026",
+   "physical_stores": "Portland flagship (new, used/consignment, rentals)",
+   "complaints": "None found; check-site 90 (return/shipping links not detected)",
+   "verdict": "caution",
+   "verdict_reason": "Legit independent, but ownership churn and a small online outdoor assortment",
+   "sources": [
+    "https://sgbonline.com/exec-portlands-next-adventure-to-remain-open-under-former-owners/",
+    "https://www.kptv.com/2025/05/15/spirit-is-not-going-anywhere-portland-outdoor-store-closing-after-30-years",
+    "https://en.wikipedia.org/wiki/Next_Adventure"
+   ]
+  },
+  "anon": {
+   "checked_at": "2026-10-25",
+   "id": "anon",
+   "domain": "anonoptics.com",
+   "hq": "Burlington, Vermont, USA",
+   "founded": "anon optics launched by Burton in 2001",
+   "ownership_notes": "Brand of Burton Snowboards (privately held)",
+   "physical_stores": "None of its own; sold through Burton stores and dealers",
+   "complaints": "None notable found",
+   "authorized_dealer_evidence": "Official brand store",
+   "returns": "30 days, unused, original packaging; $9.95 deducted for prepaid FedEx label; no exchanges; no post-purchase price adjustments",
+   "shipping": "US domestic",
+   "price_match": "No (no price adjustments)",
+   "verdict": "brand",
+   "verdict_reason": "Official Burton-owned store, USD/US Shopify, crawlable, frequent sale pricing on goggles/helmets",
+   "sources": [
+    "https://www.anonoptics.com/policies/refund-policy",
+    "https://www.burton.com/ca/en/c/mens-anon-optics-goggles"
+   ]
+  },
+  "smith": {
+   "checked_at": "2026-10-25",
+   "id": "smith",
+   "domain": "smithoptics.com",
+   "hq": "Ketchum / Sun Valley, Idaho, USA",
+   "founded": "1965",
+   "ownership_notes": "Was in Vista Outdoor's Revelyst segment, which was sold to Strategic Value Partners (deal announced 2024). Smith's post-sale status was not separately verified",
+   "physical_stores": "No own stores; wide dealer network",
+   "complaints": "None notable found",
+   "authorized_dealer_evidence": "Official brand store",
+   "returns": "Via smithoptics.com returns center (policy text not machine-readable)",
+   "verdict": "brand",
+   "verdict_reason": "Official store, USD/US Shopify, crawlable, regular past-season discounts",
+   "sources": [
+    "https://www.businesswire.com/news/home/20240710753238/en",
+    "https://www.smithoptics.com/policies/refund-policy"
+   ]
+  },
+  "on3p": {
+   "checked_at": "2026-10-25",
+   "id": "on3p",
+   "domain": "on3pskis.com",
+   "hq": "Portland, Oregon, USA",
+   "founded": "2008",
+   "ownership_notes": "Independent, founder-run",
+   "physical_stores": "Factory/showroom in Portland; phone (503) 206-5909",
+   "complaints": "None notable found",
+   "authorized_dealer_evidence": "Official brand store (skis also sold via evo)",
+   "verdict": "brand",
+   "verdict_reason": "Official maker store, USD/US Shopify, crawlable",
+   "sources": [
+    "https://www.freeskier.com/on3p-goes-home-for-third-in-house-movie-on3p-3",
+    "https://www.evo.com/skis/on3p-jeffrey-112-wild-lion"
+   ]
+  },
+  "scarpa": {
+   "checked_at": "2026-10-25",
+   "id": "scarpa",
+   "domain": "us.scarpa.com",
+   "hq": "Boulder, Colorado, USA (SCARPA North America); parent Calzaturificio SCARPA, Asolo, Italy",
+   "founded": "1938 (SCARPA Italy)",
+   "ownership_notes": "Official North American subsidiary of SCARPA S.p.A.",
+   "physical_stores": "No retail stores; Boulder office pickup discontinued",
+   "complaints": "None notable found",
+   "authorized_dealer_evidence": "Official brand store",
+   "returns": "30 days, new/unused, items bought direct; prepaid label in lower 48 with $8 restocking fee",
+   "shipping": "Free ground over $99 to lower 48",
+   "verdict": "brand",
+   "verdict_reason": "Official US subsidiary store, USD, crawlable; also covers hiking/trail shoes",
+   "sources": [
+    "https://us.scarpa.com/policies/refund-policy",
+    "https://us.scarpa.com/community/support/returns"
+   ]
+  },
+  "leki": {
+   "checked_at": "2026-10-25",
+   "id": "leki",
+   "domain": "lekiusa.com",
+   "hq": "Cheektowaga (Buffalo), New York, USA; parent LEKI Lenhart GmbH, Germany",
+   "founded": "1948 (LEKI Germany)",
+   "ownership_notes": "US subsidiary of family-owned LEKI Lenhart GmbH",
+   "physical_stores": "None; dealer network",
+   "trustpilot": "leki.com page has mixed reviews (warranty/parts response complaints)",
+   "complaints": "Some slow warranty/parts responses reported",
+   "authorized_dealer_evidence": "leki.com US locale redirects to lekiusa.com (official)",
+   "returns": "30 days, unused, RMA required, customer pays return shipping, original shipping not refunded",
+   "verdict": "brand",
+   "verdict_reason": "Official US subsidiary store; automated trust flag is a false positive",
+   "sources": [
+    "https://lekiusa.com/policies/refund-policy",
+    "https://at.trustpilot.com/review/leki.com"
+   ]
+  },
+  "proskiservice": {
+   "checked_at": "2026-10-25",
+   "id": "proskiservice",
+   "domain": "proskiservice.com",
+   "hq": "North Bend, WA",
+   "founded": "1990s (Seattle); North Bend since ~2000",
+   "ownership_notes": "Independent; owner Martin Volken (Swiss-born guide, author of backcountry ski books)",
+   "physical_stores": "1 shop in North Bend, WA (expanded storefront, adjacent cafe)",
+   "complaints": "None found",
+   "authorized_dealer_evidence": "Dynafit Competence Center; current Blizzard/Volkl/Atomic/Salomon lines",
+   "returns": "Return, shipping, privacy and terms pages present (check-site)",
+   "verdict": "B",
+   "verdict_reason": "Long-running, well-reviewed specialty shop; Blister top North Bend shop 2022",
+   "sources": [
+    "https://blisterreview.com/gear-reviews/pro-ski-mountain-service-2",
+    "https://www.valleyrecord.com/?p=13559"
+   ]
+  },
+  "skicountrysports": {
+   "checked_at": "2026-10-25",
+   "id": "skicountrysports",
+   "domain": "skicountrysports.com",
+   "hq": "Banner Elk, NC",
+   "founded": "1983",
+   "ownership_notes": "Independent regional chain (NC High Country)",
+   "physical_stores": "Banner Elk (main, across from Sugar Mountain), Boone (1st Tracks), Charlotte, Asheville",
+   "complaints": "None found",
+   "authorized_dealer_evidence": "Full current lines from Atomic, Rossignol, Salomon, Nordica, Oakley, Smith; brick-and-mortar ski shop since 1983",
+   "returns": "Return, shipping and privacy pages present (check-site); phone 1-800-528-3874",
+   "verdict": "B",
+   "verdict_reason": "40+ year regional ski chain, deep catalog, clean trust check (95)",
+   "sources": [
+    "https://skisoutheast.com/one-stop-winter-shop-ski-country-sports",
+    "https://business.averycounty.com/list/member/ski-country-sports-1123"
+   ]
+  },
+  "skibarn": {
+   "checked_at": "2026-10-25",
+   "id": "skibarn",
+   "domain": "skibarn.com",
+   "hq": "846 Route 17 North, Paramus, NJ 07652",
+   "founded": "1971",
+   "ownership_notes": "Family-owned (Fallon family, 2nd/3rd generation); SMC buying-group member",
+   "physical_stores": "Paramus, Wayne, Lawrenceville, Shrewsbury (NJ)",
+   "complaints": "None found",
+   "authorized_dealer_evidence": "Current 2027 Armada/Atomic/Look lines; 50+ year brick-and-mortar ski dealer",
+   "returns": "Return, shipping, privacy, terms pages present (check-site)",
+   "verdict": "B",
+   "verdict_reason": "Long-running family ski chain, trust check 100",
+   "sources": [
+    "https://skibarn.com/pages/about-us",
+    "https://www.skiinghistory.org/lives/richard-and-carol-fallon",
+    "https://sgbonline.com/ski-barn-joins-smc/"
+   ]
+  },
+  "alpenglow": {
+   "checked_at": "2026-10-25",
+   "id": "alpenglow",
+   "domain": "alpenglowsports.com",
+   "hq": "415 N. Lake Blvd, Tahoe City, CA 96145",
+   "founded": "1979",
+   "ownership_notes": "Founded by Don Fyfe; bought by long-time employee Brendan Madigan 2011/2012; independent",
+   "physical_stores": "1 store, Tahoe City, CA",
+   "complaints": "None found",
+   "authorized_dealer_evidence": "Long-standing backcountry specialty dealer (4FRNT, DPS, ATK, Black Diamond lines); Blister featured shop",
+   "returns": "Return and shipping pages present (check-site)",
+   "verdict": "B",
+   "verdict_reason": "45+ year independent shop, trust check 100",
+   "sources": [
+    "https://blisterreview.com/blister-shops/alpenglow-sports",
+    "https://www.formula4media.com/articles/a-mountain-shop-with-heart",
+    "https://earnyourturns.com/7828/alpenglow-sports-under-new-ownership/"
+   ]
+  },
+  "burton": {
+   "checked_at": "2026-10-25",
+   "id": "burton",
+   "domain": "burton.com",
+   "hq": "Burlington, Vermont, USA",
+   "founded": "1977 (Jake Burton Carpenter, Londonderry VT)",
+   "ownership_notes": "Privately held; owned by Donna Carpenter since Jake Burton Carpenter's death in 2019. Owns Anon.",
+   "physical_stores": "Burton flagship stores in the US (e.g. Burlington, NYC, Denver) and abroad",
+   "complaints": "None material found",
+   "authorized_dealer_evidence": "Official brand store",
+   "returns": "Policy pages present (check-site found returns/shipping/privacy/terms)",
+   "shipping": "US shipping policy page present",
+   "verdict": "brand",
+   "verdict_reason": "Iconic snowboard/snow-apparel brand, 49 years old, US Shopify store in USD, check-site 95.",
+   "sources": [
+    "https://en.wikipedia.org/wiki/Burton_Snowboards",
+    "https://www.burton.com/ch/en/content/about-us.html",
+    "https://vtdigger.org/2019/11/21/jake-burton-carpenter-godfather-of-snowboarding-dies-at-65/"
+   ]
+  },
+  "lebent": {
+   "checked_at": "2026-10-25",
+   "id": "lebent",
+   "domain": "lebent.com",
+   "hq": "Mona Vale NSW, Australia (US arm: Park City, Utah)",
+   "founded": "2012",
+   "ownership_notes": "Independent; CB Insights lists Point King Capital as investor.",
+   "physical_stores": "None (sold via REI, evo etc.)",
+   "authorized_dealer_evidence": "Official brand store (Le Bent USA)",
+   "returns": "Returns policy page present",
+   "shipping": "Shipping policy page present",
+   "verdict": "brand",
+   "verdict_reason": "Established snow-sock brand carried by REI; US Shopify store in USD.",
+   "sources": [
+    "https://www.snowsports.org/australias-le-bent-announces-new-u-s-sales-pr-partners",
+    "https://www.cbinsights.com/company/le-bent/financials"
+   ]
+  },
+  "icebreaker": {
+   "checked_at": "2026-10-25",
+   "id": "icebreaker",
+   "domain": "icebreaker.com",
+   "hq": "Auckland, New Zealand (NA ops under VF Corp, Denver CO)",
+   "founded": "1995",
+   "ownership_notes": "Acquired by VF Corporation in 2018 (~NZ$288M); no 2025-26 divestiture found in VF filings/news.",
+   "physical_stores": "Some brand stores internationally; widely sold at REI etc.",
+   "authorized_dealer_evidence": "Official brand store",
+   "returns": "Returns policy page present",
+   "shipping": "Shipping policy page present",
+   "verdict": "brand",
+   "verdict_reason": "Major merino brand of VF Corp; US/NA Shopify store in USD.",
+   "sources": [
+    "https://vfc.com/investors/news-events-presentations/press-releases/detail/1636/vf-corporation-announces-definitive-agreement-to-acquire",
+    "https://www.newstalkzb.co.nz/news/business/icebreaker-sold-for-288-million/"
+   ]
+  },
+  "powgloves": {
+   "checked_at": "2026-10-25",
+   "id": "powgloves",
+   "domain": "powgloves.com",
+   "hq": "Glacier / Seattle, Washington, USA",
+   "founded": "2002 (Dustin Goss)",
+   "ownership_notes": "POW Inc. (also Holden, Spacecraft); $2.5M from Columbia Pacific Advisors 2014; PitchBook lists acquired by Rojo Australia (unverified).",
+   "physical_stores": "None; wholesale in 30+ countries",
+   "authorized_dealer_evidence": "Official brand store",
+   "returns": "Returns policy page present",
+   "shipping": "Shipping policy page present",
+   "verdict": "brand",
+   "verdict_reason": "Long-running specialist snow-glove brand, GORE-TEX licensee; US Shopify in USD.",
+   "sources": [
+    "https://www.freeskier.com/pow-gloves-is-giving-you-the-upper-hand-in-the-great-outdoors",
+    "https://shop-eat-surf-outdoor.com/?p=27214",
+    "https://pitchbook.com/profiles/company/97739-47"
+   ]
+  },
+  "syncperformance": {
+   "checked_at": "2026-10-25",
+   "id": "syncperformance",
+   "domain": "syncperformance.com",
+   "hq": "Vail Valley (Avon), Colorado, USA",
+   "founded": "2014 (Geof Ochs and other former racers)",
+   "ownership_notes": "Independent; 'wholly owned by a group of investors' per company page.",
+   "physical_stores": "None",
+   "authorized_dealer_evidence": "Official brand store",
+   "returns": "Returns policy page present",
+   "shipping": "Shipping policy page present",
+   "verdict": "brand",
+   "verdict_reason": "Niche but established US ski-racing apparel brand (ColoradoBiz coverage); USD Shopify.",
+   "sources": [
+    "https://www.syncperformance.com/pages/the-origin-story",
+    "https://coloradobiz.com/vail-based-sync-performance-makes-innovative-ski-apparel/"
+   ]
+  },
+  "krimsonklover": {
+   "checked_at": "2026-10-25",
+   "id": "krimsonklover",
+   "domain": "krimsonklover.com",
+   "hq": "Boulder, Colorado, USA",
+   "founded": "2009/2010 (Rhonda Swenson)",
+   "ownership_notes": "Independent, founder-led.",
+   "physical_stores": "None; wholesale to ski shops",
+   "authorized_dealer_evidence": "Official brand store",
+   "returns": "Returns policy present (no shipping-policy link found by check-site)",
+   "verdict": "brand",
+   "verdict_reason": "Long-standing women's ski-sweater brand with SIA/SGB press; USD Shopify.",
+   "sources": [
+    "https://sgbonline.com/pressrelease/krimson-klover-presents-winter-collection-for-2024-season/",
+    "https://www.snowsports.org/krimson-klover-promotes-victoire-dumont-to-vp-of-sales/"
+   ]
+  },
+  "autumn": {
+   "checked_at": "2026-10-25",
+   "id": "autumn",
+   "domain": "autumnmtnwear.com",
+   "hq": "Salt Lake City, Utah, USA",
+   "founded": "Autumn Headwear (snow-headwear brand, long-running); autumnMTN outerwear launched ~2020",
+   "ownership_notes": "Independent",
+   "physical_stores": "None; sold by Backcountry, Milosport, Salty Peaks",
+   "authorized_dealer_evidence": "Official brand store",
+   "returns": "Returns policy page present",
+   "shipping": "Shipping policy page present",
+   "verdict": "brand",
+   "verdict_reason": "Real snow brand carried by major specialty retailers; USD Shopify. Young domain (2020) only because of rebrand.",
+   "sources": [
+    "https://slushthemagazine.com/blogs/features/autumn-headwear-mtn-collection-live",
+    "https://www.milosport.com/products/autumn-camber-snow-jacket-2026",
+    "https://www.backcountry.com/autumn-crest-3l-jacket-mens"
+   ]
+  },
+  "wigwam": {
+   "checked_at": "2026-10-25",
+   "id": "wigwam",
+   "domain": "wigwam.com",
+   "hq": "Sheboygan, Wisconsin, USA",
+   "founded": "1905 (as Hand Knit Hosiery Co.)",
+   "ownership_notes": "Family-owned (Chesebro family, 4th generation); made in USA.",
+   "physical_stores": "Factory in Sheboygan",
+   "authorized_dealer_evidence": "Official brand store",
+   "returns": "Returns policy page present",
+   "shipping": "Shipping policy page present",
+   "verdict": "brand",
+   "verdict_reason": "120-year-old US sock maker; small but legit ski-sock range.",
+   "sources": [
+    "https://en.wikipedia.org/wiki/Wigwam_Mills",
+    "https://www.wigwam.com/pages/our-story"
+   ]
+  },
+  "spacecraft": {
+   "checked_at": "2026-10-25",
+   "id": "spacecraft",
+   "domain": "spacecraftcollective.com",
+   "hq": "Seattle, Washington, USA",
+   "ownership_notes": "POW Inc. (sister brand of POW Gloves and Holden)",
+   "authorized_dealer_evidence": "Official brand store",
+   "verdict": "brand",
+   "verdict_reason": "Small snow-headwear brand under POW Inc.; USD Shopify. Low priority.",
+   "sources": [
+    "https://shop-eat-surf-outdoor.com/?p=27214"
+   ]
+  },
+  "hestra": {
+   "checked_at": "2026-10-25",
+   "id": "hestra",
+   "domain": "hestragloves.us",
+   "hq": "Hestra, Sweden (US subsidiary Hestra Gloves LLC, Arvada, Colorado)",
+   "founded": "1936",
+   "ownership_notes": "Family-owned (Magnusson family, 3rd/4th generation), Martin Magnusson & Co AB.",
+   "physical_stores": "None in US",
+   "authorized_dealer_evidence": "Official brand store (US subsidiary)",
+   "shipping": "Free FedEx 2-day over $125 (site banner)",
+   "returns": "Returns policy page present",
+   "verdict": "brand",
+   "verdict_reason": "Premier ski-glove brand; legit US store. Needs currency override in adapter before enabling.",
+   "sources": [
+    "https://en.wikipedia.org/wiki/Hestra",
+    "https://www.hestragloves.us/about-hestra",
+    "https://www.trailspace.com/gear/hestra"
    ]
   }
  }

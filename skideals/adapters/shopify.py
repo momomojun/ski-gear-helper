@@ -117,7 +117,9 @@ class ShopifyAdapter(Adapter):
 
     def fetch(self) -> Iterator[RawProduct]:
         self.store_meta = self._meta()
-        currency = self.store_meta.get("currency") or self.cfg.get("currency", "USD")
+        # currency_override：欧洲品牌的一个 Shopify 店挂多个地区（atomic.com/en-us），/en-us 下的商品价格已经是美元，
+        # 但 meta.json 仍然报店铺本币 EUR——这时以配置为准，否则美元价会被当成欧元换算
+        currency = self.cfg.get("currency_override") or self.store_meta.get("currency") or self.cfg.get("currency", "USD")
         if currency != self.cfg.get("currency", "USD"):
             self.log(f"[{self.rid}] 注意：店铺币种是 {currency}，配置写的是 {self.cfg.get('currency')}")
 

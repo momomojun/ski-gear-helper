@@ -104,8 +104,9 @@ def test_outdoor_mixed_pages_drop_only_unproven_products():
     proven = [assign("trail_shoe", "Merrell Hiking Shoes")] * 5
     unknown = assign("trail_shoe", "Unnamed 7")
     assert unknown == ("trail_shoe", "page")
+    # 越野跑鞋页里挂着徒步鞋（KEEN 两边都挂）不算混装：没证据的仍是鞋，留在本页分类，不丢掉
     categories, mixed = decide_batch("trail_shoe", proven + [unknown])
-    assert mixed and categories == ["hiking_shoe"] * 5 + [None]
+    assert not mixed and categories == ["hiking_shoe"] * 5 + ["trail_shoe"]
     rejected = [assign("trail_shoe", "Casual Sneakers")] * 5
     assert decide_batch("trail_shoe", rejected + [unknown]) == ([None] * 6, True)
     assert decide_batch("trail_shoe", [assign("trail_shoe", "Trail Shoes"), unknown])[1] is False
