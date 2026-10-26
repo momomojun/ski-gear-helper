@@ -171,8 +171,9 @@ _COMPATIBLE = {
 
 def classify(title: str, product_type: str | None = None) -> str | None:
     """只凭强关键词判断分类；判断不了返回 None。"""
-    text = f"{title} | {product_type or ''}"
-    if re.search(r"binding not included|\bw/o bindings?\b|without bindings?|\bski only\b", text, re.I) and \
+    # W/O = without："Marker Alpinist 8 W/O Brake Bindings" 是固定器，不是“带固定器的雪板套装”（w/ 会被当成 with）
+    text = re.sub(r"\bw/o\b", "without", f"{title} | {product_type or ''}", flags=re.I)
+    if re.search(r"binding not included|without bindings?|\bski only\b", text, re.I) and \
             re.search(r"\bskis?\b", text, re.I):
         return "ski"   # “Fischer RC4 … (SKI ONLY - BINDING NOT INCLUDED)” 是板身
     # 套装标题里不会出现衣服：“Fire + Ice Saelly2 Insulated Ski Jacket”（品牌名 Bogner Fire + Ice）不是套装
@@ -217,7 +218,7 @@ def _outdoor_classify(text: str, explicit_only: bool = False) -> str | None:
     return None
 
 
-_OTHER_SHOE = re.compile(r"\b(?:road[- ]running|road[- ]shoes?|sneakers?|trainers?|casual shoes?|"
+_OTHER_SHOE = re.compile(r"\b(?:road[- ]running|road[- ]shoes?|sneakers?|(?<!trail )trainers?|casual shoes?|"
                          r"running shoes?|running footwear|winter boots?|snow boots?|mountaineering boots?)\b|"
                          r"公路跑鞋|运动休闲鞋", re.I)
 _SHOE_PART = re.compile(r"\b(?:shoe|boot|hiking|trail)\b.*\b(?:accessor(?:y|ies)|laces?|insoles?|footbeds?|"
@@ -306,7 +307,7 @@ _ACCESSORY_OVERRIDE = re.compile(
 # 电池 / 充电器 / 线缆：只有标题里没有“正经商品”（衣服、手套、袜子、头盔、固定器…）时才算配件——
 # “Obermeyer Charger Jacket”“Dakine Charger Helmet”是产品线名，“Heated Socks + Batteries”是袜子
 _POWER_PART = re.compile(r"\bbatter(?:y|ies)\b|\b(?:re)?chargers?\b|\bcables?\b|\bcords?\b", re.I)
-_PRODUCT_NOUN = re.compile(r"\b(?:jackets?|parkas?|anoraks?|pants|bibs?|vests?|hoodies?|pullovers?|shirts?|tops?|sweaters?|"
+_PRODUCT_NOUN = re.compile(r"\b(?:jackets?|parkas?|anoraks?|pants?|wide-leg|bibs?|vests?|hoodies?|pullovers?|shirts?|tops?|sweaters?|"
                            r"fleece|base ?layers?|crews?|tees?|t-shirts?|henleys?|zips?|bottoms?|leggings?|tights?|jerseys?|"
                            r"suits?|gloves?|mitts?|mittens?|liners?|socks?|helmets?|mips|beanies?|hats?|"
                            r"bindings?|boots?)\b", re.I)
@@ -453,7 +454,9 @@ def _meta_vote(source: str, product_type: str | None, tags: list[str] | None) ->
         if re.search(r"accessor", product_type, re.I):   # "Ski Boot Accessories" 是配件，不是雪鞋；单独的 "Accessories" 太泛
             add("accessory" if len(product_type.split()) > 1 else None, 3)
         else:
-            add(_term(product_type) or (classify(product_type) if len(product_type.split()) <= 4 else None), 3)
+            # "Skis & Snowboard equipment"（Rossignol 全部硬货都标这个）是部门名，不是“双板”
+            dept = re.search(r"\bequipment\b|&|\band\b", product_type, re.I)
+            add(_term(product_type) or (classify(product_type) if len(product_type.split()) <= 4 and not dept else None), 3)
     for tag in tags or []:
         tag = str(tag)
         if len(tag) > 80:
@@ -494,7 +497,7 @@ def assign(source: str, title: str, product_type: str | None = None, tags: list[
            lengths: list[int] | None = None, vendor: str | None = None) -> tuple[str | None, str]:
     """从“source 分类页”抓到的商品最终属于哪个分类。返回 (分类, 依据)；分类为 None 表示不要。
     依据：not-ours / xc / part / brand / title / meta / option / url / length / page（没有证据，相信分类页）。"""
-    t = title or ""
+    t = re.sub(r"(?i)\bski(boots?|poles?|bags?)\b", r"ski \1", title or "")   # Rossignol 写 "Skiboots"
     if source in OUTDOOR:
         # 户外店常把配色写在 " | " 后面（KEEN "Targhee III Waterproof | Bungee Cord/Black"）：
         # 配色名里的 Cord / Wax 不能让鞋变成配件、打蜡用品
@@ -535,7 +538,8 @@ def assign(source: str, title: str, product_type: str | None = None, tags: list[
             re.search(r"\b(?:nano[- ]puff|r1[^a-z0-9]*\s*air)\b", t, re.I) and
             found in (None, "jacket", "midlayer")):
         return "midlayer", "title"
-    if re.search(r"\b(?:road[- ]running|road[- ]shoes?|sneakers?|trainers?|casual shoes?)\b", t, re.I):
+    # Danner 的 "Trail Trainer" 是徒步鞋，不是公路训练鞋
+    if re.search(r"\b(?:road[- ]running|road[- ]shoes?|sneakers?|(?<!trail )trainers?|casual shoes?)\b", t, re.I):
         return None, "not-ours"
     # 滑雪分类页里的商品只有标题明确（雨衣、徒步裤、防晒帽衫、徒步鞋）才挪去户外；单独的 shirt/tee、网站标签都不算
     outdoor = _outdoor_pick(source, t, product_type, tags)

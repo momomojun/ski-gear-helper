@@ -3762,3 +3762,352 @@ collections = ["ski-gloves", "kids-ski-snowboard-gloves", "liners"]
 "mens-ski-gloves" = { gender = "men" }
 "womens-ski-gloves" = { gender = "women" }
 "kids-ski-snowboard-gloves" = { gender = "kids" }
+
+# ---- 2026-10-25 新增 / 补充分类
+
+[skirack.ski]
+enabled = false          # no clean ski-only collection; alpine skis live in the mixed "alpine-ski"
+
+[skirack.boot]
+collections = ["alpine-boots"]
+
+[skirack.baselayer]
+collections = ["baselayers"]
+
+# skirack 的 alpine-ski 是混装页（双板+雪鞋+服装+工具），不接入：没写 ski 的双板会被当成配件
+
+# ---- 2026-10-26 新增 / 补充分类
+
+[runningwarehouse.ski]
+enabled = false
+
+# Running Warehouse：列表页一页就是全部（男 306 / 女 274 个颜色卡片，中性款两边都有）；尺码只在商品页，
+# max_detail_pages 控制每次抓多少个商品页（打折幅度大的优先），其余商品只有价格、没有尺码。
+# 网站没有单独的徒步鞋 / 户外服装列表（导航只有 Trail Running / Walking），所以只配越野跑鞋。
+[runningwarehouse.trail_shoe]
+pages = [{ path = "/trailshoesmen.html", gender = "men" }, { path = "/trailshoeswomen.html", gender = "women" }]
+max_detail_pages = 80
+
+[topo.ski]
+enabled = false
+
+# Topo：接口按 custitem_collection / custitem_bestfor_activity 本地筛选（/activity/ 筛选页 robots 禁止）。
+# 网站没写尺码码制；确认要当 US 处理时加 shoe_size_system = "US"。
+[topo.trail_shoe]
+shoe_size_system = "US"   # 美国品牌官网，尺码就是美码（网站没明写）
+pages = [{ path = "/men/mens-shoes", gender = "men" }, { path = "/women/womens-shoes", gender = "women" }]
+collections = ["Trail"]
+activities = ["Trail Running"]
+
+[topo.hiking_shoe]
+shoe_size_system = "US"   # 美国品牌官网，尺码就是美码（网站没明写）
+pages = [{ path = "/men/mens-shoes", gender = "men" }, { path = "/women/womens-shoes", gender = "women" }]
+collections = ["Trail"]
+activities = ["Hiking"]
+exclude_activities = ["Trail Running"]
+
+[danner.ski]
+enabled = false
+
+# Danner：Hike 分类里混有打猎款（Mossy Oak 等迷彩），用 exclude_title 去掉。网站没写 US，同 Topo。
+[danner.hiking_shoe]
+shoe_size_system = "US"   # 美国品牌官网，尺码就是美码（网站没明写）
+pages = [{ category_id = 498, gender = "men", name = "men/hike" }, { category_id = 509, gender = "women", name = "women/hike" }]
+exclude_title = "Mossy Oak|Realtree|Kryptek|Optifade"
+
+# ---- 2026-10-26 新增 / 补充分类
+
+[bentgate.ski]
+pages = [{ path = "/snowsports/skiing/skis" }, { path = "/clearance/demo-ski-gear", condition = "used" }]
+max_detail_pages = 70
+
+[bentgate.binding]
+pages = ["/snowsports/skiing/alpine-touring-bindings", "/snowsports/skiing/alpine-bindings", "/snowsports/skiing/telemark-bindings"]
+max_detail_pages = 40
+
+[bentgate.boot]
+pages = [{ path = "/snowsports/skiing/mens-alpine-touring-boots", gender = "men" },
+         { path = "/snowsports/skiing/womens-alpine-touring-boots", gender = "women" },
+         { path = "/snowsports/skiing/telemark-boots" }]
+max_detail_pages = 70
+
+[bentgate.skin]
+pages = ["/snowsports/skiing/skins"]
+max_detail_pages = 15
+
+[bentgate.pole]
+pages = ["/snowsports/ski-poles"]
+max_detail_pages = 15
+
+[bentgate.helmet]
+pages = ["/snowsports/snow-helmets"]
+max_detail_pages = 10
+
+[bentgate.goggle]
+pages = ["/snowsports/goggles"]
+
+[bentgate.avalanche]
+pages = ["/snowsports/avy-gear"]
+
+[bentgate.backpack]
+pages = ["/snowsports/snow-packs"]
+
+[bentgate.tuning]
+pages = ["/snowsports/tuning-equipment"]
+
+# ---------------------------------------------------------------- Wasatch Touring（Lightspeed）
+
+[wasatchtouring.ski]
+pages = [{ path = "/ski/skis/touring" }, { path = "/sale/demo-sale", condition = "demo" }]
+max_detail_pages = 20
+
+[wasatchtouring.boot]
+pages = ["/ski/boots/touring"]
+max_detail_pages = 25
+
+[wasatchtouring.binding]
+pages = ["/ski/bindings"]
+max_detail_pages = 10
+
+[wasatchtouring.avalanche]
+pages = ["/ski/avalanche-safety"]
+
+# ---------------------------------------------------------------- Mountain Shop（WooCommerce Store API）
+
+[mountainshop.ski]
+pages = [{ category = "skis" }, { category = "skis-backcountry" }]
+[mountainshop.ski.hints]
+"mens-skis" = { gender = "men" }
+"womens-skis" = { gender = "women" }
+"junior-skis" = { gender = "kids" }
+
+[mountainshop.binding]
+pages = [{ category = "bindings" }, { category = "bindings-backcountry" }]
+[mountainshop.binding.hints]
+"junior-bindings" = { gender = "kids" }
+
+[mountainshop.boot]
+pages = [{ category = "boots" }, { category = "boots-backcountry" }]
+[mountainshop.boot.hints]
+"mens-boots" = { gender = "men" }
+"womens-boots" = { gender = "women" }
+"junior-boots" = { gender = "kids" }
+"mens-at-boots" = { gender = "men" }
+"womens-at-boots" = { gender = "women" }
+
+[mountainshop.pole]
+pages = [{ category = "poles" }, { category = "poles-backcountry" }]
+[mountainshop.pole.hints]
+"junior-poles" = { gender = "kids" }
+
+[mountainshop.helmet]
+pages = [{ category = "helmets" }]
+
+[mountainshop.goggle]
+pages = [{ category = "goggles" }]
+
+[mountainshop.baselayer]
+pages = [{ category = "baselayers-mens-clothing", gender = "men" }, { category = "baselayers-womens-clothing", gender = "women" }]
+
+[mountainshop.glove]
+pages = [{ category = "gloves-mittens" }]
+[mountainshop.glove.hints]
+"junior-gloves-mittens" = { gender = "kids" }
+
+[mountainshop.avalanche]
+pages = [{ category = "avalanche-safety" }]
+
+[mountainshop.skin]
+pages = [{ category = "skins" }]
+
+[mountainshop.backpack]
+pages = [{ category = "ski-packs" }]
+
+[mountainshop.hiking_shoe]
+pages = [{ category = "hiking-boots" }, { category = "hiking-shoes" }]
+
+# ---- 2026-10-26 新增 / 补充分类
+
+[skimo.ski]
+pages = [{ path = "/skis" }]
+details = true
+detail_limit = 250
+
+[skimo.boot]
+pages = [{ path = "/race-boots" }, { path = "/alpine-touring-boots" }, { path = "/freeride-boots" }]
+details = true
+detail_limit = 150
+
+[skimo.binding]
+pages = [{ path = "/bindings" }]
+
+[skimo.skin]
+pages = [{ path = "/skins" }]
+
+[skimo.avalanche]
+pages = [{ path = "/avalanche-safety" }]
+
+[skimo.helmet]
+pages = [{ path = "/helmets" }]
+
+[skimo.jacket]
+pages = [{ path = "/jackets", gender = "men" }, { path = "/womens-jackets", gender = "women" }]
+
+[skimo.pants]
+pages = [{ path = "/pants", gender = "men" }, { path = "/womens-pants", gender = "women" }]
+
+[skimo.suit]
+pages = [{ path = "/race-suits", gender = "men" }, { path = "/womens-suits", gender = "women" }]
+
+[skimo.pole]
+pages = [{ path = "/poles" }]
+
+[skimo.backpack]
+pages = [{ path = "/backpacks" }]
+
+[skimo.goggle]
+pages = [{ path = "/goggles" }]
+
+[skimo.glove]
+pages = [{ path = "/gloves" }]
+
+[skimo.hat]
+pages = [{ path = "/hats" }]
+
+[skimo.sock]
+pages = [{ path = "/socks" }]
+
+# ============================================================================ KÜHL（skideals/adapters/kuhl.py）
+# 一页就是整个分类；details = true 会逐个抓商品页（约 600 KB / 个）拿尺码和促销价，默认关闭。
+
+[kuhl.ski]
+enabled = false
+
+[kuhl.outdoor_pants]
+trust_page = true   # 品牌自己整理的分类页：标题多是 "Driftr Long Sleeve" 这种没有品类词的，不当混装页丢掉
+pages = [{ path = "/kuhl/mens/pants/", gender = "men" }, { path = "/kuhl/womens/pants/", gender = "women" }]
+
+[kuhl.outdoor_jacket]
+trust_page = true   # 品牌自己整理的分类页：标题多是 "Driftr Long Sleeve" 这种没有品类词的，不当混装页丢掉
+pages = [{ path = "/kuhl/mens/outerwear/", gender = "men" }, { path = "/kuhl/womens/outerwear/", gender = "women" }]
+
+[kuhl.outdoor_top]
+trust_page = true   # 品牌自己整理的分类页：标题多是 "Driftr Long Sleeve" 这种没有品类词的，不当混装页丢掉
+pages = [{ path = "/kuhl/mens/tops/", gender = "men" }, { path = "/kuhl/womens/tops/", gender = "women" }]
+
+# ============================================================================ POC（skideals/adapters/poc.py）
+
+[poc.ski]
+enabled = false
+
+[poc.helmet]
+pages = [{ path = "/categories/snow/all-mountain/helmets" }, { path = "/categories/snow/backcountry/helmets" },
+         { path = "/categories/snow/all-mountain/junior", gender = "kids" }]
+
+[poc.goggle]
+pages = [{ path = "/categories/snow/all-mountain/goggles-and-sunglasses" },
+         { path = "/categories/snow/backcountry/goggles-and-sunglasses" }]
+
+[poc.protection]
+pages = [{ path = "/categories/snow/all-mountain/protection" }, { path = "/categories/snow/backcountry/protection" }]
+
+[poc.backpack]
+pages = [{ path = "/categories/snow/all-mountain/backpacks" }, { path = "/categories/snow/backcountry/backpacks" }]
+
+# ============================================================================ Dynafit（skideals/adapters/dynafit.py）
+# 只有前 20 条是服务器渲染的（固定器页 23 条，少 3 条）；只列有货商品。
+
+[dynafit.ski]
+pages = [{ path = "/equipment/touring-skis" }]
+
+[dynafit.binding]
+pages = [{ path = "/equipment/bindings" }]
+
+[dynafit.boot]
+pages = [{ path = "/men/footwear/ski-touring-boots", gender = "men" },
+         { path = "/women/footwear/ski-touring-boots", gender = "women" }]
+
+[dynafit.skin]
+pages = [{ path = "/equipment/skins" }]
+
+[dynafit.backpack]
+pages = [{ path = "/equipment/ski-touring-backpacks" }]
+
+[dynafit.pole]
+pages = [{ path = "/skitouring/poles" }]
+
+# ---- 2026-10-26 新增 / 补充分类
+
+[k2.ski]
+pages = [{ path = "/c/skis/" }, { path = "/c/sale/sale-skis/" }]
+[k2.boot]
+pages = [{ path = "/c/ski-boots/" }, { path = "/c/sale/sale-ski-boots/" }]
+[k2.binding]
+pages = [{ path = "/c/ski-bindings/" }]
+[k2.pole]
+pages = [{ path = "/c/ski-poles/" }]
+[k2.helmet]
+pages = [{ path = "/c/gear/helmets/" }]
+
+[line.ski]
+pages = [{ path = "/c/skis/" }, { path = "/c/sale/skis/" }]
+[line.pole]
+pages = [{ path = "/c/poles/" }, { path = "/c/sale/poles/" }]
+[line.binding]
+pages = [{ path = "/c/ski-bindings/" }, { path = "/c/sale/bindings/" }]
+
+[volkl.ski]
+pages = [{ path = "/c/skis/" }, { path = "/c/youth/", gender = "kids" }, { path = "/c/sale/sale-skis/" }]
+[volkl.binding]
+pages = [{ path = "/c/bindings/" }, { path = "/c/sale/sale-bindings/" }]
+[volkl.pole]
+pages = [{ path = "/c/poles/" }, { path = "/c/sale/sale-poles/" }]
+[volkl.skin]
+pages = [{ path = "/c/skins/" }]
+
+[marker.ski]
+enabled = false
+[marker.binding]
+pages = [{ path = "/c/bindings/" }, { path = "/c/sale/sale-bindings/" }]
+
+[dalbello.ski]
+enabled = false
+[dalbello.boot]
+pages = [{ path = "/c/shop-all/" }, { path = "/c/sale/sale-boots/" }]
+
+# ---- SFCC 品牌官网：categories 路径相对 url；不写时用 sfcc_brand.py 里的默认值（和下面一样）
+
+[rossignol.ski]
+categories = [{ path = "/sports/alpine-ski/skis" }]
+[rossignol.boot]
+categories = [{ path = "/sports/alpine-ski/ski-boots" }]
+[rossignol.binding]
+categories = [{ path = "/sports/alpine-ski/look-ski-bindings" }]
+[rossignol.pole]
+categories = [{ path = "/sports/alpine-ski/poles" }]
+[rossignol.helmet]
+categories = [{ path = "/sports/alpine-ski/helmets-protections" }]
+exclude = 'protect|back ?pad|armou?r|\bvest\b'
+[rossignol.protection]
+categories = [{ path = "/sports/alpine-ski/helmets-protections" }]
+include = 'protect|back ?pad|armou?r|\bvest\b'
+[rossignol.goggle]
+categories = [{ path = "/sports/alpine-ski/goggles-lenses" }]
+
+[dynastar-lange.ski]
+categories = [{ path = "/skis/men", gender = "men" }, { path = "/skis/women", gender = "women" }, { path = "/skis/kids", gender = "kids" }]
+[dynastar-lange.boot]
+categories = [{ path = "/ski-boots/men", gender = "men" }, { path = "/ski-boots/women", gender = "women" }, { path = "/ski-boots/junior", gender = "kids" }]
+[dynastar-lange.binding]
+categories = [{ path = "/bindings" }]
+[dynastar-lange.pole]
+categories = [{ path = "/equipment/poles" }]
+[dynastar-lange.skin]
+categories = [{ path = "/equipment/skins" }]
+
+[giro.ski]
+enabled = false
+[giro.helmet]
+categories = [{ path = "/snow/helmets/" }, { path = "/kids/snow/helmets/", gender = "kids" }]
+[giro.goggle]
+categories = [{ path = "/snow/goggles/ski-and-snowboard/" }, { path = "/snow/goggles/replacement-lenses/" }, { path = "/kids/snow/goggles/", gender = "kids" }]

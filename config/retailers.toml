@@ -1345,3 +1345,233 @@ adapter = "shopify"
 tier = "brand"
 brand = "Hestra"
 # Swedish family glove maker since 1936; US market domain of a SEK-based Shopify shop — products.json returns USD here but meta.json says SEK, so the adapter must be told to trust the config currency.
+
+# ---- 2026-10-25 新增（调研见 due_diligence.json）
+
+[[retailers]]
+id = "skirack"
+name = "Skirack"
+country = "US"
+currency = "USD"
+url = "https://www.skirack.com"
+adapter = "shopify"
+tier = "B"
+collections = []
+# Burlington, VT ski/bike shop since 1969. Only one mixed 'alpine-ski' collection (skis+boots+apparel+tools); skis disabled until redistribution from a mixed page is verified.
+
+# ---- 2026-10-26 新增（调研见 due_diligence.json）
+
+[[retailers]]
+id = "runningwarehouse"
+name = "Running Warehouse"
+country = "US"
+currency = "USD"
+url = "https://www.runningwarehouse.com"
+adapter = "runningwarehouse"
+tier = "A"
+min_interval = 2.0
+# San Luis Obispo, CA (Tennis Warehouse family). Multi-brand running specialist; carries Hoka/Saucony/Altra/Salomon/NNormal trail shoes
+# (Hoka/Saucony/Merrell own stores block us). Listing = 2 big HTML pages; sizes come from descpages (max_detail_pages, biggest discount first).
+
+[[retailers]]
+id = "topo"
+name = "Topo Athletic 官网"
+country = "US"
+currency = "USD"
+url = "https://www.topoathletic.com"
+adapter = "topo"
+tier = "brand"
+brand = "Topo Athletic"
+min_interval = 2.0
+# SuiteCommerce public items API, 1 request per gender per category. Owned by Designer Brands (DSW) since 2022.
+
+[[retailers]]
+id = "danner"
+name = "Danner 官网"
+country = "US"
+currency = "USD"
+url = "https://www.danner.com"
+adapter = "danner"
+tier = "brand"
+brand = "Danner"
+min_interval = 2.0
+# Magento GraphQL GET (men/hike 498, women/hike 509), about 7 requests. LaCrosse Footwear / ABC-Mart.
+
+# ---- 2026-10-26 新增（调研见 due_diligence.json）
+
+[[retailers]]
+id = "bentgate"
+name = "Bentgate Mountaineering"
+country = "US"
+currency = "USD"
+url = "https://www.bentgate.com"
+adapter = "lightspeed"
+tier = "B"
+price_match = "未公开价格匹配政策（下单前问店里）"
+# Golden, CO 的登山/野雪专卖店。Lightspeed eCom：分类页 ?format=json（一页 100 个），逐尺码库存要抓商品页（max_detail_pages）。
+# robots Crawl-delay 2（抓取器会遵守），一次完整抓取约 15 个分类页 + ~200 个商品页 ≈ 7–8 分钟。
+
+[[retailers]]
+id = "wasatchtouring"
+name = "Wasatch Touring"
+country = "US"
+currency = "USD"
+url = "https://www.wasatchtouring.com"
+adapter = "lightspeed"
+tier = "B"
+price_match = "未公开价格匹配政策（下单前问店里）"
+# 盐湖城 1972 年老店，Lightspeed eCom；网上商品少（登山板/鞋/固定器 + 雪崩装备 ≈ 50 个），Crawl-delay 2。
+
+[[retailers]]
+id = "mountainshop"
+name = "Mountain Shop"
+country = "US"
+currency = "USD"
+url = "https://www.mountainshop.net"
+adapter = "woocommerce"
+tier = "B"
+price_match = "未公开价格匹配政策（下单前问店里）"
+# 波特兰 1937 年老店，WordPress + WooCommerce；公开 Store API（/wp-json/wc/store/v1/products），一次完整抓取约 40 个请求。
+
+# ---- 2026-10-26 新增（调研见 due_diligence.json）
+
+[[retailers]]
+id = "skimo"
+name = "Skimo Co"
+country = "US"
+currency = "USD"
+url = "https://skimo.co"
+adapter = "skimo"
+tier = "B"
+min_interval = 1.5
+# Salt Lake City ski-mountaineering specialist (OpenCart HTML). Listing pages use ?limit=100 (2 pages for skis).
+# Skis and boots also fetch product pages for per-size stock and price (one request per product, ~230 total, about 6 min).
+
+[[retailers]]
+id = "kuhl"
+name = "KÜHL 官网"
+country = "US"
+currency = "USD"
+url = "https://www.kuhl.com"
+adapter = "kuhl"
+tier = "brand"
+brand = "Kühl"
+min_interval = 2.0
+# Salt Lake City outdoor apparel brand (Next.js). Listing pages are 1.3–1.5 MB and one page holds a whole category; about 6 requests per crawl.
+# Do not use /api/ (robots disallows it).
+
+[[retailers]]
+id = "poc"
+name = "POC 官网"
+country = "US"
+currency = "USD"
+url = "https://poc.com"
+adapter = "poc"
+tier = "brand"
+brand = "POC"
+min_interval = 2.0
+# Swedish helmet, goggle and protection brand (Next.js + Centra). Listing pages are about 0.8 MB; the adapter adds the /en-us market prefix itself.
+
+[[retailers]]
+id = "dynafit"
+name = "Dynafit 官网"
+country = "US"
+currency = "USD"
+url = "https://www.dynafit.com"
+adapter = "dynafit"
+tier = "brand"
+brand = "Dynafit"
+min_interval = 2.0
+# Oberalp group (Nuxt + Algolia). Listing pages are about 2.5 MB and only the first 20 hits are server-rendered; only in-stock products are listed.
+
+# ---- 2026-10-26 新增（调研见 due_diligence.json）
+
+[[retailers]]
+id = "k2"
+name = "K2 官网"
+country = "US"
+currency = "USD"
+url = "https://k2snow.com/en-us"
+adapter = "k2sports"
+tier = "brand"
+brand = "K2"
+# K2 Sports（Kohlberg & Co.）。Nuxt + BigCommerce，分类页 __NUXT_DATA__；robots Crawl-delay 20 → 每个分类 1–2 个请求。也卖 Marker 固定器（vendor 按标题识别）
+
+[[retailers]]
+id = "line"
+name = "Line 官网"
+country = "US"
+currency = "USD"
+url = "https://lineskis.com/en-us"
+adapter = "k2sports"
+tier = "brand"
+brand = "Line"
+# K2 Sports 旗下；同一平台（Crawl-delay 20）。标题基本不写性别
+
+[[retailers]]
+id = "volkl"
+name = "Völkl 官网"
+country = "US"
+currency = "USD"
+url = "https://volkl.com/en-us"
+adapter = "k2sports"
+tier = "brand"
+brand = "Völkl"
+# K2 Sports 旗下；同一平台（Crawl-delay 20）。/c/mens/ 与 /c/womens/ 几乎包含全部双板，不能当性别依据，所以不用
+
+[[retailers]]
+id = "marker"
+name = "Marker 官网"
+country = "US"
+currency = "USD"
+url = "https://markerbindings.com/en-us"
+adapter = "k2sports"
+tier = "brand"
+brand = "Marker"
+# K2 Sports 旗下；只卖固定器（头盔 / 雪镜 Sale 页目前是空的）
+
+[[retailers]]
+id = "dalbello"
+name = "Dalbello 官网"
+country = "US"
+currency = "USD"
+url = "https://dalbelloboots.com/en-us"
+adapter = "k2sports"
+tier = "brand"
+brand = "Dalbello"
+# K2 Sports 旗下；只卖雪鞋。女款在标题里写成 " W "（Veloce 75 MV W）
+
+# ---------------------------------------------------------------- 美国 · 品牌官网：Salesforce Commerce（sfcc_brand）
+
+[[retailers]]
+id = "rossignol"
+name = "Rossignol 官网"
+country = "US"
+currency = "USD"
+url = "https://www.rossignol.com/us-en"
+adapter = "rossignol"
+tier = "brand"
+brand = "Rossignol"
+# Rossignol 集团（Altor）。SFCC Sites-ross-us-Site；卡片上有尺码和库存；基本按原价卖（Outlet 只有几件配件）
+
+[[retailers]]
+id = "dynastar-lange"
+name = "Dynastar / Lange 官网"
+country = "US"
+currency = "USD"
+url = "https://www.dynastar-lange.com/us-en"
+adapter = "dynastarlange"
+tier = "brand"
+brand = "Dynastar"
+# Rossignol 集团；lange-boots.com 301 到这里。也卖 Look 固定器、Kerma 雪杖
+
+[[retailers]]
+id = "giro"
+name = "Giro 官网"
+country = "US"
+currency = "USD"
+url = "https://www.giro.com"
+adapter = "giro"
+tier = "brand"
+brand = "Giro"
+# Giro（原 Vista/Revelyst，现 SVP）。SFCC；每个颜色另有一张卡片（VG-…），头盔页约 8 个请求；经常有过季颜色打折

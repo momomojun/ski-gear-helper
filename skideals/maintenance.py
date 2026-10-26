@@ -50,10 +50,14 @@ def _reassign(conn, log, brand: str | None = None) -> Counter:
         if m.get("src") and m["src"] != "ski":
             groups[(r["retailer_id"], m["src"])].append((r, m))
     moved: Counter = Counter()
+    trusted = {(c["id"], cat) for c in load_retailers() for cat, ccfg in c.get("by_category", {}).items()
+               if ccfg.get("trust_page")}
     for (rid, src), rows in groups.items():
         results = [assign(src, r["title"], m.get("pt"), m.get("tags"), m.get("opts"), r["url"],
                           [s["cm"] for s in json.loads(r["sizes_json"] or "[]") if s.get("cm")], r["vendor"]) for r, m in rows]
-        finals, _ = decide_batch(src, results)
+        finals, mixed = decide_batch(src, results)
+        if mixed and (rid, src) in trusted:   # 和抓取时一样：品牌自己整理的分类页不按混装页丢商品
+            finals = [c for c, _ in results]
         for (r, _m), final in zip(rows, finals):
             if final is None:
                 conn.execute("UPDATE listings SET active=0 WHERE id=?", (r["id"],))

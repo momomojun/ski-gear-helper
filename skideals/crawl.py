@@ -117,7 +117,7 @@ def _carry_shoe_context(rid: str, raw, cache: dict) -> None:
         raw.extra.setdefault(k, v)
 
 
-def _decide_categories(rid: str, cat: str, raws: list) -> tuple[list[str | None], int]:
+def _decide_categories(rid: str, cat: str, raws: list, trust_page: bool = False) -> tuple[list[str | None], int]:
     """这个分类页抓到的每个商品最终属于哪个分类（categories.assign + decide_batch），返回 (分类列表, 改判数)。
     双板页沿用适配器里严格的 NOT_SKI_RE 过滤，不再改判。"""
     from collections import Counter
@@ -131,6 +131,8 @@ def _decide_categories(rid: str, cat: str, raws: list) -> tuple[list[str | None]
     results = [assign(cat, r.title, r.product_type, r.tags, r.extra.get("options"), r.url,
                       [s.cm for s in r.sizes if s.cm], r.vendor) for r in raws]
     finals, mixed = decide_batch(cat, results)
+    if trust_page and mixed:  # 品牌官网自己整理的分类页（trust_page = true）：没证据的商品相信本页，不当混装页丢掉
+        finals, mixed = [c for c, _ in results], False
     stats = Counter()
     for (c, why), final in zip(results, finals):
         if final is None:
@@ -163,7 +165,7 @@ def crawl_category(cfg: dict, cat: str, fetcher: Fetcher, seen: set | None = Non
                 continue
             from .normalize import split_age_variants
             raws.extend(split_age_variants(raw))
-        finals, moved = _decide_categories(rid, cat, raws)
+        finals, moved = _decide_categories(rid, cat, raws, bool(cfg.get("trust_page")))
         prev_shoe: dict = {}   # 上次抓取记下的鞋码制/楦宽（第一次遇到鞋时才读数据库）
         for raw, final in zip(raws, finals):
             if final is None:

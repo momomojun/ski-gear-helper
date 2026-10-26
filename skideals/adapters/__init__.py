@@ -16,6 +16,19 @@ ADAPTERS: dict[str, tuple[str, str]] = {
     "zappos": ("zappos", "ZapposAdapter"),
     "marmot": ("marmot", "MarmotAdapter"),
     "tactics": ("tactics", "TacticsAdapter"),
+    "runningwarehouse": ("runningwarehouse", "RunningWarehouseAdapter"),
+    "topo": ("topo", "TopoAdapter"),
+    "danner": ("danner", "DannerAdapter"),
+    "lightspeed": ("lightspeed", "LightspeedAdapter"),     # Lightspeed eCom 平台通用：Bentgate、Wasatch Touring
+    "woocommerce": ("woocommerce", "WooCommerceAdapter"),  # WooCommerce Store API 通用：Mountain Shop
+    "skimo": ("skimo", "SkimoAdapter"),
+    "kuhl": ("kuhl", "KuhlAdapter"),
+    "poc": ("poc", "PocAdapter"),
+    "dynafit": ("dynafit", "DynafitAdapter"),
+    "k2sports": ("k2sports", "K2SportsAdapter"),        # K2 Sports 平台：K2、Line、Völkl、Marker、Dalbello（robots 要求 20 秒间隔）
+    "rossignol": ("sfcc_brand", "RossignolAdapter"),
+    "dynastarlange": ("sfcc_brand", "DynastarLangeAdapter"),
+    "giro": ("sfcc_brand", "GiroAdapter"),
 }
 
 

@@ -156,3 +156,35 @@ def test_filter_facet_tags_are_not_shoe_type_evidence():
     # Alpenglow 的筛选标签 "Best Use (Running shoes)|…" 不能让越野跑鞋被当成公路鞋丢掉
     tags = ["Best Use (Running shoes)|Technical/Rocky", "Color (Running shoes)|Green", "footwear"]
     assert assign("trail_shoe", "M Olympus 275", "Footwear - Men's - Run", tags)[0] == "trail_shoe"
+
+
+def test_trail_trainer_is_a_hiking_shoe_not_a_gym_trainer():
+    assert assign("hiking_shoe", "Danner Trail Trainer Men's")[0] == "hiking_shoe"
+    assert assign("trail_shoe", "Nike Pegasus Trainers")[0] is None
+
+
+def test_w_slash_o_means_without_not_with():
+    assert assign("binding", "MARKER Alpinist 8 W/O Brake Bindings 2027")[0] == "binding"
+    assert classify("Volkl Mantra 88 W/Marker Griffon 13") == "ski"   # w/ 仍然是“带固定器的套装”
+    assert classify("Fischer Ranger 96 Skis w/o Bindings") == "ski"
+
+
+def test_department_product_type_is_not_ski_evidence():
+    # Rossignol 所有硬货的商品类型都是 "Skis & Snowboard equipment"
+    pt, tags = "Skis & Snowboard equipment", ["Skis & Snowboard equipment", "season 26/27"]
+    assert assign("binding", "Look PIVOT 2.0 15 GW B95 BLACK METAL", pt, tags)[0] == "binding"
+    assert assign("boot", "Rossignol Men's Alltrack 90 HV BOA GW Skiboots 2027", pt, tags)[0] == "boot"
+
+
+def test_corduroy_pants_are_pants_not_cables():
+    assert assign("outdoor_pants", "Lydia Cord Pant")[0] == "outdoor_pants"
+
+
+def test_trust_page_keeps_unproven_items_on_brand_pages():
+    raws = [RawProduct(retailer_id="kuhl", external_id=str(i), url="https://x.test", title=t, category="outdoor_top")
+            for i, t in enumerate(["Shadow Hoody", "Motive Sweater", "Thor 1/4 Zip", "Evoker Sweater", "Spekter Full Zip Hoody",
+                                            "Ryzer 1/4 Zip", "Driftr Long Sleeve", "Bravado T"])]
+    strict, _ = crawl._decide_categories("kuhl", "outdoor_top", raws)
+    trusted, _ = crawl._decide_categories("kuhl", "outdoor_top", raws, trust_page=True)
+    assert strict.count(None) >= 1          # 普通店：混装页里没证据的不要
+    assert None not in trusted and trusted[-1] == "outdoor_top"
