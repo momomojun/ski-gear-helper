@@ -1,0 +1,5 @@
+{"table": "price_history", "columns": ["listing_id", "day", "price", "compare_at", "available", "sizes"]}
+[51397,"2026-10-16",97.3,null,1,"S,L,XL,XXL,M"]
+[51397,"2026-10-23",100.99,null,1,"S,L,XL,XXL,M"]
+[51398,"2026-10-16",165.0,null,1,"S,XL,XXL,M,L"]
+[51398,"2026-10-23",165.0,null,1,"S,XL,XXL,M,L"]

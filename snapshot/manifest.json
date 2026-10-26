@@ -1,0 +1,21 @@
+{
+ "format": 1,
+ "exported_at": "2026-10-25T15:19:18",
+ "data_day": "2026-10-25",
+ "counts": {
+  "retailers": 77,
+  "listings": 55174,
+  "price_history": 176178,
+  "intl_prices": 415,
+  "intl_queries": 81,
+  "site_checks": 75,
+  "spec_cache": 600,
+  "fx": 14,
+  "crawl_runs": 47
+ },
+ "private_tables_excluded": [
+  "watchlist",
+  "alerts",
+  "settings"
+ ]
+}
