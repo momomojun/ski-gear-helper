@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 from . import db
 from .net import Fetcher
@@ -38,7 +39,7 @@ def current() -> dict:
     """返回 {"rates": {...}, "day": ..., "source": ..., "fallback": bool}，优先用今天，其次最近一次缓存。"""
     with db.connect() as conn:
         row = conn.execute("SELECT * FROM fx ORDER BY day DESC LIMIT 1").fetchone()
-    if row is None or row["day"] != db.today():
+    if (row is None or row["day"] != db.today()) and not os.environ.get("SKIDEALS_OFFLINE"):
         try:
             refresh()
             with db.connect() as conn:

@@ -15,7 +15,7 @@ def best_offer(conn, key: str, year: int | None = None, length: int | None = Non
                size_label: str | None = None) -> dict | None:
     rates = fx.current()["rates"]
     q = """SELECT l.*, r.name AS rname FROM listings l JOIN retailers r ON r.id=l.retailer_id
-           WHERE l.model_key=? AND l.active=1 AND r.enabled=1 AND l.condition='new' AND l.available=1"""
+           WHERE l.model_key=? AND +l.active=1 AND r.enabled=1 AND l.condition='new' AND l.available=1"""
     args: list = [key]
     if year:
         q += " AND l.year=?"
@@ -33,8 +33,11 @@ def best_offer(conn, key: str, year: int | None = None, length: int | None = Non
             price, url = chosen.get("p") or row["price"], chosen.get("u") or url
         elif size_label:  # 服装/雪鞋：按规范化尺码（M、26.5、100mm…）匹配；"S/M" 这种两码合一也算
             want = size_label.strip().upper()
+            footwear = row["category"] in ("hiking_shoe", "trail_shoe")
             sizes = [s for s in json.loads(row["sizes_json"] or "[]")
-                     if s.get("a") and s.get("p") and want in str(s.get("n") or s.get("l") or "").upper().split("/")]
+                     if s.get("a") and s.get("p") and
+                     (want == str(s.get("n") or s.get("l") or "").upper() if footwear else
+                      want in str(s.get("n") or s.get("l") or "").upper().split("/"))]
             if not sizes:
                 continue
             chosen = min(sizes, key=lambda s: s.get("p") or row["price"])

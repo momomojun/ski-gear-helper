@@ -96,6 +96,27 @@ def _write(rid: str, category: str, items: list, started: str, complete: bool) -
     return 0
 
 
+def _carry_shoe_context(rid: str, raw, cache: dict) -> None:
+    """REI 每类只抓前 30 个商品的详情页，码制（US）和楦宽只在详情里有。这次没抓详情的商品沿用上次记下的，
+    否则尺码键在 "US:men:9:…" 和 "未注明:men:9:…" 之间来回变，关注的尺码提醒就会悄悄失效。"""
+    if "_loaded" not in cache:
+        cache["_loaded"] = True
+        with db.connect() as conn:
+            for ext, meta in conn.execute("SELECT external_id, meta FROM listings WHERE retailer_id=? "
+                                          "AND category IN ('hiking_shoe','trail_shoe') AND meta IS NOT NULL", (rid,)):
+                try:
+                    m = json.loads(meta)
+                except ValueError:
+                    continue
+                kept = {k: m[k] for k in ("shoe_size_system", "shoe_width") if m.get(k)}
+                if kept:
+                    cache[ext] = kept
+    if raw.extra.get("shoe_size_system"):
+        return   # 这次抓到了详情：以这次为准（楦宽混合时适配器会特意去掉 shoe_width，不能补回旧值）
+    for k, v in (cache.get(raw.external_id) or {}).items():
+        raw.extra.setdefault(k, v)
+
+
 def _decide_categories(rid: str, cat: str, raws: list) -> tuple[list[str | None], int]:
     """这个分类页抓到的每个商品最终属于哪个分类（categories.assign + decide_batch），返回 (分类列表, 改判数)。
     双板页沿用适配器里严格的 NOT_SKI_RE 过滤，不再改判。"""
@@ -143,11 +164,14 @@ def crawl_category(cfg: dict, cat: str, fetcher: Fetcher, seen: set | None = Non
             from .normalize import split_age_variants
             raws.extend(split_age_variants(raw))
         finals, moved = _decide_categories(rid, cat, raws)
+        prev_shoe: dict = {}   # 上次抓取记下的鞋码制/楦宽（第一次遇到鞋时才读数据库）
         for raw, final in zip(raws, finals):
             if final is None:
                 continue
             raw.extra["src_category"] = cat
             raw.category = final
+            if final in ("hiking_shoe", "trail_shoe"):
+                _carry_shoe_context(rid, raw, prev_shoe)
             # 双板以外的售罄商品不入库：服装大多没写年份，没法判断是不是早已下市的老款，留着只会让数据库膨胀
             if final != "ski" and raw.available is False:
                 continue
@@ -265,7 +289,7 @@ def run_crawl(retailer_ids: list[str] | None = None, categories: list[str] | Non
             _log(f"关注列表检查失败：{e}")
 
         n_requests = fetcher.request_count + sum(r.get("requests", 0) for r in results)  # 加上单独限速网站自己的请求数
-        summary = {"results": results, "requests": n_requests}
+        summary = {"results": results, "requests": n_requests, "categories": categories, "retailer_ids": retailer_ids}
         with db.connect() as conn:
             conn.execute("UPDATE crawl_runs SET finished_at=?, status='done', summary_json=? WHERE id=?",
                          (db.now_iso(), json.dumps(summary, ensure_ascii=False), run_id))

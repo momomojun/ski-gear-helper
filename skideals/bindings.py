@@ -17,7 +17,7 @@ _GENERIC = {"gw", "mnc", "id", "binding", "bindings", "with", "brake", "brakes",
 
 
 def _best_new(fam: dict) -> dict | None:
-    pool = [o for o in fam["o"] if o["cd"] == "new" and o["a"]]
+    pool = [o for o in fam["o"] if o["cd"] == "new" and o["a"] and o["p"] is not None]
     return min(pool, key=lambda o: o["p"]) if pool else None
 
 
@@ -28,7 +28,9 @@ def _fit_price(o: dict, waist: int | None) -> float | None:
         return None
     if not waist or not o["z"]:
         return o["p"]
-    fits = [z[2] for z in o["z"] if z[1] and str(z[0]).endswith("mm") and waist <= int(str(z[0])[:-2]) <= waist + 20]
+    # 尺码价格未知（None）的不参与比较：上一版“隔离未知价格”后尺码里会出现 None，min() 会直接报错
+    fits = [z[2] for z in o["z"] if z[1] and z[2] is not None and str(z[0]).endswith("mm")
+            and waist <= int(str(z[0])[:-2]) <= waist + 20]
     return min(fits, default=None)
 
 

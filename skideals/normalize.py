@@ -15,6 +15,7 @@ import re
 import unicodedata
 
 from .models import Listing, RawProduct
+from .footwear import FOOTWEAR, UNKNOWN, parse_shoe_size, shoe_identity
 
 # ---------------------------------------------------------------- 基础工具
 
@@ -113,6 +114,12 @@ BRANDS: list[tuple[str, list[str], bool]] = [
     ("mountainFLOW", ["mountainflow", "mountain flow"], False), ("Hotronic", ["hotronic"], False),
     ("Therm-ic", ["therm-ic", "thermic"], False), ("Sidas", ["sidas"], False), ("Superfeet", ["superfeet"], False),
     ("Zipfit", ["zipfit"], False), ("Intuition", ["intuition"], True),
+    # ---- 户外鞋（La Sportiva / Scarpa / Merrell 已收录）
+    ("Altra", ["altra", "altra running"], False), ("Hoka", ["hoka", "hoka one one"], False),
+    ("Brooks", ["brooks", "brooks running"], False), ("Topo Athletic", ["topo athletic", "topo"], False),
+    ("Keen", ["keen"], True), ("Oboz", ["oboz"], False), ("Vasque", ["vasque"], False),
+    ("Inov-8", ["inov-8", "inov8", "inov 8"], False),
+    ("NNormal", ["nnormal"], False),
     # ---- 头盔 / 雪镜
     ("Smith", ["smith", "smith optics"], True), ("Giro", ["giro"], False), ("POC", ["poc"], False),
     ("Oakley", ["oakley", "オークリー"], False), ("Anon", ["anon"], True), ("Dragon", ["dragon", "dragon alliance"], True),
@@ -441,7 +448,7 @@ def kids_by_sizes(sizes, category: str | None = None) -> bool:
     if any(_ADULT_SIZE.search(l) for l in labels):  # "Adult / Youth" 两种都卖（护齿、头盔）→ 不算儿童款
         return False
     # 月龄 M 和幼童 T 仅适用于服装；不能把雪鞋尺码或配件尺寸当成月龄。
-    if category in {"ski", "boot", "binding", "pole", "skin", "tuning", "accessory", "bag", "backpack", "avalanche"}:
+    if category in {"hiking_shoe", "trail_shoe", "ski", "boot", "binding", "pole", "skin", "tuning", "accessory", "bag", "backpack", "avalanche"}:
         return all(re.search(r"\b(?:kids?|youth|junior|infants?|toddlers?)\b", l, re.I) for l in labels)
     return sum(1 for l in labels if _KIDS_SIZE.search(l)) * 2 >= len(labels)
 
@@ -643,7 +650,7 @@ _NOISE_WORDS = {
 _TOKEN_ALIASES = {"junior": ["jr"], "juniors": ["jr"], "cti": ["c", "ti"], "tis": ["ti"],
                   "mitten": ["mitt"], "mittens": ["mitt"], "mitts": ["mitt"], "bibs": ["bib"], "hoodie": ["hoody"],
                   "gtx": ["goretex"], "gore": ["goretex"], "tex": [], "goretex": ["goretex"],
-                  "gripwalk": ["gw"]}
+                  "gripwalk": ["gw"], "wp": ["waterproof"]}   # 鞋：gearx 写 WP、REI 写 Waterproof
 _GENDER_PHRASE = re.compile(
     r"\b(?:women'?s|womens|woman's|men'?s|mens|kids'?|kid's|boys'?|girls'?|youth|unisex|ladies|junior's)\b", re.I)
 _SIZE_TEXT = re.compile(r"\b\d{2,3}\s?cm\b", re.I)
@@ -696,6 +703,23 @@ _COLOR_TAIL = re.compile(rf"(?:[\s/,&+-]+(?:{_COLOR_WORDS}))+\s*$", re.I)
 _COLOR_ANY = re.compile(rf"\b(?:{_COLOR_WORDS})\b", re.I)
 
 
+_GENDER_SEGMENT = re.compile(r"^\s*(?:men|women|mens|womens|unisex|kids?|youth|boys|girls|junior)\s*$", re.I)
+
+
+def _shoe_model_segments(segments: list[str]) -> list[str]:
+    """鞋的标题按 " - " 分段：性别段之后的都是配色/版本说明（"Model - Men's - Thunder"），只有颜色词的段也不算型号。"""
+    out = []
+    for seg in segments:
+        if _GENDER_SEGMENT.match(seg) and out:
+            break
+        if out and not split_tokens(_COLOR_ANY.sub(" ", seg.replace("/", " "))):
+            continue
+        if out and "/" in seg and not re.search(r"\d", seg):
+            continue   # 双色配色名：gearx 的 "Keen - Targhee IV WP - Alloy/Granite Green"
+        out.append(seg)
+    return out or segments
+
+
 def _strip_colors(head: str, anywhere: bool = False) -> str:
     """去掉颜色词。固定器：任何位置（型号名里从来不用颜色词）；其他装备：只去掉末尾的颜色词。至少保留一个词。"""
     out = _COLOR_ANY.sub(" ", head) if anywhere else _COLOR_TAIL.sub("", " " + head)
@@ -717,11 +741,15 @@ def clean_model(title: str, brand: str | None, vendor: str | None,
             t = t[:m2.start()]   # “Wildcat 80 Ti Shift X EL 9.0” → 型号只到 “Wildcat 80 Ti”
     t = re.sub(r"'s\b", "", t)
     segments = [s for s in re.split(r"\s+[-|/]\s+|\s*\|\s*", t) if s.strip()]
-    head = segments[0] if segments else t
+    if category in FOOTWEAR:
+        head = " - ".join(_shoe_model_segments(segments)) if segments else t
+    else:
+        head = segments[0] if segments else t
     # 第一段太短（比如 "Atomic - Bent 100"）时合并下一段
     if len(split_tokens(_remove_brand(head, brand, vendor))) == 0 and len(segments) > 1:
         head = head + " " + segments[1]
-    head = _BRACKETS.sub(" ", head)
+    if category not in FOOTWEAR:
+        head = _BRACKETS.sub(" ", head)
     head = _remove_brand(head, brand, vendor)
     if category in _CUT_AFTER:
         # 保留到品类词为止（品类词本身也去掉）；如果品类词在最前面（"Gloves Hestra ..."）就不截
@@ -778,15 +806,16 @@ def clean_model(title: str, brand: str | None, vendor: str | None,
     had_w = False
     tokens = []
     for tok in raw_tokens:
-        if tok == "w":
+        if tok == "w" and category not in FOOTWEAR:
             had_w = True
             continue
         if tok in _NOISE_WORDS:
             continue
         tokens.append(tok)
     # 展示名：去掉末尾单独的 W（性别单独显示）
-    display = re.sub(r"\s+W$", "", head).strip()
-    display = re.sub(r"\bW\b(?=\s*$)", "", display).strip()
+    display = head if category in FOOTWEAR else re.sub(r"\s+W$", "", head).strip()
+    if category not in FOOTWEAR:
+        display = re.sub(r"\bW\b(?=\s*$)", "", display).strip()
     if display.isupper() and len(display) > 4:
         display = " ".join(w if re.search(r"\d", w) or len(w) <= 3 else w.capitalize() for w in display.split())
     return display or head, tokens, had_w, bind_name
@@ -921,7 +950,24 @@ def _normalize_gear(raw: RawProduct) -> Listing:
     cat = raw.category
     cdef = BY_ID.get(cat)
     brand = detect_brand(raw.vendor, raw.title, _store_name(raw.retailer_id))
-    display, tokens, had_w, _ = clean_model(raw.title, brand, raw.vendor, cat)
+    if cat in FOOTWEAR:
+        model_title, shoe_spec = shoe_identity(raw.title, raw.extra.get("shoe_width"),
+                                               " ".join([raw.product_type or "", *raw.tags]))
+        # Size-label widths are stronger than an unqualified model title. Keep
+        # mixed-width pages separate from a listing containing only one width.
+        size_widths = {parsed.width for size in raw.sizes
+                       if (parsed := parse_shoe_size(size.label, width=raw.extra.get("shoe_width") or shoe_spec["shoe_width"]))}
+        if size_widths and size_widths != {UNKNOWN}:
+            shoe_spec["shoe_width"] = "+".join(sorted(size_widths))
+    else:
+        model_title, shoe_spec = raw.title, {}
+    display, tokens, had_w, _ = clean_model(model_title, brand, raw.vendor, cat)
+    # A trailing W on footwear can be width. Only explicit gender evidence counts.
+    if cat in FOOTWEAR:
+        had_w = False
+        tokens = [t for t in tokens if t != "low"]
+        if shoe_spec["shoe_membrane"] == "gtx" and "goretex" not in tokens:
+            tokens.append("goretex")   # 和标题里写 GTX / Gore-Tex 得到的词一致（split_tokens 统一成 goretex）
     if not tokens:
         tokens = split_tokens(raw.title)[:6] or ["unknown"]
     if not display.strip():  # 标题去掉品牌和品类词后什么都不剩（如 "Marker Bindings"）→ 用原标题
@@ -944,9 +990,30 @@ def _normalize_gear(raw: RawProduct) -> Listing:
         gender, gsrc, gclass = "unisex", "sizes", "a"
     if raw.extra.get("age_partition") == "adult":
         gender, gsrc, gclass = ("women", "sizes", "w") if _WOMEN.search(fold(raw.title)) else ("unisex", "sizes", "a")
+    if cat in FOOTWEAR:
+        if gsrc == "default" or (gsrc == "sizes" and raw.extra.get("age_partition") == "adult"):
+            bases = {parsed.gender for size in raw.sizes if (parsed := parse_shoe_size(size.label))}
+            if len(bases) == 1 and next(iter(bases)) in {"men", "women", "kids"}:
+                gender, gsrc = next(iter(bases)), "sizes"
+        gclass = {"men": "m", "women": "w", "kids": "k", "unisex": "u"}[gender]
     text = " ".join([raw.title, raw.product_type or "", " ".join(t for t in raw.tags if len(t) < 60)])
     feats = features(cat, text, (raw.body_text or "")[:800])
     spec = specs(cat, raw.title + " " + (raw.body_text or "")[:2000])
+    if cat in FOOTWEAR:
+        spec.update(shoe_spec)
+        if re.search(r"\b(?:non|no|without)[ -]+(?:gore[- ]?tex|goretex|gtx)\b", raw.title, re.I):
+            feats = [f for f in feats if f != "goretex"]
+        # Product gender is not an assumed US size basis for unisex footwear.
+        basis = gender if gender in {"men", "women", "kids"} else None
+        spec["shoe_sizes"] = []
+        for size in raw.sizes:
+            parsed = parse_shoe_size(size.label, size_system=raw.extra.get("shoe_size_system"),
+                                     gender=basis, width=raw.extra.get("shoe_width") or shoe_spec["shoe_width"])
+            spec["shoe_sizes"].append({"label": size.label, "key": parsed.key if parsed else None,
+                                       **({"system": parsed.system, "gender": parsed.gender,
+                                           "value": parsed.value, "width": parsed.width} if parsed else {})})
+        if shoe_spec["shoe_width"] in {"wide", "xwide", "2e", "3e", "4e", "5e", "6e"} and "wide" not in feats:
+            feats.append("wide")
     if cat == "binding":  # 固定器的尺码 = 刹车宽度，汇总进规格里
         brakes = sorted({int(n[:-2]) for n in (norm_size(cat, s.label) for s in raw.sizes) if n and n.endswith("mm")}
                         | set(spec.get("brakes", [])))

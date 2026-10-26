@@ -3,3 +3,6 @@
 *.bat text eol=crlf
 *.ps1 text eol=crlf
 *.png binary
+# 数据快照和构建脚本固定用 LF：快照每天差异最小，Vercel 的 bash 也不认 CRLF
+snapshot/** text eol=lf
+*.sh text eol=lf

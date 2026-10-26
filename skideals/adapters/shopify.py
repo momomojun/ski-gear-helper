@@ -18,6 +18,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 
 from ..models import RawProduct, SizeOption
+from ..net import BlockedError
 from ..normalize import known_brand
 from .base import NOT_SKI_RE, Adapter, parse_cm, to_float
 
@@ -26,7 +27,40 @@ _EXCLUDED_TYPES = re.compile(
     r"accessor|\bwax\b|\btools?\b|\bsocks?\b|cloth|gift|snowboard|\bnordic\b|cross[- ]?country|\bxc\b|\bskate\b|"
     r"\bclassic\b|layer|shirt|hood|sweat|sunglass|\blocks?\b|\bstraps?\b|\btun(?:e|ing)\b|service",
     re.I)
-_SIZE_OPTION = re.compile(r"size|length|cm|brake|width|长度|サイズ", re.I)   # 尺码类选项（不是颜色）
+_SIZE_OPTION = re.compile(r"size|length|cm|brake|width|waist|inseam|长度|サイズ", re.I)   # 尺码类选项（不是颜色）
+
+
+OUTDOOR_CATEGORIES = frozenset({"outdoor_jacket", "outdoor_pants", "outdoor_top", "hiking_shoe", "trail_shoe"})
+SHOE_CATEGORIES = frozenset({"hiking_shoe", "trail_shoe"})
+OUTDOOR_HARDWARE_RE = re.compile(
+    r"\b(?:skis?|snowboards?|bindings?|poles?|helmets?|goggles?|skins?|crampons?|snowshoes?)\b", re.I)
+
+
+def outdoor_gender(title: str) -> str | None:
+    """Only explicit gender words; numeric shoe sizes never imply gender."""
+    t = title.replace("’", "'")
+    if re.search(r"\b(?:kids?|boys?|girls?|youth|junior|toddlers?|infants?)\b", t, re.I):
+        return "kids"
+    if re.search(r"\bunisex\b", t, re.I):
+        return "unisex"
+    women = bool(re.search(r"\bwomen(?:'?s)?\b|\bw's\b", t, re.I))
+    men = bool(re.search(r"\bmen(?:'?s)?\b|\bm's\b", t, re.I))
+    return "unisex" if women and men else "women" if women else "men" if men else None
+
+
+def explicit_shoe_system(text: str) -> str | None:
+    """A system must be named by the source, never inferred from a number or country."""
+    systems = set()
+    for system, pattern in (("US", r"\bU\.?S\.?(?![a-z])"), ("UK", r"\bU\.?K\.?(?![a-z])"),
+                            ("EU", r"\bEU(?:R)?\b|\bEuropean\b")):
+        if re.search(pattern, text, re.I):
+            systems.add(system)
+    return next(iter(systems)) if len(systems) == 1 else None
+
+
+def shoe_width(label: str) -> str | None:
+    match = re.search(r"\b(?:extra[- ]wide|x[- ]wide|wide|narrow|regular|standard|medium|[2-6]E|EE|D|B)\b", label, re.I)
+    return match.group(0) if match else None
 
 
 def _strip_html(s: str | None, limit: int = 4000) -> str:
@@ -76,6 +110,8 @@ class ShopifyAdapter(Adapter):
     def _meta(self) -> dict:
         try:
             return self.fetcher.get_json(f"{self.base_url}/meta.json")
+        except BlockedError:
+            raise
         except Exception:
             return {}
 
@@ -92,6 +128,8 @@ class ShopifyAdapter(Adapter):
         for handle in main + [h for h in hints if h not in main]:
             try:
                 items = self._collection(handle)
+            except BlockedError:
+                raise
             except Exception as e:  # 某个分类失败不影响其他分类
                 self.log(f"[{self.rid}] 分类 {handle} 抓取失败：{e}")
                 if handle in main:
@@ -127,6 +165,8 @@ class ShopifyAdapter(Adapter):
         if self._is_rental(p) or re.search(r"gift ?card|e-?gift|warranty|\bmounting\b|\bservice\b|tune[- ]?up",
                                            title, re.I):
             return False
+        if self.category in OUTDOOR_CATEGORIES and OUTDOOR_HARDWARE_RE.search(title + " " + ptype):
+            return False
         if self.category != "ski":  # 其他分类：相信分类页，只排除明显属于别的分类的东西
             return self.wanted(title, ptype)
         if NOT_SKI_RE.search(title) or (ptype and _EXCLUDED_TYPES.search(ptype)):
@@ -154,9 +194,26 @@ class ShopifyAdapter(Adapter):
         if not variants:
             return None
         from ..categories import norm_size
+        tags = p.get("tags") or []
+        if isinstance(tags, str):
+            tags = [t.strip() for t in tags.split(",") if t.strip()]
+        # SB publishes explicit D/B widths as a structured product tag. Keep the
+        # literal standard; do not equate D/B to Regular by assumed gender rules.
+        tag_widths = {shoe_width(str(t).partition(":")[2]) for t in tags
+                      if re.fullmatch(r"shoe\s*width", str(t).partition(":")[0].strip(), re.I)}
+        tag_width = next(iter(tag_widths)) if len(tag_widths) == 1 and None not in tag_widths else None
         options = [o.get("name", "") for o in p.get("options", [])]
-        size_idx = next((i for i, n in enumerate(options)
-                         if _SIZE_OPTION.search(n) and not re.search(r"colou?r", n, re.I)), None)
+        outdoor = self.category in OUTDOOR_CATEGORIES
+        footwear = self.category in SHOE_CATEGORIES
+        size_indices = [i for i, n in enumerate(options)
+                        if _SIZE_OPTION.search(n) and not re.search(r"colou?r", n, re.I)]
+        size_idx = next((i for i in size_indices if not re.search(r"width", options[i], re.I)), None)
+        if size_idx is None and not footwear:
+            size_idx = next(iter(size_indices), None)
+        color_idx = next((i for i, n in enumerate(options) if re.search(r"colou?r", n, re.I)), None)
+        width_idx = next((i for i, n in enumerate(options) if re.search(r"width", n, re.I)), None)
+        variant_rows = []
+        widths, systems = set(), set()
         length_based = self.category in ("ski", "pole")
 
         by_cm: dict[str, SizeOption] = {}
@@ -171,17 +228,46 @@ class ShopifyAdapter(Adapter):
                              None)
             if label in ("Default Title", "Default"):
                 label = None
+            width = v.get(f"option{width_idx + 1}") if width_idx is not None else None
+            color = v.get(f"option{color_idx + 1}") if color_idx is not None else None
+            if outdoor:
+                # Preserve all size axes, including widths and waist/inseam combinations.
+                parts = [str(v[f"option{i + 1}"]).strip() for i in size_indices if v.get(f"option{i + 1}")]
+                label = (" " if footwear else " / ").join(parts) or label
+            if footwear:
+                # 网站的结构化标签优先于标题；标题里单个字母 D / B 不算楦宽（"Topo Plan B Hiker" 的 B 是型号名）
+                title_width = shoe_width(p.get("title") or "")
+                if title_width and len(title_width) == 1:
+                    title_width = None
+                width = width or shoe_width(str(label or "")) or tag_width or title_width
+                if width:
+                    widths.add(str(width))
+                    if label and str(width).lower() not in str(label).lower():
+                        label = f"{label} {width}"
+                system = explicit_shoe_system(" ".join([options[size_idx] if size_idx is not None else "", str(label or "")]))
+                systems.add(system)
             cm = self.size_cm(label)
             price = to_float(v.get("price"))
             cmp_ = to_float(v.get("compare_at_price"))
             cmp_ = cmp_ if (cmp_ and price and cmp_ > price + 0.5) else None
             avail = bool(v.get("available"))
-            key = str(cm) if cm else (norm_size(self.category, label) or label or "default")
+            variant_url = f"{self.base_url}/products/{p['handle']}"
+            if v.get("id") is not None:
+                variant_url += f"?variant={v['id']}"
+            if outdoor:
+                # One row per variant: never collapse a sold-out colour or a width into another SKU.
+                variant_rows.append({"id": v.get("id"), "label": label, "width": width, "color": color,
+                                     "options": [v.get(f"option{i + 1}") for i in range(len(options))],
+                                     "price": price, "compare_at": cmp_, "available": avail, "url": variant_url})
+                key = str(len(variant_rows))
+            else:
+                key = str(cm) if cm else (norm_size(self.category, label) or label or "default")
             cur = by_cm.get(key)
             if cur is None:
                 # 只有颜色变体（雪镜等）时 label 为空 → 当作均码，不能把颜色名当尺码
                 shown = label if label else (v.get("title") if length_based else "")
-                by_cm[key] = SizeOption(label=str(shown or ""), cm=cm, available=avail, price=price, compare_at=cmp_)
+                by_cm[key] = SizeOption(label=str(shown or ""), cm=cm, available=avail, price=price, compare_at=cmp_,
+                                        color=color if outdoor else None, url=variant_url if outdoor else None)
             else:  # 同一长度多个颜色：有一个有货就算有货，价格取有货里的最低
                 if avail and (not cur.available or (price or 1e9) < (cur.price or 1e9)):
                     cur.price, cur.compare_at = price, cmp_
@@ -209,6 +295,8 @@ class ShopifyAdapter(Adapter):
             gender_hint = "kids"
         else:
             gender_hint = next((g for g in ("women", "men", "unisex", "kids") if g in genders), None)
+        if outdoor and gender_hint is None:
+            gender_hint = outdoor_gender(p.get("title") or "")
         type_hints = sorted(handles) + [hints[h]["type"] for h in handles if hints.get(h, {}).get("type")]
 
         tags = p.get("tags") or []
@@ -226,6 +314,19 @@ class ShopifyAdapter(Adapter):
             if not other or other == own:
                 in_title = known_brand(p.get("title"))
                 vendor = in_title if in_title and in_title != own else store_brand
+        extra = {"published_at": p.get("published_at"), "created_at": p.get("created_at"), "options": options}
+        if outdoor:
+            extra["variants"] = variant_rows
+            extra["colors"] = sorted({row["color"] for row in variant_rows if row["color"]})
+        if footwear:
+            if len(systems) == 1 and None not in systems:
+                extra["shoe_size_system"] = next(iter(systems))
+            if widths:
+                extra["shoe_widths"] = sorted(widths)
+                # A product context must apply to every variant. Mixed or unknown
+                # widths belong on individual labels, never on the whole product.
+                if len({row["width"] for row in variant_rows}) == 1:
+                    extra["shoe_width"] = next(iter(widths))
         return RawProduct(
             retailer_id=self.rid,
             external_id=str(p["id"]),
@@ -244,8 +345,7 @@ class ShopifyAdapter(Adapter):
             type_hints=type_hints,
             body_text=_strip_html(p.get("body_html")),
             condition_hint=next(iter(conds), None),
-            extra={"published_at": p.get("published_at"), "created_at": p.get("created_at"),
-                   "options": [o.get("name", "") for o in p.get("options") or []]},
+            extra=extra,
             category=self.category,
         )
 

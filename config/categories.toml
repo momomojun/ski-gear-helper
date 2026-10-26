@@ -2767,3 +2767,76 @@ product_urls = ["/p/15171-40246/", "/p/15171-40275/"]
 max_listing_pages = 1
 max_detail_pages = 12
 
+
+
+# ============================================================================
+# 独立 outdoor 专区；固定分类由 categories/normalize 注册，滑雪配置和默认首页不变。
+# 2026-10-18 少量 Fetcher probe（robots/2s 限速，无 DB）：以下所有路径均返回真实商品。
+# REI：男女分类逐个核实，列表 /c/<handle>?pagesize=30&sort=title&json=true。
+# 详情 /rest/products/201989 已核实 size="7 Wide"、color、sku、price、isAvailable；
+# sizechart.valueTable 的 U.S. Men's 为原码 identity row。仅逐商品有明确证据才传 shoe_size_system。
+# all 包括原价款，单分类最多 30 个详情；余下保留搜索索引的 size/colour 关联，价格区间不伪装逐码价格。
+[rei.outdoor_jacket]
+category_paths = []
+gender_paths = { men = "/c/mens-rain-jackets", women = "/c/womens-rain-jackets" }
+exclude_paths = []
+detail_mode = "all"
+max_detail_pages = 30
+
+[rei.outdoor_pants]
+category_paths = []
+gender_paths = { men = "/c/mens-hiking-pants", women = "/c/womens-hiking-pants" }
+exclude_paths = []
+detail_mode = "all"
+max_detail_pages = 30
+
+[rei.outdoor_top]
+category_paths = []
+gender_paths = { men = "/c/mens-hiking-shirts", women = "/c/womens-hiking-shirts" }
+exclude_paths = []
+detail_mode = "all"
+max_detail_pages = 30
+
+[rei.hiking_shoe]
+category_paths = []
+gender_paths = { men = "/c/mens-hiking-shoes", women = "/c/womens-hiking-shoes" }
+exclude_paths = []
+detail_mode = "all"
+max_detail_pages = 30
+
+[rei.trail_shoe]
+category_paths = []
+gender_paths = { men = "/c/mens-trail-running-shoes", women = "/c/womens-trail-running-shoes" }
+exclude_paths = []
+detail_mode = "all"
+max_detail_pages = 30
+
+# Sports Basement：每个集合 products.json?limit=2&page=1 核实；服装按标题性别。
+# hiking-jackets 含 fleece/pullover，由户外分类规则归类；不以普通滑雪装备页作来源。
+# hiking-footwear 混凉鞋、hiking-shoes 为空，不配置。Size 未明确 US，不凭美国店铺推断系统。
+[sportsbasement.outdoor_jacket]
+collections = ["hiking-jackets"]
+hints = {}
+
+[sportsbasement.outdoor_pants]
+collections = ["hiking-pants"]
+hints = {}
+
+[sportsbasement.outdoor_top]
+collections = ["hiking-tops"]
+hints = {}
+
+[sportsbasement.trail_shoe]
+collections = ["mens-trail-running-shoes", "womens-trail-running-shoes"]
+[sportsbasement.trail_shoe.hints]
+"mens-trail-running-shoes" = { gender = "men" }
+"womens-trail-running-shoes" = { gender = "women" }
+
+# gearx：专用低帮徒步鞋集合（Footwear > Hiking > Hike Low），男女均核实 products.json。
+# options: Color / Footwear Size (Men's or Women's) / Width；个别女款 Size 被源站误标 Clothing Size。
+# 小样本 Width=Regular；解析支持任意宽度，不合并颜色或宽度。无明确系统标签则不填 US。
+[gearx.hiking_shoe]
+collections = ["mens-hiking-shoes", "womens-hiking-shoes"]
+[gearx.hiking_shoe.hints]
+"mens-hiking-shoes" = { gender = "men" }
+"womens-hiking-shoes" = { gender = "women" }

@@ -36,6 +36,7 @@ from urllib.parse import urlencode
 
 from ..net import BlockedError, FetchError
 from .base import NOT_SKI_RE, Adapter, RawProduct, SizeOption, to_float
+from .shopify import OUTDOOR_CATEGORIES, SHOE_CATEGORIES, OUTDOOR_HARDWARE_RE, explicit_shoe_system, shoe_width
 
 # 和 REI 前端 fetch() 一样的 Accept。/rest/products/{id} 会按 Accept 做内容协商：
 # Chrome 导航用的默认 Accept 偏好 application/xml，会拿到 XML（而且 CDN 不按 Accept 区分缓存）。
@@ -279,29 +280,51 @@ def listing_prices(r: dict) -> tuple[float | None, float | None, float | None]:
     return pmin, pmax, compare_at
 
 
+def _color_label(value) -> str | None:
+    if isinstance(value, dict):
+        return value.get("displayLabel") or value.get("label") or value.get("vendorColorName") or value.get("code")
+    return str(value) if value else None
+
+
+def _variant_label(v: dict) -> str:
+    label = _size_label(v.get("size"))
+    width = _color_label(v.get("width"))
+    return f"{label} {width}" if width and width.lower() not in label.lower() else label
+
+
 def listing_sizes(r: dict, price: float | None, compare_at: float | None,
-                  cm: Callable[[str], int | None]) -> list[SizeOption]:
-    """列表里的 sizeDetails：REI 只列出网上有货的尺码（filterState = "available"）。"""
+                  cm: Callable[[str], int | None], *, preserve_variants: bool = False,
+                  url: str | None = None) -> list[SizeOption]:
+    """Search-index stock only; colours are linked by SKU, never a size × colour cross product."""
     out: list[SizeOption] = []
-    seen: set[str] = set()
+    seen = set()
+    colors = {str(c.get("vendorColorId")): _color_label(c)
+              for c in (r.get("colorDetails") or {}).get("colors") or []}
     for s in (r.get("sizeDetails") or {}).get("sizeDetails") or []:
-        label = _size_label(s.get("size"))
-        if not label or label in seen:
+        label = _variant_label(s)
+        if not label:
             continue
-        seen.add(label)
         state = str(s.get("filterState") or "").lower()
-        out.append(SizeOption(label=label, cm=cm(label), available=state in ("available", ""),
-                              price=price, compare_at=compare_at))
+        for c in (s.get("colors") or [{}]) if preserve_variants else [{}]:
+            color = colors.get(str(c.get("colorId"))) or _color_label(c.get("color"))
+            sku = c.get("skuId")
+            key = (label, sku or color) if preserve_variants else label
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(SizeOption(label=label, cm=cm(label), available=state in ("available", ""),
+                                  price=price, compare_at=compare_at, color=color,
+                                  url=f"{url}?sku={sku}" if url and sku else None))
     return out
 
 
 def detail_sizes(variants: list[dict], cm: Callable[[str], int | None],
-                 order: list[str] | None = None) -> list[SizeOption]:
-    """/rest/products/{id} 的 variants（颜色 × 尺码）→ 每个尺码一个 SizeOption：
-    任一颜色有货就算有货，价格取有货颜色里最便宜的那个。按 REI 页面上的尺码顺序（order）排列。"""
-    by_label: dict[str, SizeOption] = {}
+                 order: list[str] | None = None, *, preserve_variants: bool = False,
+                 url: str | None = None) -> list[SizeOption]:
+    """Legacy ski rows aggregate colours; outdoor rows preserve size/width/colour/SKU."""
+    by_label: dict[object, SizeOption] = {}
     for v in variants:
-        label = _size_label(v.get("size"))
+        label = _variant_label(v)
         if not label:
             continue
         price = to_float(v.get("price"))
@@ -310,9 +333,14 @@ def detail_sizes(variants: list[dict], cm: Callable[[str], int | None],
             cmp_ = None
         status = str(v.get("status") or "").upper()
         avail = bool(v.get("available")) and status not in ("SOLD_OUT", "UNAVAILABLE", "DISCONTINUED")
-        cur = by_label.get(label)
+        color = _color_label(v.get("color"))
+        sku = v.get("sku")
+        key = (label, sku or color) if preserve_variants else label
+        cur = by_label.get(key)
         if cur is None:
-            by_label[label] = SizeOption(label, cm(label), avail, price, cmp_)
+            by_label[key] = SizeOption(label, cm(label), avail, price, cmp_,
+                                      color=color if preserve_variants else None,
+                                      url=f"{url}?sku={sku}" if preserve_variants and url and sku else None)
             continue
         better = (avail and not cur.available) or (
             avail == cur.available and price is not None and (cur.price is None or price < cur.price))
@@ -328,12 +356,32 @@ def detail_sizes(variants: list[dict], cm: Callable[[str], int | None],
     return sizes
 
 
+def detail_shoe_system(det: dict) -> str | None:
+    """REI's chart explicitly maps the selected size keys to a named system.
+
+    Accept an identity row only if it is unique; the mere presence of a US conversion
+    column does not mean the product's selected sizes use US numbering.
+    """
+    explicit = explicit_shoe_system(det.get("size_label") or "")
+    if explicit:
+        return explicit
+    chart = det.get("sizechart") or {}
+    table = chart.get("valueTable") or {}
+    identities = set()
+    for name, values in table.items():
+        system = explicit_shoe_system(name)
+        if system and isinstance(values, dict) and values and all(str(k) == str(v) for k, v in values.items()):
+            identities.add(system)
+    return next(iter(identities)) if len(identities) == 1 else None
+
+
 class ReiAdapter(Adapter):
     """cfg（零售商配置 + 分类配置）可选键：
     - category_paths / category_path、gender_paths、exclude_paths：见 DEFAULT_CATEGORY_CFG
     - max_detail_pages：这个分类最多调用多少次商品接口（打折商品，折扣从大到小）
     - detail_mode（默认 "discounted"）："discounted" = 打折商品都抓详情（受上限约束）；
-      "auto" = 只抓「打折且各尺码价格不同 / 列表没给尺码」的；"off" = 不抓详情
+      "auto" = 只抓「打折且各尺码价格不同 / 列表没给尺码」的；"off" = 不抓详情；
+      "all" = 也补全原价商品（仍受 max_detail_pages 限制，供户外颜色/宽度/价格库存使用）
     """
 
     platform = "rei"
@@ -341,7 +389,7 @@ class ReiAdapter(Adapter):
     # ------------------------------------------------------------------ 配置
     def _cat_cfg(self) -> dict:
         """这个分类的路径配置：toml 里写了任何路径键就完全用 toml 的，否则用内置默认。"""
-        if any(self.cfg.get(k) for k in PATH_KEYS):
+        if any(k in self.cfg for k in PATH_KEYS):
             return self.cfg
         return DEFAULT_CATEGORY_CFG.get(self.category, {})
 
@@ -386,8 +434,9 @@ class ReiAdapter(Adapter):
         # 商品接口：只针对打折商品，折扣从大到小，每个分类最多 max_detail_pages 个
         mode = str(self.cfg.get("detail_mode") or "discounted").lower()
         if mode != "off":
-            cands = [p for p in products if p.compare_at and p.price and (mode == "discounted" or needs[p.external_id])]
-            cands.sort(key=lambda p: p.price / p.compare_at)
+            cands = [p for p in products if mode == "all" or
+                     (p.compare_at and p.price and (mode == "discounted" or needs[p.external_id]))]
+            cands.sort(key=lambda p: p.price / p.compare_at if p.price and p.compare_at else 1.0)
             for p in cands[: self._max_detail()]:
                 if self._blocked:
                     break
@@ -529,6 +578,8 @@ class ReiAdapter(Adapter):
     def _keep(self, raw_title: str) -> bool:
         if self.category == "ski":
             return is_alpine_ski(raw_title)
+        if self.category in OUTDOOR_CATEGORIES and OUTDOOR_HARDWARE_RE.search(raw_title):
+            return False
         # 只看标题：同一页所有商品的 product_type 都一样，传进去反而会盖过标题的纠错（比如手套页里的帽子）
         return self.wanted(raw_title)
 
@@ -551,7 +602,10 @@ class ReiAdapter(Adapter):
 
         price, pmax, compare_at = listing_prices(r)
         uniform = price is not None and pmax is not None and abs(pmax - price) < 0.005
-        sizes = listing_sizes(r, price if uniform else None, compare_at if uniform else None, self.size_cm)
+        product_url = link if link.startswith("http") else self.base_url + link
+        outdoor = self.category in OUTDOOR_CATEGORIES
+        sizes = listing_sizes(r, price if uniform else None, compare_at if uniform else None, self.size_cm,
+                              preserve_variants=outdoor, url=product_url)
 
         gender, gsrc = self._gender_for(pid, raw_title, members)
         tiles = _tiles(r)
@@ -596,6 +650,19 @@ class ReiAdapter(Adapter):
             "gender_src": gsrc,
             "detail": False,
         }
+        if outdoor:
+            extra["colors"] = [_color_label(c) for c in colors if _color_label(c)]
+            extra["size_source"] = "search_index"
+            # Keep the exact source associations even if detail enrichment hits its request cap.
+            extra["size_details"] = r.get("sizeDetails") or {}
+        if self.category in SHOE_CATEGORIES:
+            widths = [str(w) for tile in r.get("tileAttributes") or [] if tile.get("title") == "Footwear Width"
+                      for w in tile.get("values") or [] if w]
+            if widths:
+                extra["shoe_widths"] = sorted(set(widths))
+                explicit_widths = {shoe_width(s.label) for s in sizes if shoe_width(s.label)}
+                if len(set(widths)) == 1 and explicit_widths <= set(widths):
+                    extra["shoe_width"] = widths[0]
         if self.category == "ski":
             extra.update(terrain=tiles.get("Terrain"), waist_width=tiles.get("Waist Width"),
                          sidecut_radius=tiles.get("Sidecut Radius"))
@@ -643,11 +710,14 @@ class ReiAdapter(Adapter):
         if head.startswith(b"{"):
             d = json.loads(body)
             return {
+                "size_label": d.get("sizeLabel"),
+                "sizechart": d.get("sizechart"),
                 "gender": d.get("gender"),
                 "outlet": bool(d.get("isOutlet")),
                 "category": (d.get("primaryCategory") or {}).get("label"),
                 "order": [s.get("label") for s in d.get("sizes") or [] if isinstance(s, dict)],
-                "variants": [{"size": v.get("size"), "available": v.get("isAvailable"), "status": v.get("status"),
+                "variants": [{"size": v.get("size"), "width": v.get("width"), "color": v.get("color"), "sku": v.get("sku"),
+                              "available": v.get("isAvailable"), "status": v.get("status"),
                               "price": v.get("price"), "compare_at": v.get("compareAtPrice")}
                              for v in d.get("variants") or []],
             }
@@ -655,11 +725,18 @@ class ReiAdapter(Adapter):
             # CDN 里可能缓存着 XML 版本（别人用浏览器默认 Accept 请求过）
             root = ET.fromstring(body)
             return {
+                "size_label": root.findtext("sizeLabel"),
+                "sizechart": {"valueTable": {
+                    row.findtext("attribute") or "": dict(zip(
+                        [x.text or "" for x in root.findall("sizechart/sizes")],
+                        [x.text or "" for x in row.findall("values")]))
+                    for row in root.findall("sizechart/rows")}},
                 "gender": root.findtext("gender"),
                 "outlet": (root.findtext("isOutlet") or "").strip() == "true",
                 "category": root.findtext("primaryCategory/label"),
                 "order": [s.findtext("label") for s in root.findall("sizes")],
-                "variants": [{"size": v.findtext("size"),
+                "variants": [{"size": v.findtext("size"), "width": v.findtext("width"), "sku": v.findtext("sku"),
+                              "color": v.findtext("color/displayLabel") or v.findtext("color/label") or v.findtext("color"),
                               "available": (v.findtext("isAvailable") or "").strip() == "true",
                               "status": v.findtext("status"), "price": v.findtext("price"),
                               "compare_at": v.findtext("compareAtPrice")}
@@ -682,7 +759,27 @@ class ReiAdapter(Adapter):
             self.log(f"[rei] product API failed for {p.external_id}: {e}")
             return
 
-        sizes = detail_sizes(det["variants"], self.size_cm, det.get("order"))
+        outdoor = self.category in OUTDOOR_CATEGORIES
+        sizes = detail_sizes(det["variants"], self.size_cm, det.get("order"), preserve_variants=outdoor, url=p.url)
+        if outdoor:
+            p.extra["variants"] = det["variants"]
+            p.extra["colors"] = sorted({_color_label(v.get("color")) for v in det["variants"] if _color_label(v.get("color"))})
+            p.extra["size_source"] = "product_api" if sizes else p.extra.get("size_source", "search_index")
+        if self.category in SHOE_CATEGORIES:
+            system = detail_shoe_system(det)
+            if system:
+                p.extra["shoe_size_system"] = system
+            variant_widths = {_color_label(v.get("width")) or shoe_width(_size_label(v.get("size")))
+                              for v in det["variants"]}
+            widths = variant_widths - {None}
+            if widths:
+                p.extra["shoe_widths"] = sorted(widths)
+            if len(variant_widths) == 1 and None not in variant_widths:
+                p.extra["shoe_width"] = next(iter(widths))
+            elif widths:
+                # Bare sizes do not imply Regular. Do not apply a Wide context to
+                # unmarked sizes on the same page; their width stays unknown.
+                p.extra.pop("shoe_width", None)
         if sizes:
             p.sizes = sizes
             priced = [s for s in sizes if s.price is not None]
@@ -691,7 +788,9 @@ class ReiAdapter(Adapter):
                 best = min(s.price for s in pool)
                 cmps = [s.compare_at for s in pool if abs(s.price - best) < 0.005 and s.compare_at]
                 p.price = best
-                if cmps:
+                if outdoor:
+                    p.compare_at = max(cmps) if cmps else None
+                elif cmps:
                     p.compare_at = max(cmps)
                 elif p.compare_at is not None and p.compare_at <= best + 0.005:
                     p.compare_at = None

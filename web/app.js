@@ -24,6 +24,11 @@ const DIN_BANDS = [["≤10", 0, 10], ["11–13", 11, 13], ["14–16", 14, 16], [
 const FLEX_BANDS = [["≤80（入门）", 0, 80], ["85–100（进阶）", 85, 100], ["105–120（高级）", 105, 120], ["≥130（专家）", 125, 200]];
 const LAST_BANDS = [["窄楦 ≤98mm", "narrow"], ["中楦 99–101mm", "medium"], ["宽楦 ≥102mm", "wide"]];
 const SIZED = ["ski", "pole", "boot", "binding"];  // 这些分类有专门的尺码筛选
+const FOOTWEAR = ["hiking_shoe", "trail_shoe"];
+const DEFAULT_SECTIONS = [
+  { id: "ski", name: "滑雪", default: "ski", categories: ["ski", "binding", "boot", "pole", "helmet", "goggle", "protection", "jacket", "pants", "suit", "midlayer", "baselayer", "glove", "sock", "facewear", "hat", "backpack", "bag", "avalanche", "skin", "tuning", "accessory"], labels: {} },
+  { id: "outdoor", name: "户外", default: "hiking_shoe", categories: ["hiking_shoe", "trail_shoe", "outdoor_jacket", "outdoor_pants", "outdoor_top", "midlayer", "baselayer", "glove", "sock", "hat", "facewear"], labels: { midlayer: "抓绒 / 保暖层", sock: "袜子", facewear: "围脖 / 护脸" } },
+];
 const PAGE = 60;
 
 // ================================================================ 工具
@@ -61,7 +66,49 @@ function toast(msg, ms = 2600) {
   clearTimeout(toast._t);
   toast._t = setTimeout(() => t.classList.add("hidden"), ms);
 }
+// ---------------------------------------------------------------- 在线只读版（Vercel 静态站）
+// 构建时在 index.html 里写入 window.SKIDEALS_STATIC；数据是 data/ 下的静态 JSON（python -m skideals build-site 生成）
+const STATIC = globalThis.SKIDEALS_STATIC || null;
+if (STATIC) document.documentElement.classList.add("static");
+const staticCache = new Map();
+const staticJSON = (file) => {
+  if (!staticCache.has(file)) {
+    staticCache.set(file, fetch("data/" + file).then((r) => {
+      if (!r.ok) { staticCache.delete(file); throw new Error(r.status === 404 ? "型号不存在或已下架" : "数据加载失败"); }
+      return r.json();
+    }));
+  }
+  return staticCache.get(file);
+};
+async function staticModel(key) {
+  // 详情按分类分片：目录里每个型号带着 ds（分片号），先有目录才知道去哪个文件找
+  const cat = key.split("|")[0];
+  const catalog = await staticJSON(`catalog/${cat}.json`);
+  const fam = catalog.families.find((f) => f.k === key);
+  if (!fam || fam.ds === undefined) throw new Error("型号不存在或已下架");
+  const entry = (await staticJSON(`model/${cat}/${fam.ds}.json`))[key];
+  if (!entry) throw new Error("型号不存在或已下架");
+  return entry;
+}
+async function staticApi(path, method) {
+  if (method !== "GET") throw new Error("在线版是只读快照：更新价格、关注提醒、手动记价请在本地版使用");
+  const u = new URL(path, location.href);
+  const q = (k) => u.searchParams.get(k);
+  switch (u.pathname) {
+    case "/api/meta": return staticJSON("meta.json");
+    case "/api/categories": return staticJSON("categories.json");
+    case "/api/catalog": return staticJSON(`catalog/${q("cat")}.json`);
+    case "/api/model": return (await staticModel(q("key"))).d;
+    case "/api/intl": { const m = await staticJSON("meta.json"); return { ...m.intl_common, ...(await staticModel(q("key"))).i }; }
+    case "/api/trust/retailers": return staticJSON("trust.json");
+    case "/api/settings": return (await staticJSON("meta.json")).settings;
+    case "/api/watchlist": case "/api/alerts": return [];
+    case "/api/crawl/status": return { running: false };
+    default: throw new Error("在线版不支持这个功能");
+  }
+}
 async function api(path, opts = {}) {
+  if (STATIC) return staticApi(path, opts.method || "GET");
   const init = { method: opts.method || "GET", headers: { "Content-Type": "application/json", "X-SkiDeals": "1" } };
   if (opts.body !== undefined) init.body = JSON.stringify(opts.body);
   const r = await fetch(path, init);
@@ -77,20 +124,27 @@ const loadJSON = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || 
 
 // ================================================================ 状态
 const S = {
-  cats: [], catInfo: {}, feat: {}, sizeOrder: [], catId: localStorage.getItem("sd.cat") || "ski",
+  cats: [], catInfo: {}, feat: {}, sizeOrder: [], catId: "ski", section: "ski", sections: DEFAULT_SECTIONS,
+  queries: { ski: "", outdoor: "" },
   data: {}, cat: null, meta: null, q: "", shown: PAGE, route: "deals", detail: null,
   g: loadJSON("sd.g", { gender: "all", incUnisex: true }),  // 性别选择在各分类之间共用
   f: null,
 };
 function defaultF(cat) { return { ...BASE_F, ...(CAT_F[cat] || {}), feats: [], sizes: [] }; }
-function loadF(cat) { return { ...defaultF(cat), ...loadJSON("sd.f." + cat, {}) }; }
-function saveF() {
-  localStorage.setItem("sd.f." + S.catId, JSON.stringify(S.f));
-  localStorage.setItem("sd.g", JSON.stringify(S.g));
+function loadF(cat, section = S.section) {
+  const legacy = section === "ski" ? loadJSON("sd.f." + cat, {}) : {};
+  return { ...defaultF(cat), ...loadJSON(`sd.f.${section}.${cat}`, legacy) };
 }
+function saveF() {
+  localStorage.setItem(`sd.f.${S.section}.${S.catId}`, JSON.stringify(S.f));
+  localStorage.setItem(`sd.g.${S.section}`, JSON.stringify(S.g));
+}
+const sectionInfo = (section = S.section) => S.sections.find((s) => s.id === section) || DEFAULT_SECTIONS[0];
+const sectionCats = (section = S.section) => sectionInfo(section).categories.map((id) => S.catInfo[id]).filter(Boolean);
+const categoryPath = (cat, section = S.section) => section === "outdoor" ? `#/outdoor/c/${cat}` : `#/c/${cat}`;
 const retName = (id) => S.cat?.retailers[id]?.name || id;
-const catName = (id) => (S.catInfo[id]?.name || id).split("（")[0];
-const catShort = (id) => CAT_SHORT[id] || catName(id);
+const catName = (id) => (sectionInfo().labels?.[id] || S.catInfo[id]?.name || id).split("（")[0];
+const catShort = (id) => sectionInfo().labels?.[id] || CAT_SHORT[id] || catName(id);
 const season = () => S.meta?.season || new Date().getFullYear() + (new Date().getMonth() >= 6 ? 1 : 0);
 function yearBucket(y) { if (!y) return "na"; return y >= season() - 2 ? String(y) : "old"; }
 const YEAR_LABEL = (b) => (b === "na" ? "未标注年份" : b === "old" ? "更早" : b + " 款");
@@ -100,6 +154,7 @@ const brandLabel = (b) => (b ? esc(b) : '<span class="muted">未标品牌</span>
 // ================================================================ 筛选逻辑
 function sizeMatch(cat, f, z) {  // z = [尺码, 是否有货, 价格]
   const n = z[0];
+  if (FOOTWEAR.includes(cat)) return !(f.sizes || []).length || f.sizes.includes(String(n));
   if (cat === "ski" || cat === "pole") {
     const lo = num(f.lenMin), hi = num(f.lenMax);
     return (!lo || n >= lo) && (!hi || n <= hi);
@@ -220,24 +275,27 @@ function facets() {
   if (S.catId === "ski") out.types = count("types", (r) => [r.fam.t || "none"]);
   if (!SIZED.includes(S.catId)) {
     out.sizes = count("sizes", (r) => [...new Set(r.offers.flatMap((x) => x.o.z.filter((z) => z[1] || !S.f.inStock)
-      .flatMap((z) => String(z[0]).toUpperCase().split("/"))))]);
+      .flatMap((z) => FOOTWEAR.includes(S.catId) ? [String(z[0])] : String(z[0]).toUpperCase().split("/"))))]);
   }
   return out;
 }
 
 // ================================================================ 分类栏 & 找折扣页
+function sectionTabs() {
+  return `<nav class="section-switch" aria-label="专区"><a href="#/" class="${S.section === "ski" ? "on" : ""}" ${S.section === "ski" ? 'aria-current="page"' : ""}>${catIc("ski", 20)}<b>滑雪主站</b><small>装备与雪季好价</small></a><a href="#/outdoor" class="${S.section === "outdoor" ? "on" : ""}" ${S.section === "outdoor" ? 'aria-current="page"' : ""}>${ic("mountain", 20)}<b>户外专区</b><small>徒步 · 越野 · 户外服装</small></a></nav>`;
+}
 function catBar() {
   // 横向分类栏：图标 + 短名 + 数量；不同大类之间用细线隔开
   let html = "", lastGroup = null;
-  for (const c of S.cats) {
-    if (!c.fams && c.id !== S.catId) continue;
+  for (const c of sectionCats()) {
+    if (S.section === "ski" && !c.fams && c.id !== S.catId) continue;
     if (lastGroup !== null && c.group !== lastGroup) html += '<span class="rail-sep" aria-hidden="true"></span>';
     lastGroup = c.group;
     const on = c.id === S.catId;
-    html += `<a href="#/c/${c.id}" class="cat ${on ? "on" : ""}" ${on ? 'aria-current="page"' : ""} title="${esc(c.group)} · ${esc(catName(c.id))}">
+    html += `<a href="${categoryPath(c.id)}" class="cat ${on ? "on" : ""}" ${on ? 'aria-current="page"' : ""} title="${esc(c.group)} · ${esc(catName(c.id))}">
       ${catIc(c.id, 26)}<span class="cat-name">${esc(catShort(c.id))}</span><span class="cat-n">${(c.fams || 0).toLocaleString()}</span></a>`;
   }
-  return `<nav class="catrail" aria-label="装备分类">
+  return `${sectionTabs()}<nav class="catrail" aria-label="装备分类">
     <button class="icon-btn rail-btn prev" data-act="rail-prev" aria-label="向左滚动分类" hidden>${ic("chevronLeft")}</button>
     <div class="rail" id="rail">${html}</div>
     <button class="icon-btn rail-btn next" data-act="rail-next" aria-label="向右滚动分类">${ic("chevronRight")}</button></nav>`;
@@ -277,16 +335,17 @@ const RIDGE = `<svg class="hero-ridge" viewBox="0 0 1440 92" preserveAspectRatio
 function heroHTML(loading = false) {
   // loading = 数据还没到：先把首屏框架画出来（数字显示“—”），到了以后只换数字，布局不跳
   const st = loading ? { n: 0, maxOff: 0, lo: 0, drop: 0 } : catStats(), tip = seasonTip(), name = catName(S.catId);
-  const retailers = loading ? (S.meta?.retailers_enabled || "") : Object.keys(S.cat.retailers).length;
+  const outdoor = S.section === "outdoor";
+  const retailers = loading ? (S.catInfo[S.catId]?.shops || "") : new Set(S.cat.families.flatMap((f) => f.o.map((o) => o.r))).size;
   const num = (v) => (loading ? "—" : v.toLocaleString());
-  return `<section class="hero" aria-labelledby="hero-title">
+  return `<section class="hero ${outdoor ? "hero-outdoor" : ""}" aria-labelledby="hero-title">
     <canvas class="hero-snow" aria-hidden="true"></canvas>
     <div class="hero-wrap">${TOPO}
     <div class="hero-in">
       <div>
-        <span class="eyebrow"><span class="pulse"></span>雪季播报 · ${esc(tip.tag)}</span>
+        <span class="eyebrow"><span class="pulse"></span>${outdoor ? "户外专区 · 徒步与越野" : "雪季播报 · " + esc(tip.tag)}</span>
         <h1 class="hero-title" id="hero-title">今天的<em>${esc(name)}</em>好价</h1>
-        <p class="hero-lead">${retailers ? retailers + " 家" : ""}美国网站每天自动比价，${S.meta?.last_crawl ? `${esc(ago(S.meta.last_crawl))}更新` : "等待第一次更新"}。${tip.text}</p>
+        <p class="hero-lead">${outdoor ? "户外服装、徒步鞋与越野跑鞋，按你的尺码比较已收录报价。滑雪仍在主站，两个专区分别筛选；鞋款请核对码制、楦宽和防水版本。" : `${retailers ? retailers + " 家" : ""}美国网站的已收录报价，按长度、尺码与库存比较。${tip.text}`}</p>
       </div>
       <div class="hero-stats" role="group" aria-label="${esc(name)}统计：点一下直接筛选">
         <button class="stat" data-quick="" title="显示全部在售型号"><span class="stat-l">${ic("layers", 14)}在售型号</span><span class="stat-v" data-to="${st.n}">${num(st.n)}</span></button>
@@ -313,6 +372,7 @@ function sizeFilterHTML(f) {
       <div class="range"><input id="brakeFor" inputmode="numeric" placeholder="如 94" aria-label="我的雪板腰宽（毫米）" value="${esc(f.brakeFor)}"></div>
       <div class="note">只显示刹车宽度在 腰宽 ~ 腰宽+20mm 且有货的报价（刹车比雪板窄就装不上）。</div></div>`;
   }
+  if (FOOTWEAR.includes(cat)) return `<div class="fgroup"><h3>我的鞋码与楦宽</h3><select id="shoeSize" aria-label="户外鞋码与楦宽"><option value="">全部尺码</option></select><p class="note">按商家原始码制与楦宽精确筛选；US 男码、US 女码、EU 等分别比较，不使用雪鞋 Mondo 换算。未注明码制的尺码保留原样。</p></div>`;
   return `<div class="fgroup"><h3>尺码</h3><div class="chips" id="f-sizes"></div><div class="note">只显示这个尺码有货的报价。“S/M”这种两码合一的，选 S 或 M 都会显示。</div></div>`;
 }
 function dealsShell(animate = true) {
@@ -363,7 +423,7 @@ function dealsShell(animate = true) {
         ${special}
         <div class="fgroup" id="fg-feats"><h3>特征</h3><div class="chips" id="f-feats"></div></div>
         <div class="fgroup"><h3>年份</h3><div class="checks" id="f-years"></div></div>
-        <div class="fgroup"><h3>品牌</h3><div class="checks" id="f-brands"></div></div>
+        <div class="fgroup"><h3>品牌 <span class="hint">A–Z</span></h3><div class="checks" id="f-brands"></div></div>
         <div class="fgroup"><h3>成色</h3><div class="checks" id="f-conds">${Object.entries(COND).map(([k, t]) => `<label class="chk"><input type="checkbox" data-cond="${k}" ${f.conds.includes(k) ? "checked" : ""}> ${t}</label>`).join("")}</div></div>
         <div class="fgroup"><h3>网站</h3><div class="checks" id="f-retailers"></div></div>
         <div class="fgroup reset-row">
@@ -397,6 +457,15 @@ function checkList(el, items, selected, attr, fmt, limit = 999) {
     (items.length > limit ? `<button class="link-btn more-toggle" data-act="expand" data-target="${el.id}">${expanded ? "收起" : `显示全部 ${items.length} 个`}</button>` : "") ||
     '<span class="muted small">无</span>';
 }
+function sizeLabel(cat, key) {
+  if (!FOOTWEAR.includes(cat)) return String(key);
+  const parts = String(key).split(":");
+  if (parts.length !== 4) return String(key);
+  const [system, basis, value, width] = parts;
+  const genders = {men:"男码", women:"女码", kids:"童码", unisex:"中性码", "未注明":"码别未注明"};
+  const widths = {regular:"标准楦", wide:"宽楦", narrow:"窄楦", xwide:"加宽楦", "未注明":"楦宽未注明"};
+  return `${system === "未注明" ? "码制未注明" : system} ${genders[basis] || basis} ${value} · ${widths[width] || width.toUpperCase()}`;
+}
 function sortSizes(keys) {
   const order = S.sizeOrder;
   return keys.sort((a, b) => {
@@ -404,8 +473,17 @@ function sortSizes(keys) {
     if (ia >= 0 || ib >= 0) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
     const na = parseFloat(a), nb = parseFloat(b);
     if (!isNaN(na) && !isNaN(nb)) return na - nb;
-    return String(a).localeCompare(String(b));
+    return String(a).localeCompare(String(b), undefined, { numeric: true });
   });
+}
+function sortBrandOptions(counts, selected = []) {
+  const collator = new Intl.Collator("en", { sensitivity: "base", numeric: true, ignorePunctuation: true });
+  return [...new Set([...Object.keys(counts), ...selected])].map(k => [k, counts[k] || 0])
+    .sort((a,b) => {
+      const left = String(a[0] ?? "").trim(), right = String(b[0] ?? "").trim();
+      if (!left || !right) return Number(!left) - Number(!right);
+      return collator.compare(left,right) || left.localeCompare(right,"en");
+    });
 }
 function renderFilters() {
   const fc = facets(), f = S.f;
@@ -416,13 +494,18 @@ function renderFilters() {
   if (fc.types) checkList($("#f-types"), sorted(fc.types, f.types), f.types, "type", (k) => TYPE[k] || k);
   const yrs = sorted(fc.years, f.years).sort((a, b) => (b[0] === "na" ? -1 : a[0] === "na" ? 1 : b[0].localeCompare(a[0])));
   checkList($("#f-years"), yrs, f.years, "year", YEAR_LABEL);
-  checkList($("#f-brands"), sorted(fc.brands, f.brands), f.brands, "brand", brandLabel, 12);
+  checkList($("#f-brands"), sortBrandOptions(fc.brands, f.brands), f.brands, "brand", brandLabel, 12);
   checkList($("#f-retailers"), sorted(fc.retailers, f.retailers), f.retailers, "retailer",
     (k) => `${esc(retName(k))} <span class="tier ${S.cat.retailers[k]?.tier}">${TIER[S.cat.retailers[k]?.tier] || ""}</span>`, 10);
   const feats = sorted(fc.feats, f.feats);
   $("#fg-feats").classList.toggle("hidden", !feats.length);
   $("#f-feats").innerHTML = feats.map(([k, n]) => `<button class="chip ${f.feats.includes(k) ? "on" : ""}" data-feat="${esc(k)}">${esc(featLabel(k))} <span class="cnt">${n}</span></button>`).join("");
   const sz = $("#f-sizes");
+  const shoeSize = $("#shoeSize");
+  if (shoeSize && fc.sizes) {
+    const keys = sortSizes([...new Set([...Object.keys(fc.sizes), ...(f.sizes || [])])]);
+    shoeSize.innerHTML = '<option value="">全部尺码</option>' + keys.map((k) => `<option value="${esc(k)}" ${(f.sizes || []).includes(k) ? "selected" : ""}>${esc(sizeLabel(S.catId,k))} · ${fc.sizes[k] || 0} 款</option>`).join("");
+  }
   if (sz && fc.sizes) {
     const sel = f.sizes || [];
     const keys = sortSizes([...new Set([...Object.keys(fc.sizes), ...sel])]);
@@ -460,7 +543,7 @@ function card(r, i) {
   if (o.pp && o.pp > o.p) tags.push(`<span class="tag drop">${ic("trendDown", 12)}刚降 ${usd(o.pp - o.p)}</span>`);
   const avail = o.z.filter((z) => z[1]).length;
   if (o.z.length > 2 && avail > 0 && avail <= 2 && !best.fit) tags.push(`<span class="tag few">仅剩 ${avail} 个尺码</span>`);
-  if (best.fit) tags.push(`<span class="tag">${esc(best.fit.slice(0, 4).join("/"))}${S.catId === "ski" || S.catId === "pole" ? "cm" : ""} 有货</span>`);
+  if (best.fit) tags.push(`<span class="tag">${esc(best.fit.slice(0, 4).map(k=>sizeLabel(S.catId,k)).join(" / "))}${S.catId === "ski" || S.catId === "pole" ? "cm" : ""} 有货</span>`);
   if (o.cd !== "new") tags.push(`<span class="tag cond">${COND[o.cd]}</span>`);
   if (fam.bd) tags.push('<span class="tag">含固定器</span>');
   const meta = metaLine(fam, o);
@@ -481,7 +564,7 @@ function card(r, i) {
 let moreObs = null;
 function renderGrid() {
   const rs = results();
-  const nRet = Object.keys(S.cat.retailers).length;
+  const nRet = new Set(rs.flatMap((r) => r.offers.map((x) => x.o.r))).size;
   $("#count").innerHTML = `<b>${rs.length.toLocaleString()}</b> 款符合筛选 · ${nRet} 家网站` +
     (S.f.quick ? ` <button class="qchip" data-quick="${S.f.quick}" aria-label="取消：${QUICK[S.f.quick]}">${QUICK[S.f.quick]}${ic("x", 13)}</button>` : "");
   const done = $("#sheet-done");
@@ -545,11 +628,11 @@ async function renderDeals() {
   S.cat = S.data[cat];
   S.f = loadF(cat);
   if (!S.cat.families.length) {
-    const any = S.cats.some((c) => c.fams);
-    $("#app").innerHTML = `<div class="page enter">${any ? catBar() : ""}<div class="panel" style="margin:56px auto;max-width:640px;text-align:center;padding:40px 32px">
-      ${any ? `${catIc(cat, 48)}<h2>${esc(catName(cat))}还没有数据</h2><p class="muted">可能是还没抓过这个分类。</p>` :
+    const any = sectionCats().some((c) => c.fams);
+    $("#app").innerHTML = `<div class="page enter">${catBar()}<div class="panel" style="margin:56px auto;max-width:640px;text-align:center;padding:40px 32px">
+      ${any || S.section === "outdoor" ? `${catIc(cat, 48)}<h2>${esc(catName(cat))}还没有数据</h2><p class="muted">这个分类尚未取得报价，可以单独更新；也可切换其他分类。滑雪装备始终在滑雪主站。</p>` :
         `${logoMark(56)}<h2 style="font-size:28px;margin:18px 0 8px">欢迎使用滑雪装备小帮手</h2><p class="muted" style="margin:0 0 22px">还没有数据。点下面的按钮，从各家美国雪具网站抓取价格（全品类约 20–30 分钟，可以边抓边看）。</p>`}
-      <button class="btn btn-lg" data-act="crawl">${ic("refresh", 17)}${any ? "抓取这个分类" : "开始第一次抓取"}</button></div></div>`;
+      <button class="btn btn-lg" data-act="crawl">${ic("refresh", 17)}${any || S.section === "outdoor" ? "抓取这个分类" : "开始第一次抓取"}</button></div></div>`;
     return;
   }
   stopSnow();
@@ -564,8 +647,8 @@ async function renderDeals() {
     const lead = old.querySelector(".hero-lead"), lead2 = fresh.querySelector(".hero-lead");
     if (lead && lead2 && lead.innerHTML !== lead2.innerHTML) lead.replaceWith(lead2);
     const page = old.querySelector(".page");
-    [...page.children].forEach((c) => { if (!c.classList.contains("catrail")) c.remove(); });
-    [...fresh.querySelector(".page").children].forEach((c) => { if (!c.classList.contains("catrail")) page.appendChild(c); });
+    [...page.children].forEach((c) => { if (!c.classList.contains("catrail") && !c.classList.contains("section-switch")) c.remove(); });
+    [...fresh.querySelector(".page").children].forEach((c) => { if (!c.classList.contains("catrail") && !c.classList.contains("section-switch")) page.appendChild(c); });
   } else $("#app").innerHTML = html;
   S.animateGrid = true;
   S.shown = PAGE;
@@ -578,7 +661,8 @@ async function renderDeals() {
   idle(() => {
     if ($("#deals-page") !== page) return;  // 已经切到别的分类 / 页面
     renderFilters();
-    stopSnow = Motion.snow($(".hero-snow"));
+    $("#filters").scrollTop = 0;  // 新分类从尺码筛选开始，避免动态内容引发滚动锚点跳动。
+    if (S.section === "ski") stopSnow = Motion.snow($(".hero-snow"));
     page.querySelectorAll(".stat-v[data-to]").forEach((el) => Motion.countUp(el, +el.dataset.to));
   });
 }
@@ -642,7 +726,7 @@ function bindDeals() {
     else if (d.act === "expand") { const el = $("#" + d.target); el.dataset.expanded = el.dataset.expanded === "1" ? "0" : "1"; renderFilters(); }
     else if (d.act === "more-sizes") { S.moreSizes = !S.moreSizes; renderFilters(); }
     else if (d.act === "open-sizer") { location.hash = "#/guide"; setTimeout(() => $("#sizer")?.scrollIntoView({ behavior: "smooth" }), 80); }
-    else if (d.act === "crawl") startCrawl(S.cats.some((c) => c.fams) ? [S.catId] : null);
+    else if (d.act === "crawl") startCrawl(sectionCats().some((c) => c.fams) || S.section === "outdoor" ? [S.catId] : null);
     else if (t.classList.contains("card")) openModel(d.k);
   });
   app.addEventListener("change", (e) => {
@@ -651,6 +735,7 @@ function bindDeals() {
     if (t.id === "inc-unisex") S.g.incUnisex = t.checked;
     else if (t.id === "inStock") S.f.inStock = t.checked;
     else if (t.id === "sort") S.f.sort = t.value;
+    else if (t.id === "shoeSize") S.f.sizes = t.value ? [t.value] : [];
     else if (d.type) S.f.types = toggle(S.f.types, d.type);
     else if (d.year) S.f.years = toggle(S.f.years, d.year);
     else if (d.brand) S.f.brands = toggle(S.f.brands, d.brand);
@@ -729,7 +814,7 @@ async function openModel(key, { fromRoute = false } = {}) {
     if (!S.data[cat]) S.data[cat] = await api("/api/catalog?cat=" + enc(cat));  // 从关注页打开别的分类时，要有那个分类的零售商信息
     S.detail = { d, intl, key, watchOpen: false, cat: S.data[cat] };
     renderDetail();
-    if (!intl.jp_query) refreshJP(true);  // 第一次打开这个型号：自动查一次日本价格
+    if (!FOOTWEAR.includes(cat) && !intl.jp_query) refreshJP(true);  // 鞋类先手动核对国际规格。
   } catch (e) {
     showDrawer(dBar() + `<div class="empty">${ic("alert", 40)}<b>加载失败</b>${esc(e.message)}</div>`);
   }
@@ -810,7 +895,16 @@ function bindCharts(root) {
 }
 function sizeChips(o, cat) {
   const lengthBased = cat === "ski" || cat === "pole";
-  const sizes = (o.sizes || []).map((s) => ({ ...s, key: lengthBased ? s.cm : (s.n || s.label) })).filter((s) => s.key);
+  let sizes = (o.sizes || []).map((s) => ({ ...s, key: lengthBased ? s.cm : (s.n || s.label) })).filter((s) => s.key);
+  {  // 所有分类都去重：户外店按“尺码×颜色”给变体，同一个 L 会出现好几次
+    const bySize = new Map();
+    for (const s of sizes) {
+      const old = bySize.get(s.key);
+      const cost = x => Number.isFinite(x.p) && x.p > 0 ? x.p : Infinity;
+      if (!old || (s.a && !old.a) || (!!s.a === !!old.a && cost(s) < cost(old))) bySize.set(s.key,s);
+    }
+    sizes = [...bySize.values()];  // 同一码不同颜色只显示最低有货颜色，SKU 链接仍对应该报价。
+  }
   if (!sizes.length) return '<span class="muted small">均码 / 未提供</span>';
   if (lengthBased) sizes.sort((a, b) => a.key - b.key);
   else if (cat === "boot") sizes.sort((a, b) => parseFloat(a.key) - parseFloat(b.key));
@@ -825,8 +919,8 @@ function sizeChips(o, cat) {
     const mine = s.a && active && sizeMatch(cat, f, [s.key, 1, s.p]);
     const priceNote = ` title="${esc([s.p ? usd(s.p) : "", s.color].filter(Boolean).join(" · "))}"`;
     const attrs = `class="sz ${s.a ? "a" : "x"} ${mine ? "mine" : ""}"${priceNote}`;
-    return s.a && s.u ? `<a ${attrs} href="${esc(s.u)}" target="_blank" rel="noopener noreferrer">${esc(s.key)}</a>`
-      : `<span ${attrs}>${esc(s.key)}</span>`;
+    return s.a && s.u ? `<a ${attrs} href="${esc(s.u)}" target="_blank" rel="noopener noreferrer">${esc(sizeLabel(cat,s.key))}</a>`
+      : `<span ${attrs}>${esc(sizeLabel(cat,s.key))}</span>`;
   }).join("");
 }
 function specPairs(d) {  // 规格小卡片：[标签, 值]
@@ -842,6 +936,11 @@ function specPairs(d) {  // 规格小卡片：[标签, 值]
     if (sp.flex) out.push(["硬度", "Flex " + sp.flex]);
     if (sp.last) out.push(["楦宽", typeof sp.last === "number" ? sp.last + " mm" : sp.last]);
   } else if (cat === "backpack" && sp.volume) out.push(["容量", sp.volume + " L"]);
+  if (FOOTWEAR.includes(cat)) {
+    if (sp.shoe_width && sp.shoe_width !== "未注明") out.push(["楦宽", sp.shoe_width.split("+").map(w=>({regular:"标准楦", wide:"宽楦", narrow:"窄楦", xwide:"加宽楦"}[w] || w.toUpperCase())).join(" / ")]);
+    if (sp.shoe_cut && sp.shoe_cut !== "未注明") out.push(["鞋帮", ({mid:"中帮",low:"低帮",high:"高帮"}[sp.shoe_cut] || sp.shoe_cut)]);
+    if (sp.shoe_membrane === "gtx") out.push(["防水版本", "GORE-TEX"]);
+  }
   return out;
 }
 function detailPriceScope(d) {
@@ -875,13 +974,17 @@ function detailHead(d) {
   const f = S.catId === cat && S.f ? S.f : {};
   const defaultSize = lengthBased ? (f.lenMin && f.lenMin === f.lenMax ? f.lenMin : "")
     : cat === "boot" ? (f.mondo || "") : ((f.sizes || []).length === 1 ? f.sizes[0] : "");
+  const selectedSize = w?.size_label ?? defaultSize;
+  const watchSize = FOOTWEAR.includes(cat)
+    ? `<select id="w-size" aria-label="关注的鞋码与楦宽"><option value="">任意尺码</option>${sortSizes([...new Set([...d.offers.flatMap(o=>(o.sizes || []).map(s=>s.n).filter(Boolean)), ...(selectedSize ? [selectedSize] : [])])]).map(k=>`<option value="${esc(k)}" ${k === selectedSize ? "selected" : ""}>${esc(sizeLabel(cat,k))}</option>`).join("")}</select>`
+    : `<input id="w-size" placeholder="任意" aria-label="${lengthBased ? "长度" : "尺码"}" value="${esc(lengthBased ? (w?.length_cm ?? defaultSize) : selectedSize)}">`;
   const watchUI = S.detail.watchOpen ? `
     <div class="watchbox" style="flex-basis:100%">${ic("bell", 16)}目标价 $<input id="w-target" inputmode="decimal" aria-label="目标价（美元）" value="${esc(w?.target_price ?? Math.round(best.p * 0.9))}">
-      ${lengthBased ? "长度" : "尺码"} <input id="w-size" placeholder="任意" aria-label="${lengthBased ? "长度" : "尺码"}" value="${esc(lengthBased ? (w?.length_cm ?? defaultSize) : (w?.size_label ?? defaultSize))}"> ${lengthBased ? "cm" : ""}
+      ${lengthBased ? "长度" : "尺码"} ${watchSize} ${lengthBased ? "cm" : ""}
       年份 <select id="w-year" aria-label="年份"><option value="">任意</option>${years.map((y) => `<option ${w?.year === y ? "selected" : ""}>${y}</option>`).join("")}</select>
       <button class="btn btn-sm" data-act="watch-save">保存</button><button class="btn-plain btn-sm" data-act="watch-cancel">取消</button>
       <span class="note" style="flex-basis:100%;margin:2px 0 0">每次更新数据后检查：降到目标价、或比上次便宜 3% 以上，就会在「关注」页提醒并弹 Windows 通知。</span></div>` :
-    w ? `<span class="watching">${ic("starFill", 16)}已关注${w.target_price ? " · 目标 " + usd(w.target_price) : ""}${w.length_cm ? " · " + w.length_cm + "cm" : ""}${w.size_label ? " · 尺码 " + esc(w.size_label) : ""}${w.year ? " · " + w.year + " 款" : ""}</span>
+    w ? `<span class="watching">${ic("starFill", 16)}已关注${w.target_price ? " · 目标 " + usd(w.target_price) : ""}${w.length_cm ? " · " + w.length_cm + "cm" : ""}${w.size_label ? " · 尺码 " + esc(sizeLabel(cat,w.size_label)) : ""}${w.year ? " · " + w.year + " 款" : ""}</span>
       <button class="btn-plain btn-sm" data-act="watch-open">修改</button><button class="btn-plain btn-sm" data-act="watch-del">取消关注</button>` :
       `<button class="btn-plain" data-act="watch-open">${ic("star", 17)}关注降价</button>`;
   const save = msrp && msrp > best.p + 1 ? msrp - best.p : 0;
@@ -995,6 +1098,7 @@ function historySection(d) {
 }
 function intlSection() {
   const { intl, d } = S.detail;
+  const shoe = FOOTWEAR.includes(d.category);
   const s = intl.summary, fx = intl.fx.rates;
   const pct = (v) => (v == null ? "" : v === 0 ? '<span class="pct">持平</span>' : v < 0 ? `<span class="pct cheaper">便宜 ${-v}%</span>` : `<span class="pct pricier">贵 ${v}%</span>`);
   const maxU = Math.max(1, ...[s.US?.usd, s.JP?.usd, s.CN?.usd].filter(Boolean));
@@ -1002,7 +1106,7 @@ function intlSection() {
   const us = s.US ? `<div class="irow"><span class="ctry"><i class="c-us"></i>美国</span>${bar(s.US.usd, "c-us")}<span class="amt">${usd(s.US.usd)}<span class="alt">≈ ${rmb(s.US.cny)} · ${yen(s.US.jpy)}</span></span><span class="src">${esc(dRetName(s.US.retailer))}${s.US.year ? " · " + s.US.year + " 款" : ""}</span><span class="vs-us muted small">基准</span></div>`
     : `<div class="irow"><span class="ctry"><i class="c-us"></i>美国</span><span class="none">暂无全新有货报价</span></div>`;
   const q = intl.jp_query;
-  const jpState = S.detail.jpLoading ? "正在查询价格.com…" : !q ? "还没查询" : q.status !== "ok" ? "查询失败：" + esc(q.status) : "没有找到匹配的日本报价";
+  const jpState = shoe ? "请通过下方链接核对男女码、楦宽与版本后记录参考价" : S.detail.jpLoading ? "正在查询价格.com…" : !q ? "还没查询" : q.status !== "ok" ? "查询失败：" + esc(q.status) : "没有找到匹配的日本报价";
   const row = (flag, cls, x) => x ? `<div class="irow"><span class="ctry"><i class="${cls}"></i>${flag}</span>${bar(x.usd, cls)}<span class="amt">${money(x.price, x.currency)}<span class="alt">≈ ${usd(x.usd)} · ${rmb(x.cny)}</span></span>
       <span class="src">${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.shop || "链接")} ${ic("external", 12)}</a>` : esc(x.shop || "")}${x.year ? ` · ${x.year} 款` : ""}${x.year && s.US?.year && x.year !== s.US.year ? ' <span class="tag">年份不同</span>' : ""}${x.manual ? ' <span class="tag">手动记录</span>' : ""}</span>
       <span class="vs-us">${pct(x.vs_us_pct)}</span></div>` : "";
@@ -1015,16 +1119,16 @@ function intlSection() {
   return `<section class="d-sec"><div class="sec-head"><h3>${ic("globe", 18)}国际比价</h3><p>1 美元 = ${fx.JPY?.toFixed(2)} 日元 = ${fx.CNY?.toFixed(4)} 人民币（${esc(intl.fx.source)}）</p></div>
     <p class="note">国际参考价按各地区任意尺码起价比较，未按当前尺码筛选；请核对款型、尺码与颜色。</p>
     <div class="intl bars">${us}${jp}${cn}</div>
-    <div class="linkrow"><button class="btn-plain btn-sm" data-act="jp-refresh" ${S.detail.jpLoading ? "disabled" : ""}>${ic("refresh", 15)}${S.detail.jpLoading ? "正在查询…" : "查日本最新价"}</button>
-      <span class="muted small">${q ? `上次查询 ${ago(q.fetched_at)}，找到 ${q.n} 条同款` : ""}</span></div>
+    ${shoe ? '<p class="note">鞋类国际查价需手动核对 US / EU / UK / JP 码制、男女款、楦宽、防水版本与代数，暂不自动判定同款。</p>' : `<div class="linkrow"><button class="btn-plain btn-sm" data-act="jp-refresh" ${S.detail.jpLoading ? "disabled" : ""}>${ic("refresh", 15)}${S.detail.jpLoading ? "正在查询…" : "查日本最新价"}</button>
+      <span class="muted small">${q ? `上次查询 ${ago(q.fetched_at)}，找到 ${q.n} 条同款` : ""}</span></div>`}
     ${jpEntries.length ? `<details><summary>日本报价明细（${jpEntries.length} 条，来自价格.com，含税价）</summary>
       <div class="rtable-wrap"><table style="margin-top:8px"><thead><tr><th>店铺</th><th>商品标题</th><th>年份</th><th>价格</th><th>≈ 美元</th></tr></thead><tbody>
       ${jpEntries.map((e) => `<tr><td class="small">${esc(e.shop || "")}</td><td class="small"><a href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">${esc(e.title).slice(0, 80)}</a>${e.match_score < 1 ? ' <span class="tag inf" title="标题里有额外的版本词，可能不是完全同款">待核对</span>' : ""}</td><td class="num">${e.year || "—"}</td><td class="num">${yen(e.price)}</td><td class="num">${usd(e.usd)}</td></tr>`).join("")}
       </tbody></table></div></details>` : ""}
     <div class="linkrow"><span class="lbl">中国 · 去看看</span>${links(intl.links.CN || [])}</div>
-    <div class="linkrow"><span class="lbl">日本 · 其他网站</span>${links((intl.links.JP || []).slice(1))}</div>
+    <div class="linkrow"><span class="lbl">日本 · 去看看</span>${links(shoe ? (intl.links.JP || []) : (intl.links.JP || []).slice(1))}</div>
     <div class="linkrow"><span class="lbl">美国 · 补充查价</span>${links(intl.links.US || [])}</div>
-    <details ${manual.length ? "open" : ""}><summary>记一笔参考价（手动）${manual.length ? `· 已记录 ${manual.length} 条` : ""}</summary>
+    <details class="intl-manual" ${manual.length ? "open" : ""}><summary>记一笔参考价（手动）${manual.length ? `· 已记录 ${manual.length} 条` : ""}</summary>
       ${manual.length ? `<table style="margin-top:6px"><tbody>${manual.map((e) => `<tr><td>${e.country === "CN" ? "中国" : "日本"} · ${esc(e.shop || "")}</td><td class="num">${money(e.price, e.currency)}</td><td class="num muted">≈ ${usd(e.usd)}</td><td class="small muted">${e.year || ""} ${e.bindings ? "含固定器" : ""} ${esc(e.note || "")}</td><td>${e.url ? `<a href="${esc(e.url)}" target="_blank" rel="noopener noreferrer">链接</a>` : ""}</td><td><button class="link-btn small" data-act="intl-del" data-id="${e.id}">删除</button></td></tr>`).join("")}</tbody></table>` : ""}
       <div class="form">
         <select id="m-country" aria-label="国家"><option value="CN">中国</option><option value="JP">日本</option></select>
@@ -1037,7 +1141,7 @@ function intlSection() {
         <input id="m-note" placeholder="备注（可选）" aria-label="备注">
         <button class="btn btn-sm" data-act="intl-add">保存</button>
       </div></details>
-    <div class="note">美国：${esc(intl.notes.US)}<br>日本：${esc(intl.notes.JP)}<br>中国：${esc(intl.notes.CN)}<br>日本价格来自价格.com 的自动匹配（品牌+型号+性别${d.category === "ski" ? "+是否含固定器" : ""}都要一致），仍建议点链接核对年份和尺码。</div>
+    <div class="note">美国：${esc(intl.notes.US)}<br>日本：${esc(intl.notes.JP)}<br>中国：${esc(intl.notes.CN)}${shoe ? "" : `<br>日本价格来自价格.com 的自动匹配（品牌+型号+性别${d.category === "ski" ? "+是否含固定器" : ""}都要一致），仍建议点链接核对年份和尺码。`}</div>
   </section>`;
 }
 function siblingsSection(d) {
@@ -1123,6 +1227,11 @@ function bindDrawer() {
 
 // ================================================================ 关注页
 async function renderWatch() {
+  if (STATIC) {  // 在线版没有服务器保存关注和发提醒
+    $("#app").innerHTML = `<div class="page"><section class="panel"><div class="sec-head"><h2>${ic("bell", 18)}关注降价</h2>
+      <p>在线版是定期更新的只读快照，不能保存关注、也不会发降价提醒。想用这个功能，请下载项目在自己电脑上运行（见 GitHub 说明）。</p></div></section></div>`;
+    return;
+  }
   $("#app").innerHTML = '<div class="page"><div class="loading">加载中…</div></div>';
   const [list, alerts] = await Promise.all([api("/api/watchlist"), api("/api/alerts")]);
   if (S.route !== "watch") return;
@@ -1135,7 +1244,7 @@ async function renderWatch() {
     return `<article class="wcard rv" data-open="${esc(w.model_key)}" tabindex="0" role="button" aria-label="${esc(w.label)}">
       <div class="wimg">${f?.img ? `<img referrerpolicy="no-referrer" src="${esc(thumb(f.img))}" alt="">` : catIc(cat, 30, "noimg")}</div>
       <div style="min-width:0"><h3>${esc(w.label)}${f ? `<span class="g g-${f.g}">${GENDER[f.g]}</span>` : '<span class="tag">已下架</span>'}</h3>
-        <div class="small muted">${esc(catName(cat))} · ${w.length_cm ? w.length_cm + "cm · " : ""}${w.size_label ? "尺码 " + esc(w.size_label) + " · " : ""}${w.year ? w.year + " 款 · " : ""}关注于 ${w.created_at.slice(0, 10)}</div></div>
+        <div class="small muted">${esc(catName(cat))} · ${w.length_cm ? w.length_cm + "cm · " : ""}${w.size_label ? "尺码 " + esc(sizeLabel(cat,w.size_label)) + " · " : ""}${w.year ? w.year + " 款 · " : ""}关注于 ${w.created_at.slice(0, 10)}</div></div>
       <div class="wprog">
         <div class="row"><span class="muted">当前最低${b ? " · " + esc(b.retailer) : ""}</span><b>${b ? usd(b.usd) : "暂无有货"}</b></div>
         ${w.target_price ? `<div class="wbar ${reach ? "done" : ""}"><i style="width:${reach ? 100 : pct.toFixed(0)}%"></i></div>
@@ -1201,7 +1310,8 @@ async function renderTrust() {
     <section class="t-hero"><div class="hero-wrap">${TOPO}
       <span class="eyebrow">${ic("shield", 14)}网站可信度</span>
       <h1>这个网站靠谱吗？</h1>
-      <p>在网上看到“超低价雪具”？先把网址贴进来查一查——很多骗子网站注册才几个月。</p>
+      <p>${STATIC ? "下面是已收录网站的核验结果。想检测任意网址（很多骗子网站注册才几个月），请用本地版。"
+        : "在网上看到“超低价雪具”？先把网址贴进来查一查——很多骗子网站注册才几个月。"}</p>
       <form class="checker" id="checker" role="search">${ic("search", 20)}<input id="check-url" placeholder="例如 https://www.some-ski-outlet.shop" autocomplete="off" aria-label="要检测的网址"><button class="btn btn-lg">检测</button></form>
       <ul class="check-items" aria-label="检测项">${items.map(([i, t]) => `<li>${ic(i, 14)}${t}</li>`).join("")}</ul>
     </div></section>
@@ -1343,11 +1453,12 @@ function sizeCalc() {
 function sizeApply() {
   const inp = readSizer(), r = sizeAdvice(inp);
   if (!r) return;
-  const f = loadF("ski");
+  const f = loadF("ski", "ski");
   Object.assign(f, { lenMin: String(r.len[0]), lenMax: String(r.len[1]), waistMin: String(r.waist[0]), waistMax: String(r.waist[1]), types: [] });
-  localStorage.setItem("sd.f.ski", JSON.stringify(f));
-  S.g.gender = inp.gender === "kids" ? "kids" : inp.gender;
-  localStorage.setItem("sd.g", JSON.stringify(S.g));
+  localStorage.setItem("sd.f.ski.ski", JSON.stringify(f));
+  const g = loadJSON("sd.g.ski", { gender: "all", incUnisex: true });
+  g.gender = inp.gender;
+  localStorage.setItem("sd.g.ski", JSON.stringify(g));
   location.hash = "#/c/ski";
   toast(`已筛选：${r.len[0]}–${r.len[1]}cm，腰宽 ${r.waist[0]}–${r.waist[1]}mm`);
 }
@@ -1446,16 +1557,18 @@ function renderGuide() {
 
         <section class="g-sec" id="g-data">${head(7, "数据说明")}
           <ul class="g-list">
-            ${li("覆盖范围", `${S.cats.filter((c) => c.fams).length} 个装备分类；价格来自经核验的美国网站，每天自动更新一次（网页开着时），也可以点右上角“更新数据”。`)}
+            ${li("覆盖范围", `滑雪保留默认首页和 22 类装备，另设独立户外专区。滑雪按设置的间隔自动更新（网页开着时）；户外点击“更新户外”按需更新。共享抓绒等商品沿用同一份价格历史。`)}
             ${li("抓不了的网站", "REI 通过公开的分类数据抓取；Backcountry、Powder7、Amazon 等有反爬保护，无法自动抓取，详情页提供一键搜索链接。")}
             ${li("同款识别", "分类 + 品牌 + 型号（去掉年份/性别/颜色/品类词）+ 性别大类（双板再加“含不含固定器”）。个别标题写法特殊的商品可能分错组。")}
-            ${li("礼貌抓取", "遵守各网站的 robots.txt，每个网站请求间隔 ≥ 1.5 秒；数据只保存在你自己的电脑上（data/skideals.db）。")}
+            ${li("礼貌抓取", STATIC
+              ? `遵守各网站的 robots.txt，每个网站请求间隔 ≥ 1.5 秒；抓取在维护者自己的电脑上进行，在线版是定期发布的只读快照（数据日期 ${esc(STATIC.data_day || "—")}），价格以商家页面为准。`
+              : "遵守各网站的 robots.txt，每个网站请求间隔 ≥ 1.5 秒；数据只保存在你自己的电脑上（data/skideals.db）。")}
           </ul></section>
 
         <section class="g-sec" id="g-settings">${head(8, "设置")}
           <div class="sizer">
             <label>销售税 %（估算到手价）<input id="st-tax" inputmode="decimal" value="${esc(st.sales_tax_pct ?? 6.25)}"></label>
-            <label>自动更新间隔（小时，0 = 关）<input id="st-auto" inputmode="numeric" value="${esc(st.auto_crawl_hours ?? 24)}"></label>
+            <label>滑雪自动更新间隔（小时，0 = 关）<input id="st-auto" inputmode="numeric" value="${esc(st.auto_crawl_hours ?? 24)}"></label>
             <label>日本价格缓存（天）<input id="st-cache" inputmode="numeric" value="${esc(st.intl_cache_days ?? 3)}"></label>
             <label class="switch" style="align-self:end;height:42px"><input type="checkbox" id="st-notify" ${st.notify_desktop !== false ? "checked" : ""}>降价时弹 Windows 通知</label>
           </div>
@@ -1476,6 +1589,7 @@ function renderGuide() {
 
 // ================================================================ 抓取进度
 async function startCrawl(categories = null) {
+  categories = categories || sectionInfo().categories;
   try {
     const r = await api("/api/crawl", { method: "POST", body: categories ? { categories } : {} });
     if (!r.started) toast("已经在更新中");
@@ -1496,7 +1610,7 @@ async function pollCrawl() {
   pop.innerHTML = `<div class="cp-head">${st.running ? '<span class="loading-dot"></span>' : ic("check", 18)}<b>${st.running ? "正在更新数据" : "更新完成"}</b>
       <span class="n">${done}/${rs.length}</span><button class="icon-btn" style="width:30px;height:30px" data-dismiss aria-label="关闭进度">${ic("x", 15)}</button></div>
     <div class="cp-bar"><i style="width:${rs.length ? ((done / rs.length) * 100).toFixed(1) : 0}%"></i></div>
-    <div class="note" style="margin:0 0 4px">每个网站间隔 1.5 秒请求，全品类约需 20–30 分钟（大站 evo 最慢），可以关掉这个框继续浏览。</div>
+    <div class="note" style="margin:0 0 4px">同站请求间隔至少 1.5 秒；耗时取决于本次分类和网站数量，可以关掉这个框继续浏览。</div>
     <div class="cp-list">${rs.map(([id, r]) => `<div class="row"><span><span class="dot ${r.status}"></span>${esc(r.name || id)}</span><span class="muted">${r.n || 0}${r.status === "running" && r.msg ? " · " + esc(r.msg.replace("正在抓：", "")) : ""}${r.status === "error" || r.status === "blocked" ? " · " + esc((r.msg || "").slice(0, 24)) : ""}</span></div>`).join("")}</div>`;
   if (st.running) {
     if (!pop.dataset.dismissed) pop.classList.remove("hidden");
@@ -1513,7 +1627,8 @@ async function pollCrawl() {
 // ================================================================ 路由 & 启动
 async function loadMeta() {
   S.meta = await api("/api/meta");
-  $("#last-crawl").textContent = S.meta.last_crawl ? "更新于 " + ago(S.meta.last_crawl) : "尚未抓取";
+  $("#last-crawl").textContent = STATIC ? `数据更新于 ${STATIC.data_day || "—"}`
+    : S.meta.last_crawl ? "最近任务：" + ago(S.meta.last_crawl) : "尚未抓取";
   $$(".watch-badge").forEach((b) => {
     b.textContent = S.meta.unseen_alerts || "";
     b.classList.toggle("hidden", !S.meta.unseen_alerts);
@@ -1526,6 +1641,7 @@ async function loadCategories() {
   S.catInfo = Object.fromEntries(r.categories.map((c) => [c.id, c]));
   S.feat = r.features;
   S.sizeOrder = r.size_order;
+  S.sections = r.sections || DEFAULT_SECTIONS;
 }
 async function reloadAll() {
   await Promise.all([loadMeta(), loadCategories()]);
@@ -1536,6 +1652,17 @@ function parseHash() {
   const h = location.hash.replace(/^#\/?/, "");
   const i = h.indexOf("?");
   return { path: i < 0 ? h : h.slice(0, i), m: i < 0 ? null : new URLSearchParams(h.slice(i + 1)).get("m") };
+}
+function resolveDealPath(path) {
+  const m = path.match(/^(outdoor\/)?c\/([a-z_]+)$/);
+  const section = path === "outdoor" || path.startsWith("outdoor/") ? "outdoor" : "ski";
+  const info = sectionInfo(section);
+  const requested = m?.[2];
+  const remembered = section === "outdoor" ? localStorage.getItem("sd.cat.outdoor") : "ski";
+  const cat = requested && info.categories.includes(requested) && S.catInfo[requested] ? requested
+    : remembered && info.categories.includes(remembered) && S.catInfo[remembered] ? remembered
+    : info.categories.find((id) => S.catInfo[id]) || info.default;
+  return { section, cat };
 }
 function route(force = false) {
   const { path, m: model } = parseHash();
@@ -1550,16 +1677,29 @@ function route(force = false) {
   setFiltersOpen(false);
   stopSnow(); stopSnow = () => {};
   S.spy?.disconnect(); S.spy = null;
-  const m = path.match(/^c\/([a-z]+)/);
-  if (m && S.catInfo[m[1]]) { S.catId = m[1]; localStorage.setItem("sd.cat", S.catId); }
-  if (!S.catInfo[S.catId]) S.catId = "ski";
   S.route = ["watch", "trust", "guide"].includes(path) ? path : "deals";
+  if (S.route === "deals") {
+    const resolved = resolveDealPath(path);
+    if (resolved.section !== S.section) {
+      S.queries[S.section] = S.q;
+      S.section = resolved.section;
+      S.q = S.queries[S.section] || "";
+      $("#q").value = S.q;
+    }
+    S.g = loadJSON(`sd.g.${S.section}`, S.section === "ski" ? loadJSON("sd.g", { gender: "all", incUnisex: true }) : { gender: "all", incUnisex: true });
+    S.catId = resolved.cat;
+    localStorage.setItem(`sd.cat.${S.section}`, S.catId);
+  }
+  document.body.dataset.section = S.section;
+  $("#btn-crawl").title = `更新${S.section === "outdoor" ? "户外专区" : "滑雪主站"}各分类报价，可以继续浏览`;
+  $("#btn-crawl").innerHTML = ic("refresh", 16) + `<span>更新${S.section === "outdoor" ? "户外" : "滑雪"}</span>`;
+  $("#q").placeholder = S.section === "outdoor" ? "搜户外品牌或型号：Moab、Lone Peak、Torrentshell…" : "搜品牌或型号：Bent 100、Sabre、I/O MAG…";
   $$("a[data-nav]").forEach((a) => {
-    const on = a.dataset.nav === S.route;
+    const on = a.dataset.nav === (S.route === "deals" ? S.section : S.route);
     a.classList.toggle("active", on);
     if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
   });
-  document.title = { deals: `${catName(S.catId)}好价`, watch: "我的关注", trust: "网站可信度", guide: "购买指南" }[S.route] + " · 滑雪装备小帮手";
+  document.title = { deals: `${S.section === "outdoor" ? "户外 · " : ""}${catName(S.catId)}好价`, watch: "我的关注", trust: "网站可信度", guide: "购买指南" }[S.route] + " · 滑雪装备小帮手";
   S.baseTitle = document.title;
   if (S.route === "deals") renderDeals();
   else if (S.route === "watch") renderWatch();
@@ -1581,7 +1721,7 @@ function applyTheme(t) {
 }
 function chrome() {
   // 顶栏导航、按钮、页脚（图标来自 icons.js）
-  const links = (size) => [["deals", "#/", "tag", "找折扣"], ["watch", "#/watch", "bell", "关注"], ["trust", "#/trust", "shield", "网站可信度"], ["guide", "#/guide", "book", "购买指南"]]
+  const links = (size) => [["ski", "#/", "tag", "滑雪"], ["outdoor", "#/outdoor", "mountain", "户外"], ["watch", "#/watch", "bell", "关注"], ["trust", "#/trust", "shield", "网站可信度"], ["guide", "#/guide", "book", "购买指南"]]
     .map(([k, href, icon, t]) => `<a href="${href}" data-nav="${k}" title="${t}">${ic(icon, size)}<span class="lbl">${t}</span>${k === "watch" ? '<span class="badge watch-badge hidden"></span>' : ""}</a>`).join("");
   $("#nav").innerHTML = links(16);
   $("#tabbar").innerHTML = links(20);  // 手机：底部标签栏
@@ -1625,7 +1765,8 @@ async function init() {
   $("#btn-crawl").addEventListener("click", () => startCrawl());
   const onSearch = debounce(() => {
     S.q = $("#q").value.trim().toLowerCase();
-    if (S.route !== "deals") location.hash = "#/c/" + S.catId;
+    S.queries[S.section] = S.q;
+    if (S.route !== "deals") location.hash = categoryPath(S.catId);
     else refresh();
   }, 200);
   $("#q").addEventListener("input", onSearch);

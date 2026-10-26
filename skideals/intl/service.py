@@ -71,6 +71,9 @@ def refresh_jp(key: str) -> dict:
     fetcher = _FETCHER
     status, n = "ok", 0
     try:
+        if category in ("hiking_shoe", "trail_shoe"):
+            # 现有日价匹配没有逐鞋码/楦宽证据；新鞋类先提供搜索入口，不把近似结果当同规格报价。
+            raise ValueError("鞋款暂提供手动查价，请核对男女码、楦宽、防水与型号代数")
         query, items = kakaku.find(fetcher, fam["b"], fam["m"], tokens, gclass, bindings, category=category)
     except Exception as e:
         query, items, status = f"{fam['b']} {fam['m']}", [], f"error: {str(e)[:120]}"

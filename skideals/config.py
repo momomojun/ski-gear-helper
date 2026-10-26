@@ -1,12 +1,14 @@
 """路径与全局设置。"""
 from __future__ import annotations
 
+import os
 import tomllib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
-DB_PATH = DATA_DIR / "skideals.db"
+# 环境变量 SKIDEALS_DB 可以换一个数据库文件（在线版构建时从 snapshot/ 还原到临时库）
+DB_PATH = Path(os.environ.get("SKIDEALS_DB") or DATA_DIR / "skideals.db")
 CONFIG_DIR = ROOT / "config"
 WEB_DIR = ROOT / "web"
 

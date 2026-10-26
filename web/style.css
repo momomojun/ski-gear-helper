@@ -159,6 +159,24 @@ select { appearance: none; -webkit-appearance: none; padding-right: 34px; cursor
 .nav a:hover { text-decoration: none; color: var(--ink); background: var(--surface-2); }
 .nav a.active { color: var(--sel-ink); background: var(--sel); }
 .nav a .ic { opacity: .85; }
+.section-switch { display: flex; gap: 10px; margin: 22px 0 14px; }
+.section-switch a { display: grid; grid-template-columns: 22px auto; column-gap: 10px; align-items: center;
+  padding: 11px 18px; border: 1px solid var(--line); border-radius: 16px; color: var(--ink-2); background: var(--surface); }
+.section-switch a .ic { grid-row: span 2; }
+.section-switch a b { color: inherit; font-size: 14px; }
+.section-switch a small { font-size: 11px; color: var(--ink-3); }
+.section-switch a:hover { text-decoration: none; border-color: var(--sky); }
+.section-switch a.on { color: var(--sel-ink); border-color: var(--sky); background: var(--sel); }
+.section-switch a.on small { color: color-mix(in srgb, var(--sel-ink) 78%, transparent); }
+.hero-outdoor .eyebrow { color: #14785e; }
+.hero-outdoor .pulse { background: #168565; box-shadow: 0 0 0 4px rgb(22 133 101 / .10); }
+.hero-outdoor .hero-title em { color: #14785e; }
+[data-theme="dark"] .hero-outdoor .eyebrow, [data-theme="dark"] .hero-outdoor .hero-title em { color: #74d5b6; }
+@media (max-width: 600px) {
+  .section-switch { gap: 8px; }
+  .section-switch a { flex: 1; padding: 10px; column-gap: 6px; }
+  .section-switch a small { font-size: 10px; }
+}
 .badge { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
   background: var(--deal-badge); color: #fff; font: 700 11px/1 var(--font-d); }
 .top-actions { display: flex; align-items: center; gap: 10px; flex: none; }
@@ -231,7 +249,7 @@ button.stat.on::after { content: "✓"; position: absolute; top: 9px; right: 9px
 .qchip:hover { opacity: .88; }
 
 /* 分类栏：图标 + 短名 + 数量，横向滚动 */
-.catrail { position: relative; margin: -46px 0 22px; z-index: 2; }
+.catrail { position: relative; margin: 0 0 22px; z-index: 2; }
 .rail { display: flex; gap: 2px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding: 8px;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow-2);
   scroll-padding-inline: 8px; mask-image: linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%); }
@@ -270,9 +288,9 @@ button.stat.on::after { content: "✓"; position: absolute; top: 9px; right: 9px
 .layout { display: grid; grid-template-columns: 268px minmax(0, 1fr); gap: 24px; align-items: start; }
 .filters { position: sticky; top: calc(var(--top) + 14px); max-height: calc(100vh - var(--top) - 28px); overflow: auto;
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 6px 20px 18px; box-shadow: var(--shadow-1);
-  overscroll-behavior: contain; }
+  overscroll-behavior: contain; overflow-anchor: none; }
 .sheet-head, .sheet-foot { display: none; }
-.fgroup { padding: 16px 0; border-bottom: 1px solid var(--line); content-visibility: auto; contain-intrinsic-size: auto 110px; }
+.fgroup { padding: 16px 0; border-bottom: 1px solid var(--line); }
 .fgroup:last-child { border-bottom: 0; }
 .fgroup h3 { margin: 0 0 11px; font: 650 13px/1.3 var(--font-d); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .fgroup h3 .hint { font: 400 11.5px var(--font); color: var(--ink-3); }
@@ -775,7 +793,6 @@ details[open] summary::before { transform: rotate(45deg); }
   .hero-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .stat { padding: 11px 13px; } .stat dd, .stat-v { font-size: 22px; }
   .hero-topo { width: 520px; right: -160px; }
-  .catrail { margin-top: -38px; }
   .rail-btn { display: none; }
   .cat { min-width: 70px; padding: 9px 6px 8px; }
   .toolbar { gap: 10px; }
@@ -890,3 +907,9 @@ details[open] summary::before { transform: rotate(45deg); }
     scroll-behavior: auto !important; }
   .rv { opacity: 1; transform: none; }
 }
+
+/* ---------------------------------------------------------------- 在线只读版：需要本地服务器的按钮和表单都藏起来 */
+html.static #btn-crawl, html.static [data-act="crawl"], html.static [data-act="jp-refresh"],
+html.static [data-act="watch-open"], html.static [data-act="watch-del"], html.static [data-act="recheck"],
+html.static .intl-manual, html.static #checker, html.static .check-items, html.static #g-settings,
+html.static [data-nav="watch"] { display: none !important; }

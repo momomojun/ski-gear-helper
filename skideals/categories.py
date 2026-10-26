@@ -18,7 +18,7 @@ class Category:
     id: str
     name: str                     # 中文名
     group: str                    # 页面上的分组
-    sizing: str                   # length（厘米长度）/ mondo（雪鞋码）/ apparel（XS~XXL）/ one（均码为主）
+    sizing: str                   # length / mondo（雪鞋）/ shoe（户外鞋）/ apparel / one / brake
     gendered: bool = True         # 是否区分男女款
     strong: str = ""              # 强关键词（正则）：出现就基本能确定是这个分类
     strip: tuple[str, ...] = ()   # 型号名里要去掉的品类词（不影响“同款”判断）
@@ -87,6 +87,26 @@ CATEGORIES: list[Category] = [
     _C("hat", "帽子", "服装", "one", strong=r"\bbeanies?\b|\bhats?\b|\btoque\b|\bheadbands?\b|\bearbands?\b|"
                                            r"ear ?warmers?|ビーニー|ニット帽|帽子",
        strip=("beanie", "hat"), jp="ビーニー ニット帽", cn="滑雪帽"),
+    # ---- 独立户外专区（共享的中间层/内衣/手套/袜/帽/护脸不重复建类）
+    _C("outdoor_jacket", "户外外套", "户外", "apparel",
+       strong=r"\brain(?:coat|wear|jacket|breaker)s?\b|\brain (?:jackets?|shells?|coats?|hood(?:y|ie)s?|ponchos?|parkas?|anoraks?)\b|"
+              r"\b(?:hiking|outdoor|hard[- ]?shell|soft[- ]?shell) (?:jackets?|coats?)\b|雨衣|硬壳外套|软壳外套|户外外套",
+       strip=("jacket", "jackets", "coat", "coats"), jp="アウトドア ジャケット", cn="户外 外套"),
+    _C("outdoor_pants", "徒步裤/户外裤", "户外", "apparel",
+       strong=r"\b(?:hiking|hike|trekking|outdoor|rain) (?:pants?|trousers?)\b|徒步裤|户外裤|雨裤",
+       strip=("pant", "pants", "trouser", "trousers"), jp="登山 パンツ", cn="徒步裤 户外裤"),
+    _C("outdoor_top", "速干衣/户外上衣", "户外", "apparel",
+       strong=r"\b(?:hiking|outdoor|quick[- ]?dry|sun) (?:tops?|shirts?|tees?|hood(?:y|ie)s?)\b|"
+              r"\b(?:t[- ]?shirts?|tees?|shirts?)\b|速干衣|户外上衣",
+       strip=("shirt", "shirts", "top", "tops", "tee", "tees"), jp="登山 シャツ", cn="速干衣 户外上衣"),
+    _C("hiking_shoe", "徒步鞋/徒步靴", "户外", "shoe",
+       strong=r"\b(?:hiking|hike|trekking|approach) (?:shoes?|boots?|footwear)\b|徒步鞋|徒步靴|登山靴|登山鞋|トレッキングシューズ",
+       strip=("hiking", "hike", "trekking", "shoe", "shoes", "boot", "boots", "footwear"),
+       jp="トレッキングシューズ", cn="徒步鞋 徒步靴"),
+    _C("trail_shoe", "越野跑鞋", "户外", "shoe",
+       strong=r"\btrail[- ](?:running[- ]?)?(?:shoes?|runners?|footwear)\b|越野跑鞋|越野鞋|トレイルランニングシューズ",
+       strip=("trail", "running", "shoe", "shoes", "runner", "runners", "footwear"),
+       jp="トレイルランニング シューズ", cn="越野跑鞋"),
     # ---- 背包 / 雪崩 / 登山 / 保养 / 配件
     _C("backpack", "滑雪背包", "背包·安全·其他", "one", gendered=False,
        strong=r"\bbackpacks?\b|\bdaypack\b|airbag|avalanche pack\b|\bpack\b\s*\d{1,2}\s?l\b|\b\d{1,2}\s?l\b.*\bpack\b|"
@@ -117,7 +137,8 @@ CATEGORIES: list[Category] = [
        strip=(), jp="スキー 小物", cn="滑雪 配件"),
 ]
 BY_ID: dict[str, Category] = {c.id: c for c in CATEGORIES}
-GROUPS = ["板·鞋·固定器", "防护", "服装", "背包·安全·其他"]
+GROUPS = ["板·鞋·固定器", "防护", "服装", "背包·安全·其他", "户外"]
+OUTDOOR = frozenset({"outdoor_jacket", "outdoor_pants", "outdoor_top", "hiking_shoe", "trail_shoe"})
 
 # 标题识别顺序：越具体越靠前（boot bag 先于 boot、ski boots 先于 skis、airbag 背包先于雪崩装备）
 _ORDER = ["bag", "backpack", "avalanche", "skin", "tuning", "protection", "goggle", "facewear", "helmet", "binding",
@@ -160,6 +181,10 @@ def classify(title: str, product_type: str | None = None) -> str | None:
         return "ski"
     if re.search(r"\bbeanies?\b|\bheadbands?\b|\bearbands?\b", text, re.I):
         return "hat"   # “Ski Goggles Fox Fur Pom Beanie”是印着雪镜图案的毛线帽
+    # 单独的 shirt / tee 不算户外上衣（滑雪店的 "Merino Long Sleeve Tee" 是保暖内衣），只有户外分类页里才这么认
+    outdoor = _outdoor_classify(text, explicit_only=True)
+    if outdoor:
+        return outdoor
     garment = _PRODUCT_NOUN.search(text)
     for cid in _ORDER:
         if garment and cid in ("skin", "avalanche"):
@@ -167,6 +192,76 @@ def classify(title: str, product_type: str | None = None) -> str | None:
         rx = _STRONG.get(cid)
         if rx and rx.search(text):
             return cid
+    return None
+
+
+_OUTDOOR_SHOES = ("hiking_shoe", "trail_shoe")
+
+
+_OUTDOOR_TOP_EXPLICIT = re.compile(r"\b(?:hiking|outdoor|quick[- ]?dry|sun) (?:tops?|shirts?|tees?|hood(?:y|ie)s?)\b|"
+                                   r"速干衣|户外上衣", re.I)
+
+
+def _outdoor_classify(text: str, explicit_only: bool = False) -> str | None:
+    # Explicit ski clothing/boots outranks outdoor descriptions and membrane names.
+    if re.search(r"\b(?:ski|snow|snowboard)\b|滑雪|雪服|雪裤|スキー", text, re.I):
+        return None
+    for cid in ("hiking_shoe", "trail_shoe", "outdoor_pants", "outdoor_jacket", "outdoor_top"):
+        if cid == "outdoor_top" and explicit_only and not _OUTDOOR_TOP_EXPLICIT.search(text):
+            continue
+        if re.search(BY_ID[cid].strong, text, re.I):
+            # Shared base layers retain their original category even when titled shirts.
+            if cid == "outdoor_top" and (_STRONG["baselayer"].search(text) or re.search(r"\bfleece\b|mid[- ]?layer", text, re.I)):
+                return None
+            return cid
+    return None
+
+
+_OTHER_SHOE = re.compile(r"\b(?:road[- ]running|road[- ]shoes?|sneakers?|trainers?|casual shoes?|"
+                         r"running shoes?|running footwear|winter boots?|snow boots?|mountaineering boots?)\b|"
+                         r"公路跑鞋|运动休闲鞋", re.I)
+_SHOE_PART = re.compile(r"\b(?:shoe|boot|hiking|trail)\b.*\b(?:accessor(?:y|ies)|laces?|insoles?|footbeds?|"
+                        r"replacement soles?|liners?|covers?|bags?|care kits?|crampons?)\b|\bshoelaces?\b", re.I)
+
+
+def _outdoor_pick(source: str, title: str, product_type: str | None, tags: list[str] | None) -> tuple[str | None, str] | None:
+    """Shared by assign (and therefore Adapter.wanted); only real evidence is non-page."""
+    found = _outdoor_classify(title, explicit_only=source not in OUTDOOR)
+    if found:
+        return found, "title"
+    # A specific shared/ski title must not be relabelled by broad outdoor page tags.
+    title_cat = classify(title)
+    if title_cat and (title_cat not in {"jacket", "pants"} or
+                      re.search(r"\b(?:ski|snow|snowboard)\b|滑雪|雪服|雪裤", title, re.I)):
+        return None
+    meta = [product_type or ""]
+    for tag in tags or []:
+        tag = str(tag)
+        if ":" in tag and _TAG_KEY.search(tag.partition(":")[0]):
+            meta.append(tag.partition(":")[2])
+        elif len(tag) < 60:
+            meta.append(tag.rsplit("/", 1)[-1])
+    for value in meta:
+        # Reuse category-term cleanup for retailer tags such as Sports Basement's
+        # "00Trail-Running-Shoes00"; numeric wrappers are not word boundaries.
+        found = _outdoor_classify(value.replace("_", " "), explicit_only=source not in OUTDOOR) or _term(value)
+        # 网站标签只在户外页用；滑雪页里只认鞋，以及雪服/雪裤页里明确的 "Rain Jackets"/"Hiking Pants"
+        if found in OUTDOOR and (source in OUTDOOR or found in _OUTDOOR_SHOES or
+                                 (source in ("jacket", "pants", "suit") and found in ("outdoor_jacket", "outdoor_pants"))):
+            return found, "meta"
+    if source not in OUTDOOR:
+        return None
+    # Explicit ski metadata overrides generic Jacket/Pants on an outdoor page.
+    for value in meta:
+        if re.search(r"\baccessor", value, re.I) and len(value.split()) > 1:
+            return "accessory", "meta"
+    for value in meta:
+        if re.search(r"\b(?:ski|snow|snowboard)\b", value, re.I):
+            found = classify(value)
+            if found:
+                return found, "meta"
+    if title_cat in {"jacket", "pants"}:
+        return {"jacket": "outdoor_jacket", "pants": "outdoor_pants"}[title_cat], "title"
     return None
 
 
@@ -296,6 +391,7 @@ def _part(source: str, t: str) -> bool:
 
 # 网站自己的分类名 / 标签 → 分类（整个词组要对得上，"Accessories" "Apparel" "Snow" 这种太泛的不算）
 _TERMS: list[tuple[str | None, re.Pattern]] = [(c, re.compile(p, re.I)) for c, p in [
+    *[(cid, BY_ID[cid].strong) for cid in ("hiking_shoe", "trail_shoe", "outdoor_jacket", "outdoor_pants", "outdoor_top")],
     (None, r"sunglass(?:es)?|bike helmets?|cycling|snowshoes?|sleds?|tents?|sleeping bags?|trekking poles?|swim(?:wear)?"),
     ("ski", r"(?:alpine |all[- ]mountain |freeride |powder |park |race |touring |backcountry )?skis|ski packages?|system skis"),
     ("binding", r"(?:ski |alpine |touring |at |alpine touring )?bindings"),
@@ -347,6 +443,9 @@ def _meta_vote(source: str, product_type: str | None, tags: list[str] | None) ->
     src_names = {source, BY_ID[source].name} if source in BY_ID else {source}
 
     def add(c, w):
+        if c in OUTDOOR and c not in _OUTDOOR_SHOES and source not in OUTDOOR and \
+                not (source in ("jacket", "pants", "suit") and c in ("outdoor_jacket", "outdoor_pants")):
+            return  # 滑雪分类页里的 "Shirts" 这类标签不能把商品挪去户外专区
         if c:
             votes[c] = votes.get(c, 0) + w
 
@@ -410,6 +509,10 @@ def assign(source: str, title: str, product_type: str | None = None, tags: list[
     if (source == "binding" or _STRONG["binding"].search(t)) and \
             _SNOWBOARD_BINDING_BRANDS.search(re.sub(r"^\W+", "", (vendor or "") + " " + t if vendor else t)):
         return None, "not-ours"   # Burton / Union / Ride… 的固定器都是单板固定器
+    if _SHOE_PART.search(t) and not _STRONG["bag"].search(t) and \
+            not re.search(r"\b(?:bags?|totes?|lockers?|backpacks?|packs?|duffels?)\b", t, re.I) and \
+            (source in OUTDOOR or not re.search(r"\bboots?\b", t, re.I)):
+        return "accessory", "part"   # 鞋带、鞋垫…；"Dakine Boot Locker Bag" 是雪鞋包，滑雪页里的雪鞋零件另有规则
     if _part(source, t):
         return ("tuning" if source == "tuning" else "accessory"), "part"   # 打蜡页里的钻孔模具、螺丝塞还是修板工具
     # 硬货（雪杖 / 固定器 / 雪鞋）页里，网站明确标了“XX 配件”（“Pole Accessories”）、标题里又有零件词：是配件
@@ -426,6 +529,19 @@ def assign(source: str, title: str, product_type: str | None = None, tags: list[
             re.search(r"\b(?:nano[- ]puff|r1[^a-z0-9]*\s*air)\b", t, re.I) and
             found in (None, "jacket", "midlayer")):
         return "midlayer", "title"
+    if re.search(r"\b(?:road[- ]running|road[- ]shoes?|sneakers?|trainers?|casual shoes?)\b", t, re.I):
+        return None, "not-ours"
+    # 滑雪分类页里的商品只有标题明确（雨衣、徒步裤、防晒帽衫、徒步鞋）才挪去户外；单独的 shirt/tee、网站标签都不算
+    outdoor = _outdoor_pick(source, t, product_type, tags)
+    if outdoor:
+        return outdoor
+    shoe_meta = [product_type or "", *(str(tag) for tag in tags or [] if len(str(tag)) < 80)]
+    # Keep independent fields independent: "Running" + "Shoe Width:D" must
+    # never become the exclusion phrase "Running Shoe".
+    if (_OTHER_SHOE.search(t) or any(_OTHER_SHOE.search(value) for value in shoe_meta)) and not _STRONG["boot"].search(t):
+        return None, "not-ours"
+    if source in {"hiking_shoe", "trail_shoe"} and re.search(r"\bboots?\b", t, re.I) and not classify(t):
+        return None, "not-ours"  # generic winter/lifestyle boots are not hiking evidence
     if found:
         return _pick(source, found), "title"
     found = _meta_vote(source, product_type, tags)
@@ -448,9 +564,14 @@ def assign(source: str, title: str, product_type: str | None = None, tags: list[
 def decide_batch(source: str, results: list[tuple[str | None, str]], min_away: int = 5,
                  away_share: float = 0.2) -> tuple[list[str | None], bool]:
     """一个分类页（一批商品）的判定结果 → 最终分类列表。
-    混装页（有证据的商品里 ≥20% 指向别的分类）里“没有证据、只能相信分类页”的商品不要；“其他配件”“打蜡”页本来就杂，不算。"""
+    混装页（有证据的商品里 ≥20% 指向别的分类）里“没有证据、只能相信分类页”的商品不要；“其他配件”“打蜡”页本来就杂，不算。
+    户外页明确拒收的日常鞋/公路鞋等也计入混装证据，不能让剩余无证据商品回落成越野鞋。"""
     with_ev = [c for c, why in results if c is not None and why != "page"]
     away = sum(1 for c in with_ev if c != source)
+    if source in OUTDOOR:
+        rejected = sum(c is None and why != "page" for c, why in results)
+        away += rejected
+        with_ev += [None] * rejected
     mixed = source not in ("accessory", "tuning") and away >= min_away and away >= away_share * len(with_ev)
     return [None if (why == "page" and mixed) else c for c, why in results], mixed
 
@@ -474,20 +595,28 @@ def _f(key, label, pattern, *cats):
     return Feature(key, label, re.compile(pattern, re.I), tuple(cats))
 
 
-_WEAR = ("jacket", "pants", "suit", "midlayer", "glove")
+_WEAR = ("jacket", "pants", "suit", "midlayer", "glove", "outdoor_jacket", "outdoor_pants", "outdoor_top")
 FEATURES: list[Feature] = [
-    _f("goretex", "GORE-TEX", r"gore[- ]?tex|goretex|\bgtx\b", *_WEAR, "boot", "facewear"),
+    _f("goretex", "GORE-TEX", r"gore[- ]?tex|goretex|\bgtx\b", *_WEAR, "boot", "facewear", "hiking_shoe", "trail_shoe"),
     _f("insulated", "保暖（有填充）", r"\binsulated\b|\bdown\b(?! to)|primaloft|thermore|\bpuffy\b|\bpuffer\b|"
                                     r"coreloft|thinsulate|synthetic insulation|\d{2,3}g (?:fill|insulation)",
-       "jacket", "pants", "suit", "midlayer", "glove"),
-    _f("shell", "硬壳（无填充）", r"\bshell\b|hardshell|3l\b|3-layer|2\.5l", "jacket", "pants", "suit"),
-    _f("3in1", "三合一", r"3[- ]in[- ]1|three[- ]in[- ]one|\binterchange\b", "jacket", "glove"),
+       "jacket", "pants", "suit", "midlayer", "glove", "outdoor_jacket", "outdoor_pants"),
+    _f("shell", "硬壳（无填充）", r"\bshell\b|hardshell|3l\b|3-layer|2\.5l", "jacket", "pants", "suit", "outdoor_jacket", "outdoor_pants"),
+    _f("3in1", "三合一", r"3[- ]in[- ]1|three[- ]in[- ]one|\binterchange\b", "jacket", "glove", "outdoor_jacket"),
     _f("bib", "背带裤", r"\bbibs?\b|\bsuspenders?\b", "pants"),
-    _f("softshell", "软壳", r"soft ?shell", "jacket", "pants", "midlayer"),
-    _f("merino", "美利奴羊毛", r"merino|\bwool\b", "baselayer", "sock", "midlayer", "hat", "facewear", "glove"),
+    _f("softshell", "软壳", r"soft ?shell", "jacket", "pants", "midlayer", "outdoor_jacket", "outdoor_pants"),
+    _f("merino", "美利奴羊毛", r"merino|\bwool\b", "baselayer", "sock", "midlayer", "hat", "facewear", "glove", "outdoor_top"),
     _f("mitten", "连指手套", r"\bmitts?\b|\bmittens?\b|\blobster\b|3[- ]finger|\btrigger\b", "glove"),
-    _f("leather", "皮革", r"leather", "glove"),
+    _f("leather", "皮革", r"leather", "glove", "hiking_shoe", "trail_shoe"),
     _f("heated", "电加热", r"\bheated\b|\bheat\b.*\bbattery\b|\bbattery\b", "glove", "sock", "accessory", "jacket"),
+    _f("waterproof", "防水", r"\bwaterproof\b|gore[- ]?tex|\bgtx\b|防水", *OUTDOOR),
+    _f("quickdry", "速干", r"quick[- ]?dry|fast[- ]?dry|速干", "outdoor_top", "outdoor_pants"),
+    _f("sunprotect", "防晒", r"\bupf\s*\d+|sun protect|防晒", "outdoor_top", "outdoor_jacket", "outdoor_pants"),
+    _f("stretch", "弹力", r"\bstretch\b|弹力", "outdoor_top", "outdoor_jacket", "outdoor_pants"),
+    _f("midcut", "中帮", r"\bmid(?:[- ]cut)?\b|中帮", "hiking_shoe", "trail_shoe"),
+    _f("lowcut", "低帮", r"\blow(?:[- ]cut)?\b|低帮", "hiking_shoe", "trail_shoe"),
+    _f("wide", "宽楦", r"\bwide\b|\b[2-6]e\b|宽楦", "hiking_shoe", "trail_shoe"),
+    _f("vibram", "Vibram 大底", r"\bvibram\b", "hiking_shoe", "trail_shoe"),
     _f("mips", "MIPS 防旋转", r"\bmips\b|\bwavecel\b|\bspin\b|\bkoroyd\b", "helmet"),
     _f("audio", "耳机", r"\baudio\b|bluetooth|outdoor tech|aleck", "helmet"),
     _f("visor", "一体面罩", r"\bvisor\b", "helmet"),
@@ -515,10 +644,13 @@ FEATURES: list[Feature] = [
 
 
 # 这些特征可以从商品描述里识别（材料类，描述里写了基本就是真的）；其余只看标题，避免描述里的“适合登山”之类误判
-BODY_OK = {"goretex", "insulated", "shell", "softshell", "merino", "leather", "carbon", "mips"}
+BODY_OK = {"goretex", "insulated", "shell", "softshell", "merino", "leather", "carbon", "mips", "waterproof", "quickdry", "sunprotect", "stretch", "vibram"}
 
 
 def features(category: str, text: str, body: str = "") -> list[str]:
+    if category in OUTDOOR:
+        text = re.sub(r"\b(?:non|no|without)[ -]+(?:gore[- ]?tex|goretex|gtx|waterproof)\b", " ", text, flags=re.I)
+        body = re.sub(r"\b(?:non|no|without)[ -]+(?:gore[- ]?tex|goretex|gtx|waterproof)\b", " ", body, flags=re.I)
     out = []
     for f in FEATURES:
         if f.cats and category not in f.cats:
@@ -603,14 +735,20 @@ def _apparel_key(tok: str) -> str | None:
 
 
 @lru_cache(maxsize=65536)
-def norm_size(category: str, label: str | None) -> str | None:
+def norm_size(category: str, label: str | None, *, shoe_size_system: str | None = None,
+              shoe_gender: str | None = None, shoe_width: str | None = None) -> str | None:
     """把各网站的尺码写法统一：雪鞋 → '26.5'；服装 → 'M'；雪板/雪杖 → 厘米数。返回 None 表示识别不了
-    （通常是颜色/镜片名被网站当成了“尺码”选项，这种不参与尺码筛选）。"""
+    （通常是颜色/镜片名被网站当成了“尺码”选项，这种不参与尺码筛选）。
+    户外鞋返回 SYSTEM:basis:value:width；可传 shoe_size_system/shoe_gender/shoe_width，
+    无证据用“未注明”，不换码。完整接口见 footwear.py。旧分类忽略这三个参数。"""
     if not label:
         return None
     s = str(label).strip()
     cat = BY_ID.get(category)
     kind = cat.sizing if cat else "one"
+    if kind == "shoe":
+        from .footwear import norm_size as shoe_norm_size
+        return shoe_norm_size(label, shoe_size_system=shoe_size_system, shoe_gender=shoe_gender, shoe_width=shoe_width)
     if kind == "length":
         m = re.search(r"(?<![\d.])(\d{2,3})\s?cm", s, re.I) or re.fullmatch(r"\s*(\d{2,3})\s*", s)
         if m and 60 <= int(m.group(1)) <= 215:

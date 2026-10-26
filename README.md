@@ -4,7 +4,7 @@
 
 **Ski Gear Helper** —— 在自己电脑上运行的滑雪装备比价工具
 
-把 **73 家美国雪具 / 户外来源**（含部分覆盖）、**22 类装备**的价格放进同一个页面：同款自动对齐、按年龄和尺码比价；<br>
+把 **73 家美国雪具 / 户外来源**（含部分覆盖）、**22 类滑雪装备**的价格放进同一个页面：同款自动对齐、按年龄和尺码比价；另设独立的**户外专区**，新增 5 类户外服装与鞋履。<br>
 双板还附**日本 / 中国参考价**，并帮你**识别山寨雪具网站**。
 
 [![tests](https://github.com/momomojun/ski-gear-helper/actions/workflows/tests.yml/badge.svg)](https://github.com/momomojun/ski-gear-helper/actions/workflows/tests.yml)
@@ -28,6 +28,7 @@
 - 📏 **按尺码看有货**：只显示你的长度 / 鞋码 / S·M·L **有货**的报价——打折常常只剩冷门尺码
 - 📉 **看清真假折扣**：记录价格历史，标出历史低价、刚降价、“原价虚高”
 - 🎿 **固定器怎么配**：套装和分开买哪个划算；按板子腰宽挑刹车宽度合适、有货的固定器
+- 🥾 **滑雪优先，户外独立**：首页始终先看滑雪；户外另看外套、徒步裤、上衣、徒步鞋与越野跑鞋，共用抓绒等商品的价格历史
 - 🌏 **国际比价**：美国最低价 vs 日本（价格.com）vs 中国（手动记录），按当天汇率换算
 - 🛡️ **识别山寨网站**：任何网址贴进来打 0–100 分——域名注册时间、历史存档、冒用品牌名、全场骨折价……
 - 🔔 **降价提醒**：关注的型号降到目标价时提醒（Windows 弹通知）
@@ -74,8 +75,8 @@
 3. 双击 **`start.bat`**
    - 第一次会自动创建 Python 环境、安装依赖（约 1 分钟），之后秒开
    - 浏览器会自动打开 <http://127.0.0.1:8765>
-4. 第一次启动时数据库是空的，程序会**自动开始第一次抓取**（全品类约 20–30 分钟，可以边抓边看）
-5. 用完关掉黑色命令行窗口即可；之后网页开着时每 24 小时自动更新一次
+4. 第一次启动时会先从仓库里的 `snapshot/`（数据快照）**还原全部已抓到的价格和历史**（约 15 秒），之后再按需自动更新；户外专区点击“更新户外”单独抓取
+5. 用完关掉黑色命令行窗口即可；之后网页开着时滑雪每 24 小时自动更新一次，户外按需更新
 
 ### macOS / Linux
 
@@ -86,7 +87,7 @@ python3 -m venv .venv
 ```
 
 > 主要在 Windows 上开发和测试；降价弹窗通知只支持 Windows，其他功能各系统通用。
-> 数据只保存在 `data/skideals.db`，不会上传到任何地方。
+> 本地数据库在 `data/skideals.db`。仓库里的 `snapshot/` 是维护者定期发布的公开价格快照；你的关注列表、提醒和设置只存在自己电脑上，不会导出。
 
 ## 功能一览
 
@@ -103,6 +104,19 @@ python3 -m venv .venv
 - 价格区间、折扣力度（相对官方原价）、年份、品牌、成色（全新/试用/二手/瑕疵）、网站
 - 排序：折扣最大 / 省得最多 / 价格 / 比价网站最多 / 各家价差最大
 - 卡片标签：历史低价、刚降价、仅剩 1–2 个尺码、原价虚高
+
+### 独立户外专区
+
+滑雪保留第一入口和默认首页。顶部或底部的“户外”进入独立专区，搜索、性别、尺码与其他筛选分别记住；不把徒步鞋塞进滑雪雪鞋分类。
+
+- **5 个新分类**：户外外套、徒步裤/户外裤、速干衣/户外上衣、徒步鞋/徒步靴、越野跑鞋
+- **共享分类**：抓绒/保暖层、保暖内衣、手套、袜子、帽子、围脖/护脸；沿用同一商品与价格历史，不复制商品记录
+- **首批来源**：REI 覆盖新五类；Sports Basement 覆盖服装与越野鞋；Outdoor Gear Exchange 覆盖徒步鞋。仅覆盖配置中已验证的集合或分类页，不代表这些站的全部户外商品
+- **鞋类分别核对**：男女款、型号代数、防水版本、鞋帮高度与楦宽；US/EU/UK/JP 码制保留证据，未注明就标未注明，不自动换算，不与雪鞋 Mondo 合并
+- **逐码价格**：只有有货且有该规格报价的选项参与指定尺码比价；REI 每类最多读取 30 个商品详情，剩余商品可能没有逐码价格
+- **国际鞋价**：提供搜索链接和手动记录，需核对男女码、楦宽、防水与版本，暂不自动判断同款
+
+入口：滑雪 `http://127.0.0.1:8765/#/`，户外 `http://127.0.0.1:8765/#/outdoor`。分类、数据流和限制见 [户外专区说明](docs/户外专区.md)。
 
 ### 2. 型号详情（点开任意卡片）
 - **各网站报价对比表**：年份、价格、原价、折扣、每个尺码的库存（你的尺码会高亮）、直达购买链接
@@ -210,6 +224,10 @@ BLIZZARD ブリザード BLACK PEARL 88 (FLAT) 25-26 レディース   （日本
 .venv\Scripts\python -m skideals check-site https://某网站.com      # 命令行检测网站可信度
 .venv\Scripts\python -m skideals check-retailers           # 重新核验全部已收录网站
 .venv\Scripts\python -m skideals stats                     # 各网站商品数量
+.venv\Scripts\python -m skideals snapshot export           # 数据库 → snapshot/（文本快照，不含关注/提醒/设置）
+.venv\Scripts\python -m skideals snapshot import           # snapshot/ → 数据库（已有数据时要加 --force，会先备份）
+.venv\Scripts\python -m skideals build-site --db data\skideals.db   # 本地生成在线版静态网站到 public/，预览用
+.venv\Scripts\python -m skideals publish                   # 导出快照 → 只提交 snapshot/ → 推送（Vercel 自动重新部署）
 .venv\Scripts\python -m pytest -q                          # 运行单元测试
 ```
 
@@ -218,6 +236,16 @@ BLIZZARD ブリザード BLACK PEARL 88 (FLAT) 25-26 レディース   （日本
 powershell -ExecutionPolicy Bypass -File scripts\install_daily_task.ps1
 ```
 （取消：`Unregister-ScheduledTask -TaskName "SkiDeals Daily Crawl" -Confirm:$false`）
+
+## 在线版（Vercel）
+
+抓取只在维护者自己的电脑上进行；在线版是**定期发布的只读快照**，手机也能看：
+
+1. 本地抓取完成后运行 `python -m skideals publish`：把数据库导出成 `snapshot/`（按网站拆分的 JSON Lines 文本，每天只有变化的行不同），**只提交这个目录**并推送
+2. Vercel 收到推送后运行 `scripts/vercel_build.sh`：从 `snapshot/` 还原数据库 → 生成 `public/`（每个分类一个目录文件，型号详情按 40 个一组分片，约 5 分钟）
+3. 网页检测到自己是在线版，会隐藏“更新价格 / 关注降价 / 手动记价 / 检测任意网址 / 设置”这些需要本地服务的功能
+
+第一次部署：在 Vercel 里 **Add New → Project**，导入这个 GitHub 仓库，其他保持默认（`vercel.json` 里已经写好构建命令和输出目录）。之后每次 `publish` 都会自动更新。
 
 ## 添加一个新网站
 
@@ -248,7 +276,6 @@ powershell -ExecutionPolicy Bypass -File scripts\install_daily_task.ps1
 
 以后想加的：
 - **浏览器插件**：在任意雪具网站的商品页上，直接显示“这款在 X 网站更便宜 / 日本价 / 历史最低价”，数据来自本工具的本地数据库
-- **手机访问**：把结果导出成静态网页
 
 想了解内部是怎么设计的，看 [docs/项目梳理.md](docs/项目梳理.md)。
 
@@ -264,7 +291,8 @@ ski-gear-helper/
 ├─ skideals/
 │  ├─ adapters/                 每个网站/平台一个抓取器（shopify、rei、sfcc=Christy、peterglenn、sunandski、skiscom、zappos、marmot、tactics）
 │  ├─ intl/                     国际比价：kakaku.py（日本）、service.py（汇总+中国手动记录）
-│  ├─ categories.py             22 个分类：定义、分类判定、特征标签、规格、尺码统一
+│  ├─ categories.py             22 个滑雪分类 + 5 个户外分类：判定、特征、规格、尺码
+│  ├─ sections.py / footwear.py 分区范围 / 鞋款版本与原始码制
 │  ├─ normalize.py              标题标准化 & 同款识别
 │  ├─ catalog.py                按分类分组、原价、折扣、历史低价
 │  ├─ specs.py                  双板规格补全（从商品页规格表读腰宽）
@@ -275,8 +303,11 @@ ski-gear-helper/
 │  ├─ audit.py                  数据质量自检
 │  ├─ crawl.py / db.py / fx.py  抓取调度 / SQLite 数据库 / 汇率
 │  ├─ alerts.py / notify.py     降价提醒 / Windows 通知
+│  ├─ snapshot.py / site.py     数据快照导出还原 / 生成在线版静态网站
 │  └─ server.py                 本地网页服务（只监听 127.0.0.1）
 ├─ web/                         网页前端（原生 JS，无需构建）
+├─ snapshot/                    公开数据快照（publish 生成；新 clone 第一次启动会自动还原）
+├─ scripts/vercel_build.sh      在线版构建脚本（vercel.json 调用）
 ├─ docs/                        设计说明（项目梳理.md）和截图
 ├─ tests/                       单元测试（test_*.py）和各网站抓取器的联网测试（live_*.py）
 └─ data/                        数据库和日志（第一次运行时生成，不进 git）
@@ -312,7 +343,7 @@ ski-gear-helper/
 
 **Ski Gear Helper (滑雪装备小帮手)** is a self-hosted price comparison tool for ski gear that runs on your own computer. The UI is in Chinese.
 
-- **One page, 73 configured US sources, 22 categories** (some stores have partial coverage). Adult and child products are separated using titles, sizes and structured metadata. Size-specific prices and purchase links stay aligned; unknown size prices are excluded from verified size comparisons.
+- **Skiing first: 73 configured US sources, 22 ski categories**, plus a separate outdoor section with five new apparel and footwear categories (partial coverage). Shared fleece and accessories retain the same price records. Adult and child products are separated using titles, sizes and structured metadata. Size-specific prices and purchase links stay aligned; unknown size prices are excluded from verified size comparisons.
 - **Size-aware**: shows only offers that are in stock in your ski length / boot mondo / apparel size.
 - **Price history** to spot fake "sale" prices; flags all-time lows, fresh price drops and inflated "original" prices.
 - **Binding helper**: package vs. buying the skis and bindings separately; bindings whose brake width fits your ski's waist.
@@ -329,7 +360,7 @@ python3 -m venv .venv
 .venv/bin/python -m skideals serve --open
 ```
 
-The first launch starts a full crawl automatically (about 20–30 minutes); the page at <http://127.0.0.1:8765> fills in as data arrives.
+The first launch starts a ski-category crawl automatically; the page at <http://127.0.0.1:8765> fills in as data arrives. Outdoor has a separate on-demand update. Footwear keeps the stated size system, gender basis and width without Mondo or cross-system conversions.
 
 ## 许可证
 

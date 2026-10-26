@@ -19,6 +19,9 @@ _GENDER_W = {"title": 3.0, "brand": 3.0, "tags": 2.0, "collection": 2.0, "defaul
 _TYPE_W = {"collection": 3.0, "product_type": 2.0, "tags": 2.0, "title": 2.0, "waist": 1.0}
 _CACHE: dict[str, dict] = {}
 _LOCK = threading.Lock()
+# 生成在线版时数据不会再变：FROZEN=True 跳过每次的“数据有没有更新”检查（每次要扫整个分类，3 万个型号会慢一个多小时）
+FROZEN = False
+_INDEX: dict[int, dict] = {}   # id(目录数据) → {"by_key": …, "by_brand": …}
 # 旧的 Adult/Youth 共用起价无法追溯到某一年龄规格；保留原始记录，但不用于单独年龄组的历史最低价。
 _AGE_HISTORY = "NOT (LOWER(COALESCE(sizes,'')) LIKE '%adult%' AND (LOWER(sizes) LIKE '%youth%' OR LOWER(sizes) LIKE '%junior%' OR LOWER(sizes) LIKE '%kid%'))"
 
@@ -75,7 +78,7 @@ def _offer(row, rates, hist, retailers) -> dict:
     sizes = []
     for s in json.loads(row["sizes_json"] or "[]"):
         # 尺码按当前规则重新规范化（旧数据里存的 n 可能是旧规则算的）；认不出的（多半是颜色/镜片名）不参与尺码筛选
-        n = s.get("cm") if length_based else norm_size(cat, s.get("l"))
+        n = s.get("cm") if length_based else norm_size(cat, s.get("n") if cat in ("hiking_shoe", "trail_shoe") else s.get("l"))
         if n:
             z = [n, 1 if s.get("a") else 0, fx.to_usd(s.get("p"), cur, rates)]
             if s.get("u"):
@@ -85,13 +88,13 @@ def _offer(row, rates, hist, retailers) -> dict:
     o = {"id": row["id"], "r": row["retailer_id"], "p": price, "c": cmp_, "y": row["year"], "cd": row["condition"],
          "a": 1 if row["available"] else 0, "z": sizes, "u": row["url"]}
     if row["prev_price"] and row["price_changed_at"]:
-        days = (datetime.now() - datetime.fromisoformat(row["price_changed_at"])).days
+        days = (date.fromisoformat(db.today()) - datetime.fromisoformat(row["price_changed_at"]).date()).days
         if days <= 21:
             o["pp"] = fx.to_usd(row["prev_price"], cur, rates)
             o["pd"] = row["price_changed_at"][:10]
     if h:
         o["n"] = h["n"]
-        tracked_days = (date.today() - date.fromisoformat(h["d0"])).days if h["d0"] else 0
+        tracked_days = (date.fromisoformat(db.today()) - date.fromisoformat(h["d0"])).days if h["d0"] else 0
         if tracked_days >= 3 and row["price"] is not None and row["price"] <= h["mn"] + 0.01 and h["mx"] > h["mn"]:
             o["lo"] = 1  # 当前价 = 我们记录到的最低价（而且之前更贵过）
     if retailers.get(row["retailer_id"], {}).get("tier") == "brand":
@@ -122,6 +125,8 @@ def _merge_specs(rows) -> dict:
     lists: dict[str, list] = defaultdict(list)
     for r in rows:
         for k, v in (json.loads(r["specs"]) if r["specs"] else {}).items():
+            if k == "shoe_sizes":
+                continue  # 原始解析证据留在商品记录；目录已有逐规格 z，避免重复传输整份变体表。
             lists[k].append(v)
     merged: dict = {}
     for k, vals in lists.items():
@@ -134,6 +139,10 @@ def _merge_specs(rows) -> dict:
 
 def build(category: str = "ski", force: bool = False) -> dict:
     """返回某个分类的 {"families": [...], "retailers": {...}}。结果按数据版本缓存。"""
+    if FROZEN and not force:
+        c = _CACHE.get(category)
+        if c:
+            return c["data"]
     with db.connect() as conn:
         stamp = _stamp(conn, category)
         with _LOCK:
@@ -223,6 +232,7 @@ def build(category: str = "ski", force: bool = False) -> dict:
 def categories_summary() -> list[dict]:
     """每个分类的型号数、报价数、有货报价数、网站数（给顶部分类栏用）。"""
     from .categories import CATEGORIES
+    from .sections import category_sections
     with db.connect() as conn:
         rows = {r["category"]: dict(r) for r in conn.execute(
             """SELECT l.category, COUNT(DISTINCT l.model_key) fams, COUNT(*) offers,
@@ -231,13 +241,30 @@ def categories_summary() -> list[dict]:
                FROM listings l JOIN retailers r ON r.id=l.retailer_id
                WHERE l.active=1 AND r.enabled=1 GROUP BY l.category""")}
     return [{"id": c.id, "name": c.name, "group": c.group, "sizing": c.sizing, "gendered": c.gendered,
+             "sections": category_sections(c.id),
              **{k: (rows.get(c.id) or {}).get(k, 0) or 0 for k in ("fams", "offers", "live", "shops")}}
             for c in CATEGORIES]
 
 
+def _index(data: dict) -> dict:
+    """目录的查找表：型号键 → 家族、品牌 → [(家族, token 集合)]。目录对象换了（数据更新）就重建。"""
+    idx = _INDEX.get(id(data))
+    if idx is None or idx["data"] is not data:
+        by_brand: dict[str, list] = defaultdict(list)
+        for f in data["families"]:
+            pk = parse_key(f["k"])
+            by_brand[pk["brand"]].append((f, set(pk["tokens"])))
+        idx = {"data": data, "by_key": {f["k"]: f for f in data["families"]}, "by_brand": by_brand}
+        with _LOCK:
+            if len(_INDEX) > 64:
+                _INDEX.clear()
+            _INDEX[id(data)] = idx
+    return idx
+
+
 def family(key: str) -> dict | None:
     cat = parse_key(key)["category"]
-    return next((f for f in build(cat)["families"] if f["k"] == key), None)
+    return _index(build(cat))["by_key"].get(key)
 
 
 def siblings(key: str) -> list[dict]:
@@ -245,13 +272,9 @@ def siblings(key: str) -> list[dict]:
     me = parse_key(key)
     mine = set(me["tokens"])
     out = []
-    for f in build(me["category"])["families"]:
+    for f, ot in _index(build(me["category"]))["by_brand"].get(me["brand"], []):
         if f["k"] == key:
             continue
-        other = parse_key(f["k"])
-        if other["brand"] != me["brand"]:
-            continue
-        ot = set(other["tokens"])
         if ot == mine or (len(mine ^ ot) == 1 and min(len(mine), len(ot)) >= 1 and (mine <= ot or ot <= mine)):
             best = min(f["o"], key=lambda o: o["p"])
             out.append({"k": f["k"], "m": f["m"], "g": f["g"], "bd": f.get("bd", 0), "p": best["p"],
@@ -271,7 +294,7 @@ def detail(key: str) -> dict | None:
     if fam is None:
         return None
     with db.connect() as conn:
-        rows = {r["id"]: dict(r) for r in conn.execute("SELECT * FROM listings WHERE model_key=? AND active=1", (key,))}
+        rows = {r["id"]: dict(r) for r in conn.execute("SELECT * FROM listings WHERE model_key=? AND +active=1", (key,))}
         ids = list(rows)
         hist: dict[int, list] = defaultdict(list)
         if ids:
@@ -287,7 +310,7 @@ def detail(key: str) -> dict | None:
         if not r:
             continue
         cur = r["currency"] or "USD"
-        sizes = [{"cm": s.get("cm"), "n": norm_size(r["category"] or "ski", s.get("l")), "label": s.get("l"),
+        sizes = [{"cm": s.get("cm"), "n": norm_size(r["category"] or "ski", s.get("n") if r["category"] in ("hiking_shoe", "trail_shoe") else s.get("l")), "label": s.get("l"),
                   "a": bool(s.get("a")),
                   "p": fx.to_usd(s.get("p"), cur, rates), "c": fx.to_usd(s.get("c"), cur, rates),
                   "u": s.get("u"), "color": s.get("color")}
@@ -297,20 +320,21 @@ def detail(key: str) -> dict | None:
                        "binding_name": r["binding_name"], "first_seen": r["first_seen"], "last_seen": r["last_seen"],
                        "sizes": sizes, "currency": cur, "history": _step_series(points, today)})
     # 每个“有变化的日子”的全网最低价（全新、有货）：历史是稀疏的，价格沿用最近一次记录
-    days = sorted({d for o in offers if o["cd"] == "new" for d, _, _ in o["history"]})
+    # 按日期顺序走一遍，每个报价记住“到今天为止最后一条记录”，不用每天把每条历史从头扫一遍
+    news = [o["history"] for o in offers if o["cd"] == "new"]
+    days = sorted({d for h in news for d, _, _ in h})
+    pos = [0] * len(news)
+    last: list = [None] * len(news)
     daily = []
     for d in days:
         best = None
-        for o in offers:
-            if o["cd"] != "new":
-                continue
-            last = None
-            for hd, p, a in o["history"]:
-                if hd > d:
-                    break
-                last = (p, a)
-            if last and last[0] and last[1] and (best is None or last[0] < best):
-                best = last[0]
+        for i, h in enumerate(news):
+            while pos[i] < len(h) and h[pos[i]][0] <= d:
+                last[i] = h[pos[i]]
+                pos[i] += 1
+            x = last[i]
+            if x and x[1] and x[2] and (best is None or x[1] < best):
+                best = x[1]
         if best is not None:
             daily.append([d, best])
     return {**fam, "category": parse_key(key)["category"], "offers": offers, "daily_min": daily,

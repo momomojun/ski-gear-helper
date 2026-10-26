@@ -20,3 +20,6 @@ data/
 Thumbs.db
 desktop.ini
 .DS_Store
+
+# 在线版构建输出（Vercel 构建时从 snapshot/ 生成，不提交）
+public/

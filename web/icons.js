@@ -3,6 +3,7 @@
  * 用法：ic("search")、catIc("ski")；返回 <svg> 字符串。 */
 
 const ICONS = {
+  mountain: '<path d="m2 20 7-13 5 8 3-5 5 10z"/><path d="m7 11 2 2 2-2M15 14l2 2 2-2"/>',
   // ---------- 界面 ----------
   search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>',
   refresh: '<path d="M20 11a8 8 0 0 0-14.3-4.6L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.6L20 16"/><path d="M20 20.5V16h-4.5"/>',
@@ -55,6 +56,11 @@ const ICONS = {
 
 // ---------- 22 个装备分类 ----------
 const CAT_ICONS = {
+  hiking_shoe: '<path d="M5 4h7v6l4 3 4 2v5H3v-7l2-3zM3 17h17M7 9h4M7 12h5M7 15h6"/>',
+  trail_shoe: '<path d="m4 9 3 3 3-2 4 4 6 1v5H3v-6zM3 17h17M9 12l2 2M12 13l2 2M5 20v1M10 20v1M16 20v1"/>',
+  outdoor_jacket: '<path d="m8 4-4 3-2 7 3 1 2-5v11h10V10l2 5 3-1-2-7-4-3M8 4l4 4 4-4M12 8v13M8 15h2M14 15h2"/>',
+  outdoor_pants: '<path d="M6 3h12l2 18h-6l-2-11-2 11H4zM6 7h12M7 11h2M15 11h2"/>',
+  outdoor_top: '<path d="m8 4-5 3-2 6 5 2 1-3v9h10v-9l1 3 5-2-2-6-5-3M8 4a4 4 0 0 0 8 0"/>',
   ski: '<path d="M3 18.5 18.6 10c1.6-.9 2-2.8.7-3.6"/><path d="M5.4 21.8 21 13.3c1.6-.9 2-2.8.7-3.6"/><path d="m8.6 14.4 2.6-1.4M11 17.7l2.6-1.4"/>',
   binding: '<path d="M2.5 17.5h19"/><path d="M4 17.5v-3.2A1.8 1.8 0 0 1 5.8 12.5H9l.8 5"/><path d="M14.5 17.5l1-6.5h3.2a1.8 1.8 0 0 1 1.8 1.8v4.7"/><path d="M17.5 17.5l2 3.5M10 15h4"/>',
   boot: '<path d="M7.5 3h6l.8 5.6 4.6 3.2a3.5 3.5 0 0 1 1.6 2.9V18h-16l1.3-9.2z"/><path d="M3.5 18h17v2.6h-17zM8.7 7.5h4.2M8.4 11h5.2M9 14.5h7"/>',
@@ -81,6 +87,7 @@ const CAT_ICONS = {
 
 // 分类栏用的短名（4 个字以内）
 const CAT_SHORT = {
+  hiking_shoe: "徒步鞋靴", trail_shoe: "越野跑鞋", outdoor_jacket: "户外外套", outdoor_pants: "户外裤", outdoor_top: "速干上衣",
   ski: "双板", binding: "固定器", boot: "雪鞋", pole: "雪杖", helmet: "头盔", goggle: "雪镜", protection: "护具",
   jacket: "雪服", pants: "雪裤", suit: "连体服", midlayer: "中间层", baselayer: "保暖内衣", glove: "手套", sock: "滑雪袜",
   facewear: "护脸围脖", hat: "帽子", backpack: "滑雪背包", bag: "雪具包", avalanche: "雪崩装备", skin: "止滑带",

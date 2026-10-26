@@ -21,3 +21,4 @@ jobs:
         with:
           node-version: "22"
       - run: node --test tests/test_frontend_prices.cjs
+      - run: node --test tests/test_frontend_sections.cjs

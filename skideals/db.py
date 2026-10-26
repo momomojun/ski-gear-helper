@@ -6,10 +6,11 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from datetime import datetime
 
-from .config import DATA_DIR, DB_PATH, DEFAULT_SETTINGS
+from .config import DATA_DIR, DB_PATH, DEFAULT_SETTINGS  # noqa: F401  (DATA_DIR：测试里会替换)
 from .models import Listing
 
 SCHEMA = """
@@ -62,11 +63,12 @@ def now_iso() -> str:
 
 
 def today() -> str:
-    return datetime.now().date().isoformat()
+    # 在线版构建时把“今天”固定成快照日期，否则 Vercel 隔几天重新构建，“几天前降价”“跟踪天数”都会算错
+    return os.environ.get("SKIDEALS_TODAY") or datetime.now().date().isoformat()
 
 
 def connect() -> sqlite3.Connection:
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
@@ -91,6 +93,12 @@ def init() -> None:
                 if col not in have:
                     conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
         conn.execute("CREATE INDEX IF NOT EXISTS ix_listings_cat ON listings(category, active)")
+        # 没有统计信息时 SQLite 会用 active 索引（几乎每行都是 active=1）去查单个型号，一次要扫整张表。
+        # 统计一次就够（之后 PRAGMA optimize 会按需更新）
+        if not conn.execute("SELECT 1 FROM sqlite_master WHERE name='sqlite_stat1'").fetchone():
+            conn.execute("ANALYZE")
+        else:
+            conn.execute("PRAGMA optimize")
         # 分组键改成了“分类|品牌|…”：旧格式的自动日本比价结果作废（打开详情时会重新查询）
         # 旧键 = 3 个竖线且以 f/b 结尾（brand|tokens|gclass|f）；新双板键有 4 个竖线，其他分类键以 a/w/k 结尾
         old = "model_key GLOB '*|*|*|[fb]' AND model_key NOT GLOB '*|*|*|*|*'"
@@ -129,13 +137,24 @@ def set_retailer_status(conn, rid: str, status: str, msg: str, meta: dict | None
 
 # ------------------------------------------------------------------ 商品
 
-def save_listing(conn: sqlite3.Connection, lst: Listing, seen_at: str, day: str) -> None:
+def serialized_sizes(lst: Listing) -> str:
     from .categories import norm_size
     r = lst.raw
     cat = lst.category or "ski"
-    sizes = json.dumps([{"cm": s.cm, "l": s.label, "n": norm_size(cat, s.label) or (str(s.cm) if s.cm else None),
+    context = {}
+    if cat in ("hiking_shoe", "trail_shoe"):
+        context = {"shoe_size_system": r.extra.get("shoe_size_system"),
+                   "shoe_gender": lst.gender if lst.gender != "unisex" else None,
+                   "shoe_width": r.extra.get("shoe_width") or lst.specs.get("shoe_width")}
+    return json.dumps([{"cm": s.cm, "l": s.label, "n": norm_size(cat, s.label, **context) or (str(s.cm) if s.cm else None),
                          "a": s.available, "p": s.price, "c": s.compare_at, "u": s.url, "color": s.color}
                         for s in r.sizes], ensure_ascii=False)
+
+
+def save_listing(conn: sqlite3.Connection, lst: Listing, seen_at: str, day: str) -> None:
+    r = lst.raw
+    cat = lst.category or "ski"
+    sizes = serialized_sizes(lst)
     fields = dict(
         url=r.url, title=r.title, image=r.image, vendor=r.vendor, brand=lst.brand, model=lst.model, tokens=lst.tokens,
         year=lst.year, gender=lst.gender, gender_src=lst.gender_src, gclass=lst.gclass, ski_type=lst.ski_type,
@@ -149,6 +168,8 @@ def save_listing(conn: sqlite3.Connection, lst: Listing, seen_at: str, day: str)
                          "opts": r.extra.get("options"), "src": r.extra.get("src_category"),
                          "gender_hint": r.gender_hint, "age_partition": r.extra.get("age_partition"),
                          "selected_color": r.extra.get("selected_color"),
+                         "shoe_size_system": r.extra.get("shoe_size_system"),
+                         "shoe_width": r.extra.get("shoe_width"),
                          "age_uncertain": r.extra.get("age_uncertain")}, ensure_ascii=False),
     )
     row = conn.execute("SELECT id, price, sizes_json FROM listings WHERE retailer_id=? AND external_id=?",

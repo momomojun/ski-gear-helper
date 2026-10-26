@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from collections import Counter, defaultdict
 
@@ -118,12 +119,38 @@ def renormalize(log=print, brand: str | None = None) -> dict:
         dropped = _drop_bad_skis(conn)
         if dropped:
             log(f"双板：下架 {dropped} 个（十年以上的老款 / 不是雪板）")
-        rows = conn.execute("SELECT id, retailer_id, title, vendor, brand, model, tokens, gclass, bindings, binding_name, "
-                            "category, model_key, meta, sizes_json FROM listings WHERE (? IS NULL OR brand=?)",
+        rows = conn.execute("SELECT * FROM listings WHERE (? IS NULL OR brand=?)",
                             (brand, brand)).fetchall()
         kids_fixed = 0
         for r in rows:
             cat = r["category"] or "ski"
+            if cat in ("hiking_shoe", "trail_shoe"):
+                from .models import RawProduct, SizeOption
+                from .normalize import normalize
+                meta = json.loads(r["meta"] or "{}")
+                raw = RawProduct(retailer_id=r["retailer_id"], external_id=r["external_id"], url=r["url"],
+                                 title=r["title"], vendor=r["vendor"] or r["brand"], category=cat,
+                                 product_type=meta.get("pt"), tags=meta.get("tags") or [],
+                                 gender_hint=meta.get("gender_hint"), extra=meta,
+                                 sizes=[SizeOption(label=s.get("l") or "", available=bool(s.get("a")),
+                                                   price=s.get("p"), compare_at=s.get("c"), url=s.get("u"), color=s.get("color"))
+                                        for s in json.loads(r["sizes_json"] or "[]")])
+                lst = normalize(raw)
+                old_feats = json.loads(r["features"] or "[]")
+                feats = sorted(set(old_feats) | set(lst.features))
+                if "goretex" not in lst.features and re.search(r"\b(?:non|no|without)[ -]+(?:gore[- ]?tex|goretex|gtx)\b",
+                                                                 r["title"] or "", re.I):
+                    feats = [f for f in feats if f != "goretex"]
+                specs = {**json.loads(r["specs"] or "{}"), **lst.specs}
+                updates = {"brand": lst.brand, "model": lst.model, "tokens": lst.tokens, "model_key": lst.model_key,
+                           "gender": lst.gender, "gender_src": lst.gender_src, "gclass": lst.gclass,
+                           "features": json.dumps(feats), "specs": json.dumps(specs),
+                           "sizes_json": db.serialized_sizes(lst)}
+                if any(updates[k] != r[k] for k in updates):
+                    conn.execute("UPDATE listings SET " + ",".join(f"{k}=?" for k in updates) + " WHERE id=?",
+                                 (*updates.values(), r["id"]))
+                    changed[cat] += 1
+                continue
             title = r["title"] or ""
             gclass = r["gclass"]
             # 儿童款识别规则变严了（Infants' / Toddlers' / 3-6M / 2T 尺码）→ 旧数据里被当成成人款的童装改判过来。

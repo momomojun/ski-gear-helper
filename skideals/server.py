@@ -22,7 +22,7 @@ from . import alerts, catalog, crawl, db, fx, trust
 from .config import HOST, PORT, WEB_DIR, load_retailers
 from .intl import service as intl
 
-app = FastAPI(title="SkiDeals 双板比价", docs_url="/api/docs", redoc_url=None)
+app = FastAPI(title="滑雪装备小帮手 · SkiDeals", docs_url="/api/docs", redoc_url=None)
 app.add_middleware(GZipMiddleware, minimum_size=2000)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["127.0.0.1", "localhost"])
 
@@ -42,8 +42,9 @@ async def csrf_guard(request: Request, call_next):
 @app.get("/api/categories")
 def api_categories():
     from .categories import APPAREL_ORDER, FEATURE_LABELS, GROUPS
+    from .sections import sections_summary
     return {"categories": catalog.categories_summary(), "groups": GROUPS, "features": FEATURE_LABELS,
-            "size_order": APPAREL_ORDER}
+            "size_order": APPAREL_ORDER, "sections": sections_summary(), "default_section": "ski"}
 
 
 _CATALOG_JSON: dict[str, tuple] = {}  # 分类 → (目录对象, 序列化好的 JSON)：目录没变就不用每次重新转 JSON
@@ -76,14 +77,17 @@ def api_model(key: str):
 
 @app.get("/api/meta")
 def api_meta():
+    from .sections import last_full_update
     with db.connect() as conn:
         last = conn.execute("SELECT * FROM crawl_runs WHERE status='done' ORDER BY id DESC LIMIT 1").fetchone()
         unseen = conn.execute("SELECT COUNT(*) FROM alerts WHERE seen=0").fetchone()[0]
         n_watch = conn.execute("SELECT COUNT(*) FROM watchlist").fetchone()[0]
         n_enabled = conn.execute("SELECT COUNT(*) FROM retailers WHERE enabled=1").fetchone()[0]
         settings = db.get_settings(conn)
+        by_section = {s: last_full_update(conn, s) for s in ("ski", "outdoor")}
     return {
         "last_crawl": last["finished_at"] if last else None,
+        "last_crawl_by_section": by_section,
         "crawl_running": crawl.STATE["running"],
         "unseen_alerts": unseen,
         "n_watch": n_watch,
@@ -99,7 +103,8 @@ def api_meta():
 
 @app.post("/api/crawl")
 def api_crawl(body: dict = Body(default={})):
-    return {"started": crawl.start_background(body.get("ids") or None, body.get("categories") or None)}
+    from .sections import SKI_CATEGORIES
+    return {"started": crawl.start_background(body.get("ids") or None, body.get("categories") or list(SKI_CATEGORIES))}
 
 
 @app.get("/api/crawl/status")
@@ -277,11 +282,12 @@ def _auto_crawl_loop():
             hours = float(db.get_settings().get("auto_crawl_hours") or 0)
             if hours > 0 and not crawl.STATE["running"]:
                 with db.connect() as conn:
-                    row = conn.execute("SELECT finished_at FROM crawl_runs WHERE status='done' "
-                                       "ORDER BY id DESC LIMIT 1").fetchone()
-                last = datetime.fromisoformat(row["finished_at"]) if row else None
+                    from .sections import last_full_update
+                    completed = last_full_update(conn, "ski")
+                last = datetime.fromisoformat(completed) if completed else None
                 if last is None or datetime.now() - last > timedelta(hours=hours):
-                    crawl.start_background()
+                    from .sections import SKI_CATEGORIES
+                    crawl.start_background(categories=list(SKI_CATEGORIES))
         except Exception as e:
             print("自动更新检查失败：", e)
         time.sleep(1800)
