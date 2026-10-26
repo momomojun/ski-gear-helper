@@ -1,17 +1,17 @@
 {
  "format": 1,
- "exported_at": "2026-10-25T15:19:18",
+ "exported_at": "2026-10-25T18:22:52",
  "data_day": "2026-10-25",
  "counts": {
-  "retailers": 77,
-  "listings": 55174,
-  "price_history": 176178,
+  "retailers": 103,
+  "listings": 62997,
+  "price_history": 184048,
   "intl_prices": 415,
   "intl_queries": 81,
-  "site_checks": 75,
+  "site_checks": 105,
   "spec_cache": 600,
   "fx": 14,
-  "crawl_runs": 47
+  "crawl_runs": 52
  },
  "private_tables_excluded": [
   "watchlist",
