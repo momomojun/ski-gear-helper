@@ -219,15 +219,7 @@ def crawl_one(cfg: dict, fetcher: Fetcher, categories: list[str] | None = None) 
     rid = cfg["id"]
     _set(rid, status="running", n=0, msg="")
     own_fetcher = None
-    if cfg.get("fetch_via") == "brightdata":   # 直连会被反爬拦下的网站：经由 Bright Data Web Unlocker（见 brightdata.py）
-        from . import brightdata
-        bd = brightdata.make_fetcher(min_interval=float(cfg.get("brightdata_interval") or 1.0))
-        if bd is not None:
-            fetcher = own_fetcher = bd
-            _log(f"[{rid}] 经由 Bright Data 请求")
-        else:
-            _log(f"[{rid}] 配置了 fetch_via = brightdata，但没设置 BRIGHTDATA_API_KEY / BRIGHTDATA_ZONE 环境变量，改为直连")
-    if own_fetcher is None and cfg.get("min_interval"):  # 这个网站单独设置了更长的请求间隔
+    if cfg.get("min_interval"):  # 这个网站单独设置了更长的请求间隔
         fetcher = own_fetcher = Fetcher(min_interval=float(cfg["min_interval"]))
     results, total = [], 0
     seen: set = set()
