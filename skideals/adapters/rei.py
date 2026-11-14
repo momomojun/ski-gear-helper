@@ -59,99 +59,99 @@ DEFAULT_CATEGORY_CFG: dict[str, dict] = {
         "category_paths": ["/c/downhill-skis"],            # 含 Backcountry Skis；越野板在 /c/cross-country-skis
         "gender_paths": {"men": "/c/downhill-skis/f/g-mens", "women": "/c/downhill-skis/f/g-womens",
                          "unisex": "/c/downhill-skis/f/g-unisex", "kids": "/c/kids-downhill-skis"},
-        "max_detail_pages": 80,
+        "max_detail_pages": 40,
     },
     "binding": {
         "category_paths": ["/c/downhill-ski-bindings", "/c/alpine-touring-ski-bindings"],
-        "max_detail_pages": 15,
+        "max_detail_pages": 7,
     },
     "boot": {
         "gender_paths": {"men": ["/c/mens-downhill-ski-boots", "/c/mens-alpine-touring-ski-boots"],
                          "women": ["/c/womens-downhill-ski-boots", "/c/womens-alpine-touring-ski-boots"],
                          "kids": "/c/kids-downhill-ski-boots"},
-        "max_detail_pages": 30,
+        "max_detail_pages": 15,
     },
     "pole": {
         "category_paths": ["/c/backcountry-ski-poles"],
         "gender_paths": {"men": "/c/mens-ski-poles", "women": "/c/womens-ski-poles", "kids": "/c/kids-ski-poles"},
-        "max_detail_pages": 8,
+        "max_detail_pages": 4,
     },
     "helmet": {
         "gender_paths": {"men": "/c/mens-snowsports-helmets", "women": "/c/womens-snowsports-helmets",
                          "kids": "/c/kids-snowsports-helmets"},
-        "max_detail_pages": 12,
+        "max_detail_pages": 6,
     },
     "goggle": {
         "gender_paths": {"men": "/c/mens-snowsports-goggles", "women": "/c/womens-snowsports-goggles",
                          "kids": "/c/kids-snowsports-goggles"},
-        "max_detail_pages": 15,
+        "max_detail_pages": 7,
     },
     "jacket": {
         "gender_paths": {"men": "/c/mens-ski-jackets", "women": "/c/womens-ski-jackets", "kids": "/c/kids-ski-jackets"},
         "exclude_paths": ["/c/cross-country-ski-jackets"],
-        "max_detail_pages": 30,
+        "max_detail_pages": 15,
     },
     "pants": {
         "gender_paths": {"men": "/c/mens-ski-pants", "women": "/c/womens-ski-pants", "kids": "/c/kids-ski-pants"},
         "exclude_paths": ["/c/cross-country-ski-pants"],
-        "max_detail_pages": 25,
+        "max_detail_pages": 12,
     },
     "suit": {
         "gender_paths": {"women": "/c/womens-snowsuits", "kids": ["/c/kids-snowsuits", "/c/kids-buntings"]},
-        "max_detail_pages": 5,
+        "max_detail_pages": 3,
     },
     "baselayer": {
         "gender_paths": {"men": "/c/mens-base-layers", "women": "/c/womens-base-layers", "kids": "/c/kids-base-layers"},
-        "max_detail_pages": 12,
+        "max_detail_pages": 6,
     },
     "glove": {
         "gender_paths": {"men": "/c/mens-ski-gloves-and-mittens", "women": "/c/womens-ski-gloves-and-mittens",
                          "kids": "/c/kids-ski-gloves-and-mittens"},
-        "max_detail_pages": 15,
+        "max_detail_pages": 7,
     },
     "sock": {
         "gender_paths": {"men": "/c/mens-ski-socks", "women": "/c/womens-ski-socks", "kids": "/c/kids-ski-socks"},
-        "max_detail_pages": 8,
+        "max_detail_pages": 4,
     },
     "facewear": {
         "gender_paths": {"men": ["/c/mens-neck-gaiters", "/c/mens-balaclavas"],
                          "women": ["/c/womens-neck-gaiters", "/c/womens-balaclavas"],
                          "kids": ["/c/kids-neck-gaiters", "/c/kids-balaclavas"]},
-        "max_detail_pages": 8,
+        "max_detail_pages": 4,
     },
     "hat": {
         "gender_paths": {"men": ["/c/mens-beanies", "/c/mens-snow-headbands"],
                          "women": ["/c/womens-beanies", "/c/womens-snow-headbands"],
                          "kids": "/c/kids-beanies"},
-        "max_detail_pages": 8,
+        "max_detail_pages": 4,
     },
     "backpack": {
         "category_paths": ["/c/ski-backpacks"],
         "gender_paths": {"women": "/c/ski-backpacks/f/g-womens"},
-        "max_detail_pages": 8,
+        "max_detail_pages": 4,
     },
     "bag": {
         "category_paths": ["/c/ski-bags", "/c/ski-boot-bags", "/c/ski-gear-bags"],
-        "max_detail_pages": 5,
+        "max_detail_pages": 3,
     },
     "avalanche": {
         "category_paths": ["/c/avalanche-safety-gear"],
-        "max_detail_pages": 8,
+        "max_detail_pages": 4,
     },
     "skin": {
         "category_paths": ["/c/climbing-skins"],
         "exclude_paths": ["/c/ski-crampons"],              # REI 把雪板冰爪也放在 climbing-skins 里（归 accessory）
-        "max_detail_pages": 5,
+        "max_detail_pages": 3,
     },
     "tuning": {
         "category_paths": ["/c/ski-tuning-and-tools"],
-        "max_detail_pages": 5,
+        "max_detail_pages": 3,
     },
     "accessory": {  # 只放“剩下的”：靴子配件/烘鞋器、暖宝、替换镜片、头盔配件、背板带、刹车/零件、雪板冰爪、锁
         "category_paths": ["/c/boot-accessories", "/c/boot-dryers", "/c/hand-and-foot-warmers",
                            "/c/goggle-accessories", "/c/snowsports-helmet-accessories", "/c/ski-carriers",
                            "/c/ski-binding-accessories", "/c/ski-crampons", "/c/ski-locks"],
-        "max_detail_pages": 5,
+        "max_detail_pages": 3,
     },
 }
 
@@ -401,6 +401,21 @@ class ReiAdapter(Adapter):
         genders = {g: _as_paths(p) for g, p in (c.get("gender_paths") or {}).items() if _as_paths(p)}
         return main, genders, _as_paths(c.get("exclude_paths"))
 
+    def _take_detail_budget(self) -> bool:
+        """detail_budget_per_run：一轮抓取里所有分类合计最多调用多少次商品接口（存在这家店共用的 fetcher 上）。
+        2026-11：REI 一轮里请求总数超过约 160 次就会被反爬拦下（放慢也没用），分类页本身约 90 次，所以详情要省着用。"""
+        total = self.cfg.get("detail_budget_per_run")
+        if total is None:
+            return True
+        used = getattr(self.fetcher, "_rei_detail_used", 0)
+        if used >= int(total):
+            if not getattr(self.fetcher, "_rei_budget_logged", False):
+                self.fetcher._rei_budget_logged = True
+                self.log(f"[rei] 本轮商品接口额度 {total} 次已用完，其余商品只用分类页的价格")
+            return False
+        self.fetcher._rei_detail_used = used + 1
+        return True
+
     def _max_detail(self) -> int:
         v = self.cfg.get("max_detail_pages")
         if v is None:
@@ -438,7 +453,7 @@ class ReiAdapter(Adapter):
                      (p.compare_at and p.price and (mode == "discounted" or needs[p.external_id]))]
             cands.sort(key=lambda p: p.price / p.compare_at if p.price and p.compare_at else 1.0)
             for p in cands[: self._max_detail()]:
-                if self._blocked:
+                if self._blocked or not self._take_detail_budget():
                     break
                 self._enrich(p)
 

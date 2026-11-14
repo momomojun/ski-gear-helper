@@ -3817,43 +3817,54 @@ exclude_title = "Mossy Oak|Realtree|Kryptek|Optifade"
 
 # ---- 2026-10-26 新增 / 补充分类
 
+# 2026-11 Bentgate 改了分类路径（/snowsports/skiing/… → ski-touring / alpine-skiing / snowsport-accessories …）
 [bentgate.ski]
-pages = [{ path = "/snowsports/skiing/skis" }, { path = "/clearance/demo-ski-gear", condition = "used" }]
+pages = [{ path = "/snowsports/ski-touring/touring-skis" }, { path = "/snowsports/alpine-skiing/downhill-skis" },
+         { path = "/snowsports/ski-mountaineering/ski-mountaineering-skis" }, { path = "/snowsports/telemark-skiing/telemark-skis" },
+         { path = "/sale/clearance-skis-and-bindings" }, { path = "/sale/used-ski-gear", condition = "used" }]
 max_detail_pages = 70
 
 [bentgate.binding]
-pages = ["/snowsports/skiing/alpine-touring-bindings", "/snowsports/skiing/alpine-bindings", "/snowsports/skiing/telemark-bindings"]
+pages = ["/snowsports/ski-touring/alpine-touring-bindings", "/snowsports/alpine-skiing/downhill-bindings",
+         "/snowsports/alpine-skiing/hybrid-ski-bindings", "/snowsports/telemark-skiing/telemark-bindings"]
 max_detail_pages = 40
 
 [bentgate.boot]
-pages = [{ path = "/snowsports/skiing/mens-alpine-touring-boots", gender = "men" },
-         { path = "/snowsports/skiing/womens-alpine-touring-boots", gender = "women" },
-         { path = "/snowsports/skiing/telemark-boots" }]
+pages = [{ path = "/snowsports/ski-touring/mens-alpine-touring-boots", gender = "men" },
+         { path = "/snowsports/ski-touring/womens-alpine-touring-boots", gender = "women" },
+         { path = "/snowsports/alpine-skiing/mens-hybrid-ski-boots", gender = "men" },
+         { path = "/snowsports/alpine-skiing/womens-hybrid-ski-boots", gender = "women" },
+         { path = "/snowsports/ski-mountaineering/ski-mountaineering-boots" },
+         { path = "/snowsports/telemark-skiing/telemark-boots" }, { path = "/sale/clearance-ski-boots" }]
 max_detail_pages = 70
 
 [bentgate.skin]
-pages = ["/snowsports/skiing/skins"]
+pages = ["/snowsports/ski-touring/climbing-skins"]
 max_detail_pages = 15
 
 [bentgate.pole]
-pages = ["/snowsports/ski-poles"]
+pages = ["/snowsports/packs-poles-guide-books/ski-poles"]
 max_detail_pages = 15
 
 [bentgate.helmet]
-pages = ["/snowsports/snow-helmets"]
+pages = ["/snowsports/snowsport-accessories/snow-helmets", "/snowsports/ski-mountaineering/ski-mountaineering-helmets"]
 max_detail_pages = 10
 
 [bentgate.goggle]
-pages = ["/snowsports/goggles"]
+pages = ["/snowsports/snowsport-accessories/goggles"]
 
 [bentgate.avalanche]
-pages = ["/snowsports/avy-gear"]
+pages = ["/snowsports/avy-gear/beacons", "/snowsports/avy-gear/probes", "/snowsports/avy-gear/shovels",
+         "/snowsports/avy-gear/air-bag-packs"]
 
 [bentgate.backpack]
-pages = ["/snowsports/snow-packs"]
+pages = ["/snowsports/packs-poles-guide-books/snow-packs"]
+
+[bentgate.bag]
+pages = ["/snowsports/packs-poles-guide-books/ski-and-snowboard-travel-bags"]
 
 [bentgate.tuning]
-pages = ["/snowsports/tuning-equipment"]
+pages = ["/snowsports/snowsport-accessories/tuning-equipment"]
 
 # ---------------------------------------------------------------- Wasatch Touring（Lightspeed）
 

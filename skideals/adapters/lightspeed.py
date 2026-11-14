@@ -26,6 +26,7 @@ from __future__ import annotations
 import html
 import re
 from collections.abc import Iterator
+from urllib.parse import urlsplit
 
 from ..net import FetchError
 from .base import Adapter, RawProduct, SizeOption, to_float
@@ -93,10 +94,25 @@ class LightspeedAdapter(Adapter):
         path = "/" + path.strip("/")
         return f"{self.base_url}{path}/" + (f"page{page}.html" if page > 1 else "") + f"?format=json&limit={_LIMIT}"
 
+    def _get_page(self, path: str, page: int) -> tuple[dict, str]:
+        """取分类页 JSON。网站把分类搬了家时，旧地址会 301 到新地址，但跳转会丢掉 ?format=json、拿回网页——
+        这时改用跳转后的新路径再请求一次（Bentgate 2026-11 把 snowsport-accessories 改成 packs-poles-guide-books）。
+        返回 (数据, 实际使用的路径)。"""
+        try:
+            return self.fetcher.get_json(self._page_url(path, page)), path
+        except ValueError:   # 拿回来的是网页：看看被跳转到了哪里
+            resp = self.fetcher.get(self._page_url(path, page))
+            final = urlsplit(str(resp.url)).path
+            final = re.sub(r"/page\d+\.html$", "", final).rstrip("/")
+            if final and final != "/" + path.strip("/"):
+                self.log(f"[{self.rid}] 分类 {path} 已搬到 {final}（请更新 categories.toml）")
+                return self.fetcher.get_json(self._page_url(final, page)), final
+            raise FetchError(self._page_url(path, page), resp.status_code, "返回的不是 JSON")
+
     def _listing(self, path: str) -> Iterator[tuple[dict, dict]]:
         """逐页 yield (分类信息, 商品)。"""
         for page in range(1, _MAX_PAGES + 1):
-            data = self.fetcher.get_json(self._page_url(path, page))
+            data, path = self._get_page(path, page)
             if self.shop_id is None:
                 self.shop_id = (data.get("shop") or {}).get("id")
             coll = data.get("collection")

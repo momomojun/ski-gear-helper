@@ -188,3 +188,66 @@ def test_trust_page_keeps_unproven_items_on_brand_pages():
     trusted, _ = crawl._decide_categories("kuhl", "outdoor_top", raws, trust_page=True)
     assert strict.count(None) >= 1          # 普通店：混装页里没证据的不要
     assert None not in trusted and trusted[-1] == "outdoor_top"
+
+
+def test_rei_detail_budget_is_shared_across_categories():
+    # REI：一轮里商品接口的总次数有上限，所有分类共用同一个 fetcher 计数
+    from types import SimpleNamespace
+    from skideals.adapters.rei import ReiAdapter
+    fetcher = SimpleNamespace()
+    a = ReiAdapter({"id": "rei", "url": "https://www.rei.com", "category": "ski", "detail_budget_per_run": 3}, fetcher, lambda *x: None)
+    b = ReiAdapter({"id": "rei", "url": "https://www.rei.com", "category": "boot", "detail_budget_per_run": 3}, fetcher, lambda *x: None)
+    assert [a._take_detail_budget() for _ in range(2)] == [True, True]
+    assert [b._take_detail_budget() for _ in range(2)] == [True, False]
+    assert ReiAdapter({"id": "rei", "url": "u", "category": "ski"}, SimpleNamespace(), print)._take_detail_budget()
+
+
+def test_sunandski_key_read_once_per_process():
+    from skideals.adapters import sunandski
+    sunandski._KEY_CACHE["https://www.sunandski.com"] = "key_TEST"
+    a = sunandski.SunAndSkiAdapter({"id": "sunandski", "url": "https://www.sunandski.com", "category": "boot"}, None, print)
+    assert a.api_key == "key_TEST"
+    sunandski._KEY_CACHE.clear()
+
+
+def test_sunandski_prices_from_odoo_cards():
+    # 2026-11：Constructor 不再给价格，改从 Odoo 分类页的商品卡片读
+    from skideals.adapters.sunandski import parse_price_cards
+    html = """
+    <form class="oe_product_cart" data-cnstrc-item-id="000167477"><div class="product_price" data-has-discount="1">
+      <span class="x_wd_product_price">$&nbsp;<span class="oe_currency_value">499.95</span></span>
+      <del class="text-muted">$&nbsp;<span class="oe_currency_value">700.00</span></del></div></form>
+    <form class="oe_product_cart" data-cnstrc-item-id="000158750"><div class="product_price" data-has-discount="1">
+      <span class="x_wd_product_price">$&nbsp;<span class="oe_currency_value">285.59</span> –
+        $&nbsp;<span class="oe_currency_value">500.00</span></span><span class="badge">UP TO 42% OFF</span></div></form>
+    <form class="oe_product_cart" data-cnstrc-item-id="000100001"><div class="product_price">
+      <span class="x_wd_product_price">$&nbsp;<span class="oe_currency_value">1,100.00</span></span></div></form>
+    <ul class="pagination"><a href="/shop/category/snow-25/page/2">2</a><a href="/shop/category/snow-25/page/120">120</a></ul>
+    """
+    prices, last = parse_price_cards(html)
+    assert prices["000167477"] == (499.95, 700.0, False)
+    assert prices["000158750"] == (285.59, 500.0, True)
+    assert prices["000100001"] == (1100.0, None, False)
+    assert last == 120
+
+
+def test_sunandski_blocked_price_page_is_not_retried(monkeypatch):
+    # 2026-11-12：价格页被拦后每个商品都重试一次，跑了 5 个多小时。现在拦一次就整轮停下
+    from skideals.adapters import sunandski
+    from skideals.net import BlockedError
+    calls = []
+
+    class F:
+        def get_html(self, url, **kw):
+            calls.append(url)
+            raise BlockedError(url, 403, "anti-bot challenge")
+    sunandski._PRICE_CACHE.clear(); sunandski._PRICE_BLOCKED.clear()
+    a = sunandski.SunAndSkiAdapter({"id": "sunandski", "url": "https://www.sunandski.com", "category": "boot"}, F(), lambda *x: None)
+    for _ in range(3):
+        try:
+            a._price_map()
+            raise AssertionError("should raise")
+        except BlockedError:
+            pass
+    assert len(calls) == 1
+    sunandski._PRICE_BLOCKED.clear()

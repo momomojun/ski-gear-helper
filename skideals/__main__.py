@@ -66,15 +66,17 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd in ("serve", "crawl"):  # 新 clone 下来第一次运行：先用仓库里的快照把数据库建起来
         from . import snapshot
         snapshot.bootstrap_if_empty()
-    from . import db
-    db.init()
     if args.cmd == "snapshot":
+        # 必须在 db.init() 之前：init 会先建一个空库并占着连接，Windows 上 import 就删不掉、换不了这个文件
         from . import snapshot
         if args.action == "export":
             snapshot.export(args.db, args.dir)
         else:
             snapshot.import_(args.dir, args.db, force=args.force)
-    elif args.cmd == "publish":
+        return 0
+    from . import db
+    db.init()
+    if args.cmd == "publish":
         return _publish(args)
     elif args.cmd == "serve":
         from .server import serve

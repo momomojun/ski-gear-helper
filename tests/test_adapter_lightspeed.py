@@ -144,3 +144,27 @@ def test_brake_widths_sort_numerically():
     sizes = a._sizes({str(i): {"id": i, "title": f"Brake Width : {w}", "price": price(599.95, 599.95),
                                "stock": {"available": True}} for i, w in enumerate(["120mm", "97mm", "105mm"])})
     assert [s.label for s in sizes] == ["97mm", "105mm", "120mm"]
+
+
+def test_moved_category_follows_redirect_and_keeps_json():
+    # Bentgate 2026-11：旧分类地址 301 到新地址，跳转丢了 ?format=json，拿回的是网页
+    from skideals.adapters.lightspeed import LightspeedAdapter
+    page = {"shop": {"id": 1}, "collection": {"title": "Ski Poles", "count": 0, "pages": 1, "products": {}}}
+    calls = []
+
+    class Resp:
+        url = "https://www.bentgate.com/snowsports/packs-poles-guide-books/ski-poles/"
+
+    class F:
+        def get_json(self, url, **kw):
+            calls.append(url)
+            if "snowsport-accessories" in url:
+                raise ValueError("Expecting value")
+            return page
+
+        def get(self, url, **kw):
+            return Resp()
+    a = LightspeedAdapter({"id": "bentgate", "url": "https://www.bentgate.com", "category": "pole",
+                           "pages": ["/snowsports/snowsport-accessories/ski-poles"]}, F(), lambda *x: None)
+    assert list(a._listing("/snowsports/snowsport-accessories/ski-poles")) == []
+    assert calls[-1].startswith("https://www.bentgate.com/snowsports/packs-poles-guide-books/ski-poles/?format=json")

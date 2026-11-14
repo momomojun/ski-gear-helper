@@ -42,10 +42,13 @@ currency = "USD"
 url = "https://www.rei.com"
 adapter = "rei"
 tier = "A"
+# 不需要 Bright Data：限制每轮商品接口总次数（detail_budget_per_run）后直连就能抓完（2026-11-11 实测）
 price_match = "不匹配其他店；14 天内 REI 自己降价可补差价"
 price_match_ok = false   # 不接受其他店的价格匹配（只在可信度页展示政策）
 detail_mode = "discounted"   # 只对打折商品调用商品接口取每个长度的价格/库存
-max_detail_pages = 80
+max_detail_pages = 40
+detail_budget_per_run = 40   # 所有分类合计；REI 一轮超过约 160 个请求会被拦（分类页约 90 个）
+min_interval = 2.5   # 2026-11：间隔 1.5 秒、5 分钟约 180 个请求后会被反爬拦下；放慢、少调商品接口，留在它能接受的范围内
 
 [[retailers]]
 id = "christy"
@@ -104,6 +107,8 @@ currency = "USD"
 url = "https://www.sunandski.com"
 adapter = "sunandski"
 tier = "A"
+# 直连常被防火墙封。可选：加 fetch_via = "brightdata" 并设置 BRIGHTDATA_API_KEY / BRIGHTDATA_ZONE（付费，见 skideals/brightdata.py）
+min_interval = 3.0   # 2026-11：请求太密会被网站防火墙封一段时间（连 robots.txt 都 403）
 # 用网站前端自己加载的 Constructor.io 公开 browse 接口（一次拿到全部尺码价格，约 15 个请求）；
 # sunandski.com 的 robots.txt 对爬虫没有任何限制
 

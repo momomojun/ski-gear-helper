@@ -32,11 +32,51 @@ from collections.abc import Iterator
 from urllib.parse import urlencode, urlsplit, urlunsplit
 
 from ..categories import APPAREL_ORDER, BY_ID, norm_size
-from ..net import FetchError
+from ..net import BlockedError, FetchError
 from .base import NOT_SKI_RE, Adapter, RawProduct, SizeOption, to_float
 
 API = "https://ac.cnstrc.com"
 KEY_PAGE = "/shop/category/ski-equipment-104"
+# 每个分类都会新建一个适配器：key 在进程里共享，一轮抓取只读一次分类页。
+# 2026-11：每个分类都去读一次（26 秒 13 次）会被网站限流，之后所有分类都失败
+_KEY_CACHE: dict[str, str] = {}
+
+# 2026-11：Constructor 索引里不再有价格（data.price、各尺码 price 都是空的），价格只在 Odoo 分类页的商品卡片上。
+# 所以每轮抓取先把“冬季”分类页（snow-25，约 120 页 × 40 个）翻一遍，按卡片上的 data-cnstrc-item-id 建价格表，
+# 所有分类共用这一份（只打 sunandski.com 约 120 次；Constructor 接口在 ac.cnstrc.com，不受它的防火墙影响）。
+PRICE_PAGES = ("/shop/category/snow-25",)
+MAX_PRICE_PAGES = 200
+_PRICE_CACHE: dict[str, dict[str, tuple]] = {}
+_PRICE_BLOCKED: set[str] = set()   # 这一轮价格页已被拦截的网站：不再请求
+
+
+def parse_price_cards(html: str) -> tuple[dict[str, tuple], int]:
+    """分类页 → ({Constructor 商品 id: (现价, 原价, 是否价格区间)}, 最后一页页码)。
+    单一价格：`<span class=x_wd_product_price>$499.95</span><del>$700.00</del>`；
+    价格区间（各尺码不同价）："$285.59 – $500.00 UP TO 42% OFF"，原价取区间上限（有打折标签时）。"""
+    from selectolax.lexbor import LexborHTMLParser
+    tree = LexborHTMLParser(html)
+    out: dict[str, tuple] = {}
+    for form in tree.css("form.oe_product_cart"):
+        pid = (form.attributes.get("data-cnstrc-item-id") or "").strip()
+        box = form.css_first(".product_price")
+        cur = form.css_first(".x_wd_product_price")
+        if not pid or box is None or cur is None:
+            continue
+        vals = [to_float(n.text(strip=True)) for n in cur.css(".oe_currency_value")]
+        vals = [v for v in vals if v]
+        if not vals:
+            continue
+        old = box.css_first("del .oe_currency_value")
+        compare = to_float(old.text(strip=True)) if old is not None else None
+        ranged = len(vals) > 1
+        if ranged and compare is None and box.attributes.get("data-has-discount") == "1":
+            compare = max(vals)
+        price = min(vals)
+        out[pid] = (price, compare if compare and compare > price + 0.009 else None, ranged)
+    last = max([int(m) for a in tree.css("ul.pagination a") for m in
+                re.findall(r"/page/(\d+)", a.attributes.get("href") or "")] or [1])
+    return out, last
 
 
 def _spec(group: str, *names: str) -> list[dict]:
@@ -173,13 +213,15 @@ class SunAndSkiAdapter(Adapter):
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
-        self.api_key = self.cfg.get("api_key")
+        self.api_key = self.cfg.get("api_key") or _KEY_CACHE.get(self.base_url)
         self._key_refreshed = False
 
     # ---------- Constructor.io ----------
     def _read_key(self) -> str | None:
         html = self.fetcher.get_html(self.base_url + (self.cfg.get("key_page") or KEY_PAGE))
         m = re.search(r"indexKey\s*=\s*['\"](key_[A-Za-z0-9]+)['\"]", html)
+        if m:
+            _KEY_CACHE[self.base_url] = m.group(1)
         return m.group(1) if m else None
 
     def _browse(self, group_id: str, pairs: list[tuple[str, str]], page: int, ids_only: bool = False) -> dict:
@@ -196,6 +238,34 @@ class SunAndSkiAdapter(Adapter):
             if e.status in (400, 401, 403) and not self._key_refreshed and self._refresh_key():
                 return self._browse(group_id, pairs, page, ids_only)
             raise
+
+    def _price_map(self) -> dict[str, tuple]:
+        """Odoo 分类页上的价格（一轮抓取只建一次，所有分类共用）。
+        被网站拦截时：记下来、这一轮不再重试，并抛出 BlockedError 让本分类和之后的分类都直接停下——
+        2026-11-12 的教训：失败后没有记下，几千个商品每个都重新请求一次被拦的页面，跑了 5 个多小时。"""
+        if self.base_url in _PRICE_BLOCKED:
+            raise BlockedError(self.base_url, None, "价格页这一轮已被拦截，不再请求")
+        if self.base_url in _PRICE_CACHE:
+            return _PRICE_CACHE[self.base_url]
+        prices: dict[str, tuple] = {}
+        for path in self.cfg.get("price_pages") or PRICE_PAGES:
+            page, last = 1, 1
+            while page <= min(last, MAX_PRICE_PAGES):
+                url = self.base_url + path + (f"/page/{page}" if page > 1 else "")
+                try:
+                    found, last_seen = parse_price_cards(self.fetcher.get_html(url))
+                except (BlockedError, FetchError) as e:
+                    _PRICE_BLOCKED.add(self.base_url)
+                    self.log(f"[{self.rid}] 价格页第 {page} 页失败，这一轮停止抓 Sun & Ski：{e}")
+                    raise BlockedError(url, getattr(e, "status", None), "价格页被拦截") from e
+                if not found:
+                    break
+                prices.update(found)
+                last = max(last, last_seen)
+                page += 1
+            self.log(f"[{self.rid}] 价格表 {path}: {page - 1} 页，{len(prices)} 个商品")
+        _PRICE_CACHE[self.base_url] = prices
+        return prices
 
     def _refresh_key(self) -> bool:
         """index key 失效时，从网站分类页重新读取（页面里有 window.cnstrc.indexKey = 'key_...'）。"""
@@ -266,6 +336,8 @@ class SunAndSkiAdapter(Adapter):
             for it in items:
                 try:
                     p = self._to_product(it, genders, types, excluded)
+                except BlockedError:
+                    raise   # 被拦截不是“单条数据异常”：整个分类停下，不再逐个商品重试
                 except Exception as e:  # 单条数据格式异常不影响整个分类
                     bad += 1
                     if bad <= 3:
@@ -317,6 +389,13 @@ class SunAndSkiAdapter(Adapter):
             cmps = [s.compare_at for s in size_list if s.compare_at]
             if cmps:
                 compare = max(cmps)
+        if price is None:   # Constructor 不再给价格：用分类页卡片上的价格
+            hit = self._price_map().get(pid)
+            if hit:
+                price, compare, ranged = hit
+                if not ranged:   # 所有尺码同价：每个尺码都用这个价；区间价时各尺码价格未知，留空（不参与按尺码比价）
+                    for s in size_list:
+                        s.price, s.compare_at = price, compare
         if not (compare and price and compare > price + 0.009):
             compare = None
 
