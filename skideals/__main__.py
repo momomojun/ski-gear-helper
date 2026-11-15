@@ -13,6 +13,7 @@
   python -m skideals snapshot import       snapshot/ → 数据库（新电脑 clone 下来后还原全部历史数据）
   python -m skideals build-site            生成在线只读版静态网站（默认从 snapshot/ 还原，输出到 public/）
   python -m skideals publish               导出快照并提交、推送到 GitHub（Vercel 收到后自动重新部署）
+  python -m skideals push-turso [--full]   把本地数据库里有变化的数据推到 Turso（需要 TURSO_DATABASE_URL / TURSO_AUTH_TOKEN）
 """
 from __future__ import annotations
 
@@ -55,6 +56,8 @@ def main(argv: list[str] | None = None) -> int:
     bs.add_argument("--out", default="public", help="输出目录（默认 public/）")
     bs.add_argument("--snapshot", help="快照目录（默认 snapshot/）")
     bs.add_argument("--db", help="直接用这个数据库生成，不从快照还原（本地预览用）")
+    pt = sub.add_parser("push-turso", help="把本地数据推到 Turso 云端数据库")
+    pt.add_argument("--full", action="store_true", help="忽略推送记录，所有行重推一遍")
     pb = sub.add_parser("publish", help="导出快照并提交、推送")
     pb.add_argument("--no-push", action="store_true", help="只提交，不推送")
     pb.add_argument("--force", action="store_true", help="抓取还在进行时也导出")
@@ -78,6 +81,10 @@ def main(argv: list[str] | None = None) -> int:
     db.init()
     if args.cmd == "publish":
         return _publish(args)
+    if args.cmd == "push-turso":
+        from . import turso
+        turso.push(full=args.full)
+        return 0
     elif args.cmd == "serve":
         from .server import serve
         serve(open_browser=args.open, port=args.port)

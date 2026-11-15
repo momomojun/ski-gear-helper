@@ -159,7 +159,7 @@ BRANDS: list[tuple[str, list[str], bool]] = [
     ("Goldbergh", ["goldbergh"], False), ("Sportalm", ["sportalm"], False), ("Toni Sailer", ["toni sailer"], False),
     ("Poivre Blanc", ["poivre blanc"], False), ("Dale of Norway", ["dale of norway"], False),
     # ---- 背包 / 雪崩 / 止滑带
-    ("Osprey", ["osprey"], False), ("Deuter", ["deuter"], False), ("Mystery Ranch", ["mystery ranch"], False),
+    ("Osprey", ["osprey"], False), ("Gregory", ["gregory", "gregory packs"], False), ("Deuter", ["deuter"], False), ("Mystery Ranch", ["mystery ranch"], False),
     ("BCA", ["bca", "backcountry access"], False), ("Pieps", ["pieps"], False), ("Arva", ["arva"], True),
     ("G3", ["g3", "genuine guide gear"], False), ("Pomoca", ["pomoca"], False), ("Kohla", ["kohla"], False),
     ("Contour", ["contour"], True), ("Montana", ["montana"], True), ("Thule", ["thule"], False),

@@ -40,7 +40,13 @@ from .shopify import OUTDOOR_CATEGORIES, SHOE_CATEGORIES, OUTDOOR_HARDWARE_RE, e
 
 # 和 REI 前端 fetch() 一样的 Accept。/rest/products/{id} 会按 Accept 做内容协商：
 # Chrome 导航用的默认 Accept 偏好 application/xml，会拿到 XML（而且 CDN 不按 Accept 区分缓存）。
-JSON_HEADERS = {"Accept": "application/json, text/plain, */*"}
+JSON_HEADERS = {
+    "Accept": "application/json, text/plain, */*",
+    "Referer": "https://www.rei.com/",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-origin",
+}
 
 PAGE_SIZE = 90                    # REI 只接受 30 / 90
 SORTS = ("title", "max-price")    # 第二个排序只在第一轮对账缺货时才用
@@ -463,8 +469,11 @@ class ReiAdapter(Adapter):
             yield p
 
     # ------------------------------------------------------------------ 列表
-    def _get_json(self, url: str):
-        resp = self.fetcher.get(url, headers=JSON_HEADERS)
+    def _get_json(self, url: str, referer: str | None = None):
+        headers = dict(JSON_HEADERS)
+        if referer:
+            headers["Referer"] = referer
+        resp = self.fetcher.get(url, headers=headers)
         text = resp.text or ""
         try:
             return json.loads(text)
@@ -477,7 +486,7 @@ class ReiAdapter(Adapter):
         params: dict = {"page": page} if page > 1 else {}
         params.update(pagesize=PAGE_SIZE, sort=sort, json="true")
         url = f"{self.base_url}{path}?{urlencode(params)}"
-        data = self._get_json(url)
+        data = self._get_json(url, referer=f"{self.base_url}{path}")
         self.stats["listing_requests"] += 1
         sr = data.get("searchResults") if isinstance(data, dict) else None
         if not isinstance(sr, dict):
@@ -533,7 +542,11 @@ class ReiAdapter(Adapter):
             try:
                 got, total, label = self._crawl(path)
             except BlockedError:
-                raise                              # 被反爬拦截：立即停止，如实报告
+                if items:
+                    self._blocked = True
+                    self.log(f"[rei] {path} 遇到反爬，保留已抓取的 {len(items)} 个商品并结束")
+                    break
+                raise                              # 被反爬拦截且没有抓到任何商品：立即停止，如实报告
             except FetchError as e:                # 某个小分类改名 / 下架：记下来，其余照抓
                 main_errors.append(e)
                 self.log(f"[rei] {self.category} list {path} failed: {e}")
@@ -541,7 +554,7 @@ class ReiAdapter(Adapter):
             reported += total or 0
             add(path, got, label)
             self.log(f"[rei] {self.category} {path}: {len(got)} (REI reports {total})")
-        if main and len(main_errors) == len(main):
+        if main and len(main_errors) == len(main) and not items:
             raise main_errors[0]                   # 主列表全部失败 → 这个分类记为失败
 
         ok_gender = 0
@@ -554,6 +567,10 @@ class ReiAdapter(Adapter):
                     got, total, label = self._crawl(path)
                 except BlockedError as e:
                     if not main:
+                        if items:
+                            self._blocked = True
+                            self.log(f"[rei] {path} 遇到反爬，保留已抓取的 {len(items)} 个商品并结束")
+                            break
                         raise                      # 性别列表就是商品来源，被拦截就如实报告
                     self._blocked = True
                     self.log(f"[rei] blocked on {path}; genders fall back to titles ({e})")
@@ -568,7 +585,7 @@ class ReiAdapter(Adapter):
                 if not main:
                     reported += total or 0
                 self.log(f"[rei] {self.category} {gender} {path}: {len(got)} (REI reports {total})")
-        if not main and not ok_gender and errors:
+        if not main and not ok_gender and errors and not items:
             raise errors[0]
 
         for path in exclude:
@@ -719,7 +736,8 @@ class ReiAdapter(Adapter):
     def _detail(self, pid: str) -> dict:
         url = f"{self.base_url}/rest/products/{pid}"
         self.stats["detail_requests"] += 1
-        resp = self.fetcher.get(url, headers=JSON_HEADERS)
+        headers = {**JSON_HEADERS, "Referer": f"{self.base_url}/product/{pid}"}
+        resp = self.fetcher.get(url, headers=headers)
         body = resp.content or b""
         head = body[:300].lstrip()
         if head.startswith(b"{"):

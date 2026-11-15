@@ -647,6 +647,7 @@ details[open] summary::before { transform: rotate(45deg); }
 .st.ok { color: var(--good); } .st.ok::before { background: var(--good); }
 .st.blocked, .st.robots, .st.partial { color: var(--warn); } .st.blocked::before, .st.robots::before, .st.partial::before { background: var(--warn); }
 .st.error { color: var(--bad); } .st.error::before { background: var(--bad); }
+.st.unverified { color: var(--warn); } .st.unverified::before { background: var(--warn); }
 .st-msg { display: block; font-size: 11.5px; color: var(--ink-3); white-space: normal; max-width: 220px; }
 .dd { margin: 10px 0 14px; padding: 16px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
 .dd h3 { margin: 0 0 10px; font-size: 14.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
@@ -726,6 +727,7 @@ details[open] summary::before { transform: rotate(45deg); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); flex: none; }
 .dot.running { background: var(--sky); animation: blink 1s infinite; } .dot.ok { background: var(--good); }
 .dot.partial, .dot.blocked, .dot.robots { background: var(--warn); } .dot.error { background: var(--bad); }
+.dot.unverified { background: var(--warn); }
 @keyframes blink { 50% { opacity: .3; } }
 .toast { position: fixed; bottom: 26px; left: 50%; z-index: 60; display: inline-flex; align-items: center; gap: 10px;
   background: var(--sel); color: var(--sel-ink); padding: 11px 18px; border-radius: 999px; font-size: 13.5px; font-weight: 500;

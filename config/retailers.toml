@@ -45,10 +45,10 @@ tier = "A"
 # 限制每轮商品接口总次数（detail_budget_per_run）后直连就能抓完（2026-11-11 实测）
 price_match = "不匹配其他店；14 天内 REI 自己降价可补差价"
 price_match_ok = false   # 不接受其他店的价格匹配（只在可信度页展示政策）
-detail_mode = "discounted"   # 只对打折商品调用商品接口取每个长度的价格/库存
-max_detail_pages = 40
-detail_budget_per_run = 40   # 所有分类合计；REI 一轮超过约 160 个请求会被拦（分类页约 90 个）
-min_interval = 2.5   # 2026-11：间隔 1.5 秒、5 分钟约 180 个请求后会被反爬拦下；放慢、少调商品接口，留在它能接受的范围内
+detail_mode = "off"   # 列表页已包含所有尺码、价格与折扣，关闭详情页接口避免触发 Akamai 频控
+max_detail_pages = 0
+detail_budget_per_run = 0
+min_interval = 3.0
 
 [[retailers]]
 id = "christy"
@@ -1580,3 +1580,414 @@ adapter = "giro"
 tier = "brand"
 brand = "Giro"
 # Giro（原 Vista/Revelyst，现 SVP）。SFCC；每个颜色另有一张卡片（VG-…），头盔页约 8 个请求；经常有过季颜色打折
+
+# ---------------------------------------------------------------- 热门大型户外与雪具商（Backcountry / Steep & Cheap / Corbetts / L9 等）
+
+[[retailers]]
+id = "backcountry"
+name = "Backcountry"
+country = "US"
+currency = "USD"
+url = "https://www.backcountry.com"
+adapter = "backcountry"
+tier = "A"
+price_match = "匹配已授权的美国零售商同款同码现货价格"
+max_pages = 5
+
+[[retailers]]
+id = "steepandcheap"
+name = "Steep & Cheap"
+country = "US"
+currency = "USD"
+url = "https://www.steepandcheap.com"
+adapter = "backcountry"
+tier = "A"
+price_match = "Backcountry 旗下官方清仓折价站"
+max_pages = 5
+
+[[retailers]]
+id = "corbetts"
+name = "Corbetts Ski & Snowboard"
+country = "CA"
+currency = "CAD"
+url = "https://www.corbetts.com"
+adapter = "corbetts"
+tier = "A"
+price_match = "加拿大顶级独立雪具大店，支持直邮美国与跨境比价"
+
+
+[[retailers]]
+id = "levelnine"
+name = "Level Nine Sports"
+country = "US"
+currency = "USD"
+url = "https://www.levelninesports.com"
+adapter = "backcountry"
+tier = "B"
+price_match = "犹他州著名平价雪具与清仓大站，主打超高性价比"
+
+[[retailers]]
+id = "powder7"
+name = "Powder7"
+enabled = false # Cloudflare 403 / JavaScript 挑战拦截，无法直连抓取
+country = "US"
+currency = "USD"
+url = "https://www.powder7.com"
+adapter = "schema_org"
+tier = "B"
+price_match = "科罗拉多著名双板专营店，提供丰富全新与Demo试滑雪板"
+
+[[retailers]]
+id = "basinsports"
+name = "SkiEssentials Killington（原 Basin Sports）"
+country = "US"
+currency = "USD"
+url = "https://basinski.com"
+enabled = false
+# 官网线上购物导向已收录的 SkiEssentials；原 basinsports.com 为同名的其他商家。
+adapter = "shopify"
+tier = "B"
+price_match = "线上商品由 SkiEssentials 来源覆盖，不重复采集"
+collections = ["skis"]
+
+[[retailers]]
+id = "skipro"
+name = "Ski Pro"
+country = "US"
+currency = "USD"
+url = "https://www.skipro.com"
+adapter = "shopify"
+tier = "B"
+price_match = "亚利桑那州大型滑雪专营零售商（始于1978年）"
+collections = ["skis"]
+
+[[retailers]]
+id = "suburbanski"
+name = "Suburban Sports"
+country = "US"
+currency = "USD"
+url = "https://www.suburbanskiandbike.com"
+adapter = "shopify"
+tier = "B"
+price_match = "康州老牌独立滑雪与户外店"
+collections = ["skis"]
+
+[[retailers]]
+id = "bobssportschalet"
+name = "Bob's Sports Chalet"
+country = "US"
+currency = "USD"
+url = "https://www.bobssportschalet.com"
+adapter = "bobs"
+tier = "B"
+price_match = "新英格兰地区老牌专业滑雪店"
+
+# ---------------------------------------------------------------- 顶级户外与滑雪品牌官网（Arc'teryx / Patagonia / TNF / Helly Hansen 等）
+
+[[retailers]]
+id = "arcteryx"
+name = "Arc'teryx 官网"
+enabled = false # Next.js SPA 架构，商品数据由客户端动态加载，无预渲染静态商品
+country = "US"
+currency = "USD"
+url = "https://arcteryx.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Arc'teryx"
+price_match = "始祖鸟官方商城，专注顶级专业高山硬壳与滑雪服"
+
+[[retailers]]
+id = "patagonia"
+name = "Patagonia 官网"
+enabled = false # 官方反爬 WAF (Hang Tight 结账重定向拦截)，直连无法获取商品列表
+country = "US"
+currency = "USD"
+url = "https://www.patagonia.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Patagonia"
+price_match = "巴塔哥尼亚官方商城，只收录其官方 Snow 专区滑雪服与中间层"
+
+[[retailers]]
+id = "thenorthface"
+name = "The North Face 官网"
+enabled = false # Akamai 算力挑战拦截 (339 字节)，直连无法访问
+country = "US"
+currency = "USD"
+url = "https://www.thenorthface.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "The North Face"
+price_match = "北面官方商城，收录 Steep Series 及专业滑雪系列"
+
+[[retailers]]
+id = "hellyhansen"
+name = "Helly Hansen 官网"
+enabled = false # PerimeterX/Human Security 质询拦截，直连无法获取商品
+country = "US"
+currency = "USD"
+url = "https://www.hellyhansen.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Helly Hansen"
+price_match = "挪威专业高山滑雪与户外航海服装官方商城"
+
+[[retailers]]
+id = "columbia"
+name = "Columbia 官网"
+enabled = false # Akamai/PerimeterX 客户端行为验证拦截
+country = "US"
+currency = "USD"
+url = "https://www.columbia.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Columbia"
+price_match = "哥伦比亚官方商城，收录 Omni-Heat 及滑雪专区"
+
+[[retailers]]
+id = "mountainhardwear"
+name = "Mountain Hardwear 官网"
+enabled = false # 哥伦比亚集团旗下，Akamai 反爬 WAF 拦截
+country = "US"
+currency = "USD"
+url = "https://www.mountainhardwear.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Mountain Hardwear"
+price_match = "山浩官方商城，收录专业高山硬壳与滑雪装备"
+
+[[retailers]]
+id = "oakley"
+name = "Oakley 官网"
+enabled = false # Luxottica 集团 Akamai 挑战拦截 (324 字节)
+country = "US"
+currency = "USD"
+url = "https://www.oakley.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Oakley"
+price_match = "欧克利官方商城，收录 Prizm 雪镜与 MOD 滑雪头盔系列"
+
+
+# =====================================================================
+# 第一梯队：滑雪大牌硬件官方商城 (Ski Hardware Giants)
+# =====================================================================
+
+[[retailers]]
+id = "salomon"
+name = "Salomon 官网"
+country = "US"
+currency = "USD"
+url = "https://www.salomon.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Salomon"
+price_match = "萨洛蒙官方商城，顶级全能单双板、滑雪靴、越野跑与高山装备"
+
+[[retailers]]
+id = "blizzard-tecnica"
+name = "Blizzard-Tecnica 官网"
+enabled = false # 官方品牌展示型目录，不提供线上直营电商购买（无购物车/标价），装备通过 Backcountry/evo/Christy 等授权商流通
+country = "US"
+currency = "USD"
+url = "https://www.blizzard-tecnica.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Blizzard"
+price_match = "暴风雪双板与泰尼卡雪靴官方商城，高山与野雪巡回专业标杆"
+
+[[retailers]]
+id = "nordica"
+name = "Nordica 官网"
+enabled = false # 官方品牌展示型目录，不提供线上直营电商购买（无购物车/标价），装备通过 Backcountry/evo/Christy 等授权商流通
+country = "US"
+currency = "USD"
+url = "https://www.nordica.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Nordica"
+price_match = "诺迪卡官方商城，全地域双板与竞技雪靴先驱"
+
+[[retailers]]
+id = "head"
+name = "Head 官网"
+country = "US"
+currency = "USD"
+url = "https://www.head.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Head"
+price_match = "海德官方商城，世界杯冠军滑雪板、Tyrolia 固定器与雪镜防护"
+
+[[retailers]]
+id = "elan"
+name = "Elan 官网"
+country = "SI"
+currency = "EUR"
+url = "https://elansports.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Elan"
+price_match = "爱兰官方商城，Amphibio 与 Ripstick 经典雪板"
+
+[[retailers]]
+id = "fischer"
+name = "Fischer 官网"
+country = "US"
+currency = "USD"
+url = "https://www.fischersports.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Fischer"
+price_match = "菲舍尔官方商城，奥地利百年越野滑雪与高山滑雪标杆"
+
+# =====================================================================
+# 第二梯队：顶级户外/高山/越野/背包官方商城 (Outdoor & Alpine Masters)
+# =====================================================================
+
+[[retailers]]
+id = "mammut"
+name = "Mammut 官网"
+enabled = false # Next.js 14 RSC 客户端流式渲染，无预渲染静态商品卡片与 Schema.org
+country = "US"
+currency = "USD"
+url = "https://www.mammut.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Mammut"
+price_match = "猛犸象官方商城，瑞士顶级高山滑雪、硬壳攀登与雪崩安全装备"
+
+[[retailers]]
+id = "hoka"
+name = "HOKA 官网"
+enabled = false # Deckers 集团 Kasada/Akamai 挑战 (Access Denied)，直连无法访问
+country = "US"
+currency = "USD"
+url = "https://www.hoka.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "HOKA"
+price_match = "霍卡官方商城，顶级越野跑鞋与户外徒步鞋"
+
+[[retailers]]
+id = "osprey"
+name = "Osprey 官网"
+country = "US"
+currency = "USD"
+url = "https://www.osprey.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Osprey"
+price_match = "鱼鹰官方商城，专业滑雪冲锋包、重装徒步背包与户外行李袋"
+
+[[retailers]]
+id = "norrona"
+name = "Norrøna 官网"
+country = "US"
+currency = "USD"
+url = "https://www.norrona.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Norrøna"
+price_match = "老人头官方商城，挪威国宝级 Lofoten 大山粉雪硬壳与极地防寒装备"
+
+[[retailers]]
+id = "merrell"
+name = "Merrell 官网"
+country = "US"
+currency = "USD"
+url = "https://www.merrell.com"
+adapter = "outdoor_brand"
+tier = "brand"
+brand = "Merrell"
+price_match = "迈乐官方商城，全球畅销高品质徒步鞋与越野鞋"
+
+[[retailers]]
+id = "altra"
+name = "Altra 官网"
+country = "US"
+currency = "USD"
+url = "https://www.altrarunning.com"
+adapter = "shopify"
+tier = "brand"
+brand = "Altra"
+price_match = "奥创官方商城，零落差宽鞋楦顶级越野跑鞋与徒步鞋"
+
+[[retailers]]
+id = "gregory"
+name = "Gregory 官网"
+country = "US"
+currency = "USD"
+url = "https://www.gregory.com"
+adapter = "gregory"
+tier = "brand"
+brand = "Gregory"
+price_match = "格里高利官方商城，背包大师级贴合背负系统与滑雪背包"
+
+[[retailers]]
+id = "bca"
+name = "BCA 官网"
+country = "US"
+currency = "USD"
+url = "https://backcountryaccess.com/en-us"
+adapter = "k2sports"
+tier = "brand"
+brand = "BCA"
+price_match = "北美知名雪崩安全三件套（信标、探杆、雪铲）与气囊背包官方商城"
+
+# =====================================================================
+# 第三梯队：特卖打折巨头 & 欧洲滑雪海淘名站 (Outlets & European Ski Retailers)
+# =====================================================================
+
+[[retailers]]
+id = "sierra"
+name = "Sierra"
+enabled = false # TJX 旗下特卖网站，非美国本土原生家庭宽带 IP 触发 202 拦截，默认停用避免整轮阻塞
+country = "US"
+currency = "USD"
+url = "https://www.sierra.com"
+adapter = "schema_org"
+tier = "outlet"
+price_match = "TJX 旗下著名特卖折扣巨头，涵盖全品类户外、越野鞋与滑雪大减价"
+
+[[retailers]]
+id = "curated"
+name = "Curated"
+enabled = false # Cloudflare Turnstile 质询拦截 (114 字节挑战)，无法直连抓取
+country = "US"
+currency = "USD"
+url = "https://www.curated.com"
+adapter = "schema_org"
+tier = "specialty"
+price_match = "美国专业运动买手与装备顾问站，全品类双板与单板精选"
+
+[[retailers]]
+id = "ekosport"
+name = "Ekosport"
+enabled = false # 欧洲站点采用 Intershop/Angular PWA 架构，分类静态页 404，需专有 API 接入
+country = "FR"
+currency = "EUR"
+url = "https://www.ekosport.eu"
+adapter = "schema_org"
+tier = "european"
+price_match = "欧洲最大滑雪与户外在线特卖商城，数万款单双板装备及海淘极佳折扣"
+
+[[retailers]]
+id = "glisshop"
+name = "Glisshop"
+country = "FR"
+currency = "EUR"
+url = "https://www.glisshop.co.uk"
+adapter = "schema_org"
+tier = "european"
+price_match = "法国顶级滑雪运动与高山户外商城，纯正阿尔卑斯装备库"
+
+[[retailers]]
+id = "sportconrad"
+name = "Sport Conrad"
+country = "DE"
+currency = "EUR"
+url = "https://www.sport-conrad.com"
+adapter = "schema_org"
+tier = "european"
+price_match = "德国阿尔卑斯百年老牌高山滑雪与野雪巡回大牌专营店"

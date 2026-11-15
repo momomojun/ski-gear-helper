@@ -362,5 +362,23 @@ class GiroAdapter(SFCCBrandAdapter):
     BRANDS = ["Giro"]
 
 
-__all__ = ["SFCCBrandAdapter", "RossignolAdapter", "DynastarLangeAdapter", "GiroAdapter", "parse_brand_tiles",
-           "tile_prices", "brand_name", "normalize_categories"]
+GREGORY_DEFAULTS: dict[str, dict] = {
+    "backpack": {"categories": _pages("/packs/backpacking/", "/packs/day-packs/", "/packs/snow-packs/")},
+    "bag": {"categories": _pages("/travel-duffels/")},
+}
+
+
+class GregoryAdapter(SFCCBrandAdapter):
+    CATEGORY_DEFAULTS = GREGORY_DEFAULTS
+    BRANDS = ["Gregory"]
+
+    def _page_url(self, path: str, start: int, size: int) -> str:
+        url = path if path.startswith("http") else f"{self.base_url}/{path.lstrip('/')}"
+        if start == 0:
+            return url
+        sep = "&" if "?" in url else "?"
+        return f"{url}{sep}start={start}&sz={size}"
+
+
+__all__ = ["SFCCBrandAdapter", "RossignolAdapter", "DynastarLangeAdapter", "GiroAdapter", "GregoryAdapter",
+           "parse_brand_tiles", "tile_prices", "brand_name", "normalize_categories"]

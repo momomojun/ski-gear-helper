@@ -241,27 +241,39 @@ class SunAndSkiAdapter(Adapter):
 
     def _price_map(self) -> dict[str, tuple]:
         """Odoo 分类页上的价格（一轮抓取只建一次，所有分类共用）。
-        被网站拦截时：记下来、这一轮不再重试，并抛出 BlockedError 让本分类和之后的分类都直接停下——
-        2026-11-12 的教训：失败后没有记下，几千个商品每个都重新请求一次被拦的页面，跑了 5 个多小时。"""
+        被网站拦截时：若已抓到部分页面的价格，则降级使用已有价格表，避免全品类雪崩式失败；
+        若第 1 页就完全无法访问，则抛出 BlockedError。"""
+        import random
+        import time
         if self.base_url in _PRICE_BLOCKED:
+            if self.base_url in _PRICE_CACHE and _PRICE_CACHE[self.base_url]:
+                return _PRICE_CACHE[self.base_url]
             raise BlockedError(self.base_url, None, "价格页这一轮已被拦截，不再请求")
         if self.base_url in _PRICE_CACHE:
             return _PRICE_CACHE[self.base_url]
         prices: dict[str, tuple] = {}
         for path in self.cfg.get("price_pages") or PRICE_PAGES:
             page, last = 1, 1
+            prev_url = self.base_url + path
             while page <= min(last, MAX_PRICE_PAGES):
                 url = self.base_url + path + (f"/page/{page}" if page > 1 else "")
+                headers = {"Referer": prev_url} if page > 1 else None
                 try:
-                    found, last_seen = parse_price_cards(self.fetcher.get_html(url))
+                    if page > 1:
+                        time.sleep(random.uniform(1.0, 2.5))
+                    found, last_seen = parse_price_cards(self.fetcher.get_html(url, headers=headers))
                 except (BlockedError, FetchError) as e:
                     _PRICE_BLOCKED.add(self.base_url)
+                    if prices:
+                        self.log(f"[{self.rid}] 价格页第 {page} 页遇阻（{e}），停止后续翻页，已保留前 {len(prices)} 个商品价格")
+                        break
                     self.log(f"[{self.rid}] 价格页第 {page} 页失败，这一轮停止抓 Sun & Ski：{e}")
                     raise BlockedError(url, getattr(e, "status", None), "价格页被拦截") from e
                 if not found:
                     break
                 prices.update(found)
                 last = max(last, last_seen)
+                prev_url = url
                 page += 1
             self.log(f"[{self.rid}] 价格表 {path}: {page - 1} 页，{len(prices)} 个商品")
         _PRICE_CACHE[self.base_url] = prices

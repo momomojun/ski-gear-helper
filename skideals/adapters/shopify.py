@@ -18,7 +18,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 
 from ..models import RawProduct, SizeOption
-from ..net import BlockedError
+from ..net import BlockedError, RobotsDisallowed
 from ..normalize import known_brand
 from .base import NOT_SKI_RE, Adapter, parse_cm, to_float
 
@@ -97,14 +97,28 @@ class ShopifyAdapter(Adapter):
     # ------------------------------------------------------------------ 抓取
     def _collection(self, handle: str) -> list[dict]:
         out: list[dict] = []
-        for page in range(1, 81):
-            data = self.fetcher.get_json(f"{self.base_url}/collections/{handle}/products.json",
-                                         params={"limit": 250, "page": page})
-            items = data.get("products", [])
-            out.extend(items)
-            # 注意：隐藏商品不计入，所以“满页”常常只有 240 多个，不能用 < 250 判断最后一页
-            if len(items) < 150:
-                break
+        try:
+            for page in range(1, 81):
+                data = self.fetcher.get_json(f"{self.base_url}/collections/{handle}/products.json",
+                                             params={"limit": 250, "page": page})
+                items = data.get("products", [])
+                out.extend(items)
+                # 注意：隐藏商品不计入，所以“满页”常常只有 240 多个，不能用 < 250 判断最后一页
+                if len(items) < 150:
+                    break
+        except RobotsDisallowed:
+            # 部分品牌官网 (如 Altra) 的 robots.txt 允许根目录 /products.json 但屏蔽了 /collections/*/products.json
+            self.log(f"[{self.rid}] /collections/{handle}/products.json 被 robots.txt 限制，回退到 /products.json")
+            for page in range(1, 81):
+                try:
+                    data = self.fetcher.get_json(f"{self.base_url}/products.json",
+                                                 params={"limit": 250, "page": page})
+                except Exception:
+                    break
+                items = data.get("products", [])
+                out.extend(items)
+                if len(items) < 150:
+                    break
         return out
 
     def _meta(self) -> dict:

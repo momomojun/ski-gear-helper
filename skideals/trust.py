@@ -49,6 +49,9 @@ OFFICIAL_BRAND_DOMAINS = {
     "kaestle.com", "kastle.com", "stockli.com", "libertyskis.com", "blackdiamondequipment.com", "dynafit.com",
     "scott-sports.com", "burton.com",
     "lasportivausa.com", "anonoptics.com", "lekiusa.com",   # 品牌北美官网（"品牌名+usa" 本来会被当成冒牌域名）
+    "arcteryx.com", "patagonia.com", "thenorthface.com", "hellyhansen.com", "columbia.com",
+    "mountainhardwear.com", "oakley.com", "mammut.com", "hoka.com", "osprey.com", "norrona.com",
+    "merrell.com", "altrarunning.com", "gregorypacks.com", "backcountryaccess.com",
 }
 LEVELS = [(75, "trusted", "可信"), (55, "ok", "基本可信"), (35, "caution", "谨慎"), (0, "danger", "高风险")]
 

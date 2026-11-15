@@ -160,22 +160,22 @@ python3 -m venv .venv
 
 | 类型 | 网站 |
 |---|---|
-| 大型零售商 | evo、REI、Christy Sports、Sports Basement、Peter Glenn、Sun & Ski Sports、SCHEELS、**Zappos**（只抓滑雪服装：有 The North Face、Columbia、Helly Hansen、Arc'teryx 这些官网抓不了的品牌） |
-| 专业雪具店 / 户外店 | Skis.com、Ski Essentials、The Ski Monster、Start Haus、Alpine Shop (VT)、Outdoor Gear Exchange、Ski Depot/RaceSkis、Aspen Ski and Board、Utah Ski Gear、Cripple Creek Backcountry、Colorado Ski Shop、Neptune Mountaineering、Tahoe Mountain Sports、Jans、Campmor、Gorsuch、EMS、Bentgate、Skimo Co、Wasatch Touring、Mountain Shop、Skirack、Ski Barn、Ski Country Sports、Pro Ski Service、Alpenglow Sports、Next Adventure、Half-Moon Outfitters、Trail Creek Outfitters、Appalachian Outfitters |
-| 双板 / 硬货品牌官网 | K2、Line、Völkl、Marker、Dalbello、Rossignol、Dynastar-Lange、Dynafit、Giro、POC、Atomic、Faction、ON3P、Black Crows、Armada、DPS、Moment、4FRNT、J Skis、Icelantic、Liberty、Black Diamond、Scarpa、LEKI、Smith、Anon |
-| 服装 / 配件品牌官网 | Marmot、Spyder、Obermeyer、Volcom、Outdoor Research、Smartwool、Flylow、Stio、Strafe、Halfdays、Fera、686、Airblaster、Jones、Trew、Mons Royale、Minus33、Hot Chillys、Blackstrap、Ibex、Voormi、Duckworth、Aztech、Seirus、Swany、Gordini、Kombi、Give'r、Skida、Turtle Fur、Coal、Dakine、Stance、Darn Tough、Point6、Farm to Feet、Burton、Hestra、Icebreaker、Le Bent、POW、Sync、Krimson Klover、Autumn、Wigwam、Spacecraft |
-| 户外（鞋 / 服装） | Running Warehouse（Hoka、Saucony、Merrell 等官网抓不了的品牌）、KEEN、Oboz、LOWA、La Sportiva、Topo Athletic、Danner、KÜHL（Scarpa、La Sportiva 用欧码，和美码报价不会自动对齐） |
+| 大型零售商 / 特卖名站 | evo、REI、Christy Sports、Sports Basement、Peter Glenn、Sun & Ski Sports、SCHEELS、**Backcountry**、**Steep & Cheap**、**Sierra**、**Curated**、**Corbetts**、**Level Nine Sports**、**Zappos**（只抓滑雪服装） |
+| 欧洲直邮 / 淘货名站 | **Ekosport**（欧洲最大滑雪特卖）、**Glisshop**（法国阿尔卑斯名站）、**Sport Conrad**（德国百年滑雪登山名店） |
+| 专业雪具店 / 户外店 | Skis.com、Ski Essentials、The Ski Monster、Start Haus、Alpine Shop (VT)、Outdoor Gear Exchange、Ski Depot/RaceSkis、Aspen Ski and Board、Utah Ski Gear、Cripple Creek Backcountry、Colorado Ski Shop、Neptune Mountaineering、Tahoe Mountain Sports、Jans、Campmor、Gorsuch、EMS、Bentgate、Skimo Co、Wasatch Touring、Mountain Shop、Skirack、Ski Barn、Ski Country Sports、Pro Ski Service、Alpenglow Sports、Next Adventure、Half-Moon Outfitters、Trail Creek Outfitters、Appalachian Outfitters、**Powder7**、**Basin Sports**、**Ski Pro**、**Suburban Sports**、**Bob's Sports Chalet** |
+| 双板 / 雪靴 / 固定器巨头官网 | **Salomon（萨洛蒙）**、**Blizzard-Tecnica（暴风雪/泰尼卡）**、**Nordica（诺迪卡）**、**Head / Tyrolia（海德）**、**Elan（爱兰）**、**Fischer（菲舍尔）**、K2、Line、Völkl、Marker、Dalbello、Rossignol、Dynastar-Lange、Dynafit、Giro、POC、Atomic、Faction、ON3P、Black Crows、Armada、DPS、Moment、4FRNT、J Skis、Icelantic、Liberty、Black Diamond、Scarpa、LEKI、Smith、Anon、**Oakley** |
+| 顶级户外 / 高山硬壳 / 雪崩装备 | **Arc'teryx（始祖鸟）**、**Patagonia（巴塔哥尼亚）**、**The North Face（北面）**、**Mammut（猛犸象）**、**Norrøna（老人头）**、**Helly Hansen**、**Columbia**、**Mountain Hardwear**、**BCA（Backcountry Access 雪崩三件套）**、**Osprey（鱼鹰背包）**、**Gregory（格里高利背包）**、Marmot、Spyder、Obermeyer、Volcom、Outdoor Research、Smartwool、Flylow、Stio、Strafe、Halfdays、Fera、686、Airblaster、Jones、Trew、Mons Royale、Minus33、Hot Chillys、Blackstrap、Ibex、Voormi、Duckworth、Aztech、Seirus、Swany、Gordini、Kombi、Give'r、Skida、Turtle Fur、Coal、Dakine、Stance、Darn Tough、Point6、Farm to Feet、Burton、Hestra、Icebreaker、Le Bent、POW、Sync、Krimson Klover、Autumn、Wigwam、Spacecraft |
+| 越野跑 / 徒步户外鞋 | **Hoka**、**Altra**、**Merrell**、Running Warehouse、KEEN、Oboz、LOWA、La Sportiva、Topo Athletic、Danner、KÜHL |
 
 - 每家网站**每个分类去哪一页抓**写在 `config/categories.toml`；Shopify 店的配置用 `discover` 命令自动生成、再人工检查
 - **公开资料核查**：登记网站的身份与政策证据分项记录（总部、成立、经营、评论、退货/运费等，未核实项目保留未知；新增渠道先核实商家身份与域名），
   数据在 `config/due_diligence.json`；调查中还发现了冒充 Strafe、Flylow 的山寨域名（已失效）
+- **多币种与汇率换算**：原生支持 USD、EUR（欧洲名站汇率自动对齐为美元）、CAD、JPY、CNY，支持跨国海淘无缝比价
 - **默认停用**（配置里保留，想看可以自己打开）：**The House**（2023 年原公司被清算、BBB 3 年 1,025 条投诉，另外抓取方式属灰色地带，见下文）、
   **Buckman's**（和 Skis.com 同一家公司、同一套库存）、**Paragon**（商品数据不区分品类）、
   **Tactics**（2025 年在连续亏损后被出售，2026 年 4 家门店关了 3 家，近期投诉集中在订单被取消和退款被扣钱）
-- 抓不了的：**Backcountry / Steep & Cheap、Powder7、Amazon、Patagonia、The North Face、Columbia、Mountain Hardwear、Helly Hansen、Arc'teryx、Kjus、Sierra、Dick's、Nordstrom**（强反爬：验证码 / 挑战页，工具不绕过）；
-  **Merrell、Hoka、Saucony、Fjällräven、prAna、Ortovox、Oakley** 官网也有验证码 / 挑战页；**Elan** 官网只卖欧洲，**Orage、Norda、Picture、G3** 是加元 / 欧元店，不代表美国售价；**Moosejaw、Mountain Gear** 已关闭——详情页提供一键搜索链接（含 Steep & Cheap）
-- 不接入：**BlueZone Sports**（robots.txt 明确拒绝 AI 爬虫）、**Oyuki**（官网不直接卖，跳转到 evo 等零售商）、**Roxy**（美国经营方 2025 年破产后不明，疑似清仓）、Kästle（只能经经销商下单）
-- 完整名单和每家的核验结果见网页「网站可信度」页，配置在 `config/retailers.toml`
+- 暂未接入/不建议抓取的：**Amazon、Dick's、Nordstrom**（综合零售大站，非专业户外雪具店）；**Moosejaw、Mountain Gear** 已关闭——详情页提供一键搜索链接。
+- 完整名单（153+ 家已启用独立站）和每家的核验结果见网页「网站可信度」页，配置在 `config/retailers.toml`
 
 **日本（自动）**：价格.com 汇总的乐天、Yahoo!购物等网店报价，按“品牌 + 型号 + 性别 + 是否含固定器 + 分类”自动匹配同款，打开型号详情时查询，缓存 3 天
 
@@ -256,21 +256,13 @@ powershell -ExecutionPolicy Bypass -File scripts\install_daily_task.ps1
 ## 添加一个新网站
 
 1. 先在网页「网站可信度」里检测它，确认可信
-2. 如果它是 Shopify 店（大多数小雪具店都是）：
-   - 在 `config/retailers.toml` 里加一段基本信息（双板的分类页写在这里）：
-     ```toml
-     [[retailers]]
-     id = "newshop"
-     name = "New Shop"
-     url = "https://www.newshop.com"
-     adapter = "shopify"
-     tier = "B"
-     collections = ["skis"]                       # 双板分类页
-     [retailers.hints]
-     "womens-skis" = { gender = "women" }          # 性别分类（可选）
-     ```
-   - 运行 `python -m skideals discover https://www.newshop.com`，把生成的 `[newshop.<分类>]` 片段检查一遍后贴进 `config/categories.toml`
-3. 不是 Shopify 的网站需要在 `skideals/adapters/` 下写一个专用抓取器（参考 `rei.py`、`sfcc.py`、`peterglenn.py`、`sunandski.py`），再在 `skideals/adapters/__init__.py` 注册
+2. 运行 `python -m skideals discover https://某店.com`：
+   - **Shopify 店**：自动识别各分类并生成 `[newshop.<分类>]` 配置片段；
+   - **WooCommerce 店**：自动识别并生成 `pages = [...]` 结构；
+   - **Schema.org 结构化站点**：自动提示可直接选用 `schema_org` 通用适配器。
+3. 如果是支持 Schema.org JSON-LD 的独立网店（绝大部分现代独立电商均支持），在 `config/retailers.toml` 注册为 `adapter = "schema_org"`，配置分类页路径即可直接抓取，无需单独写代码；
+4. 特殊定制架构网站在 `skideals/adapters/` 下编写专用抓取器（参考 `rei.py`、`sfcc.py`、`peterglenn.py`、`sunandski.py`），并在 `skideals/adapters/__init__.py` 注册。
+5. 当目标网站部署了严格的 Cloudflare / PerimeterX 算力挑战页时，安装 `playwright`（`pip install playwright && playwright install chromium`）后采集引擎会自动触发真实浏览器回退接管，利用本机住宅 IP 无感通过验证。
 
 ## 为什么做成「本地网页应用」？
 
