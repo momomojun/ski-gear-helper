@@ -4,6 +4,8 @@ from __future__ import annotations
 import importlib
 
 ADAPTERS: dict[str, tuple[str, str]] = {
+    "corbetts": ("corbetts", "CorbettsAdapter"),
+    "bobs": ("bobs", "BobsAdapter"),
     "shopify": ("shopify", "ShopifyAdapter"),
     "scheels": ("scheels", "ScheelsAdapter"),
     "rei": ("rei", "ReiAdapter"),
@@ -29,6 +31,11 @@ ADAPTERS: dict[str, tuple[str, str]] = {
     "rossignol": ("sfcc_brand", "RossignolAdapter"),
     "dynastarlange": ("sfcc_brand", "DynastarLangeAdapter"),
     "giro": ("sfcc_brand", "GiroAdapter"),
+    "gregory": ("sfcc_brand", "GregoryAdapter"),
+    "sfcc_brand": ("sfcc_brand", "SFCCBrandAdapter"),
+    "schema_org": ("schema_org", "SchemaOrgAdapter"),
+    "backcountry": ("backcountry", "BackcountryAdapter"),
+    "outdoor_brand": ("outdoor_brand", "OutdoorBrandAdapter"),
 }
 
 

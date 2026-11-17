@@ -59,6 +59,20 @@ class Adapter:
         self.cfg = cfg
         self.fetcher = fetcher
         self.log = log
+        self.complete = True
+        self.incomplete_reasons: list[str] = []
+        self.fetch_errors: list[Exception] = []
+
+    def mark_incomplete(self, reason: str) -> None:
+        self.complete = False
+        if reason not in self.incomplete_reasons:
+            self.incomplete_reasons.append(reason)
+
+    def record_fetch_error(self, error: Exception) -> None:
+        """保留类型供调度器区分反爬、robots 与错误，同时允许尝试其余入口。"""
+        self.fetch_errors.append(error)
+        self.mark_incomplete("部分请求失败")
+        self.log(f"[{self.rid}/{self.category}] 请求失败：{type(error).__name__}: {error}")
 
     @property
     def rid(self) -> str:

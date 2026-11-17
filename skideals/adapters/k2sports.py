@@ -49,7 +49,7 @@ _SPECIAL = {-1: None, -2: None, -3: float("nan"), -4: float("inf"), -5: float("-
 
 # 平台上的品牌（K2 官网也卖 Marker 固定器、Line 官网也卖 K2 的东西）：标题以这些品牌开头时 vendor 用它
 _PLATFORM_BRANDS = {"k2": "K2", "line": "Line", "volkl": "Völkl", "völkl": "Völkl", "marker": "Marker",
-                    "dalbello": "Dalbello", "madshus": "Madshus", "full tilt": "Full Tilt"}
+                    "dalbello": "Dalbello", "madshus": "Madshus", "full tilt": "Full Tilt", "bca": "BCA"}
 _SIZE_OPT_RE = re.compile(r"\bsize\b|length|mondo", re.I)
 _COLOR_OPT_RE = re.compile(r"colou?r", re.I)
 

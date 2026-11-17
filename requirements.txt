@@ -3,3 +3,4 @@ uvicorn>=0.29
 curl_cffi>=0.7
 selectolax>=0.4   # 用 lexbor 解析器（selectolax.lexbor）；0.4.x 和 1.x 都支持
 pytest>=8
+libsql>=0.1.11   # Turso（云端 SQLite）客户端：push-turso 推送、服务器读取

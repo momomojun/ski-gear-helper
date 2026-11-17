@@ -135,10 +135,70 @@ def to_toml(sugg: dict[str, dict]) -> str:
     return "\n".join(lines)
 
 
+def all_woocommerce_categories(fetcher: Fetcher, base: str) -> list[tuple[str, int]]:
+    out: list[tuple[str, int]] = []
+    for page in range(1, 20):
+        try:
+            data = fetcher.get_json(f"{base.rstrip('/')}/wp-json/wc/store/v1/products/categories", params={"per_page": 100, "page": page})
+        except Exception:
+            break
+        if not data or not isinstance(data, list):
+            break
+        out += [(c.get("slug"), int(c.get("count") or 0)) for c in data if c.get("slug")]
+    return out
+
+
+def to_woocommerce_toml(sugg: dict[str, dict]) -> str:
+    import json
+    lines = []
+    for cat, s in sugg.items():
+        lines.append(f"[retailers.categories.{cat}]")
+        pages = [{"category": h} for h in s["collections"]]
+        lines.append("pages = " + json.dumps(pages))
+        if s["hints"]:
+            lines.append(f"[retailers.categories.{cat}.hints]")
+            for h, v in s["hints"].items():
+                lines.append(f'"{h}" = {{ gender = "{v["gender"]}" }}')
+        lines.append("")
+    return "\n".join(lines)
+
+
 def discover(url: str) -> str:
     f = Fetcher(min_interval=0.8)
-    cols = all_collections(f, url)
-    sugg = suggest(cols)
-    head = f"# {url}：共 {len(cols)} 个 collection，识别出 {len(sugg)} 个分类\n"
-    detail = "\n".join(f"#   {cat:10} " + ", ".join(f"{h}({n})" for h, n in s["_counts"].items()) for cat, s in sugg.items())
-    return head + detail + "\n\n" + to_toml(sugg)
+    base = url.rstrip("/")
+
+    # 1. 尝试 Shopify
+    try:
+        cols = all_collections(f, base)
+    except Exception:
+        cols = []
+    if cols:
+        sugg = suggest(cols)
+        head = f"# {url} [Shopify]：共 {len(cols)} 个 collection，识别出 {len(sugg)} 个分类\n"
+        detail = "\n".join(f"#   {cat:10} " + ", ".join(f"{h}({n})" for h, n in s["_counts"].items()) for cat, s in sugg.items())
+        return head + detail + "\n\n" + to_toml(sugg)
+
+    # 2. 尝试 WooCommerce Store API
+    try:
+        wc_cats = all_woocommerce_categories(f, base)
+    except Exception:
+        wc_cats = []
+    if wc_cats:
+        sugg = suggest(wc_cats)
+        head = f"# {url} [WooCommerce]：共 {len(wc_cats)} 个分类，识别出 {len(sugg)} 个分类\n"
+        detail = "\n".join(f"#   {cat:10} " + ", ".join(f"{h}({n})" for h, n in s["_counts"].items()) for cat, s in sugg.items())
+        return head + detail + "\n\n" + to_woocommerce_toml(sugg)
+
+    # 3. 检查 Schema.org 支持
+    try:
+        html = f.get_html(base)
+        from .adapters.schema_org import extract_json_ld, is_product_type
+        lds = extract_json_ld(html)
+        has_prod = any(is_product_type(it.get("@type")) or it.get("@type") == "ItemList" for it in lds)
+        if has_prod:
+            return (f"# {url} [Schema.org]：检测到标准 Schema.org 结构化数据\n"
+                    f"# 建议使用 adapter = 'schema_org' 配置分类页面路径。\n")
+    except Exception:
+        pass
+
+    return f"# {url}：未检测到公开的 Shopify 或 WooCommerce API，建议使用 adapter = 'schema_org' 配置分类页面。"

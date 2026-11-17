@@ -158,13 +158,18 @@ def crawl_category(cfg: dict, cat: str, fetcher: Fetcher, seen: set | None = Non
     try:
         adapter = get_adapter(cfg, fetcher, _log)
         raws = []
-        for raw in adapter.fetch():
-            if raw.price is None:
-                continue
-            if seen is not None and raw.external_id in seen:  # 已经在前面的分类里收过（比如保暖雪服也在中间层分类页里）
-                continue
-            from .normalize import split_age_variants
-            raws.extend(split_age_variants(raw))
+        fetch_error = None
+        try:
+            for raw in adapter.fetch():
+                if raw.price is None:
+                    continue
+                if seen is not None and raw.external_id in seen:
+                    continue
+                from .normalize import split_age_variants
+                raws.extend(split_age_variants(raw))
+        except Exception as e:
+            # 先标准化已经 yield 的结果，再报告异常；不丢弃中途取得的商品。
+            fetch_error = e
         finals, moved = _decide_categories(rid, cat, raws, bool(cfg.get("trust_page")))
         prev_shoe: dict = {}   # 上次抓取记下的鞋码制/楦宽（第一次遇到鞋时才读数据库）
         for raw, final in zip(raws, finals):
@@ -187,12 +192,18 @@ def crawl_category(cfg: dict, cat: str, fetcher: Fetcher, seen: set | None = Non
             items.append(lst)
             if seen is not None:
                 seen.add(raw.external_id)
+        errors = getattr(adapter, "fetch_errors", [])
+        if fetch_error is not None or errors:
+            raise fetch_error if fetch_error is not None else errors[0]
         complete = getattr(adapter, "complete", True)
         gone = _write(rid, cat, items, started, complete)
         kept = sum(1 for lst in items if lst.category == cat)
         msg = f"{kept} 个" + (f"（另有 {moved} 个改判到别的分类）" if moved else "") + (f"，{gone} 个已下架" if gone else "")
-        if not complete:
-            kind, msg = "partial", msg + "；达到抓取预算，未抓到的商品保留原状态"
+        if not items:
+            kind, msg = "empty", "零结果待核查（可能为空、被过滤或未解析到商品）；旧商品保留原状态"
+        elif not complete:
+            reasons = getattr(adapter, "incomplete_reasons", []) or ["抓取范围不完整"]
+            kind, msg = "partial", msg + "；" + "；".join(reasons) + "；未抓到的商品保留原状态"
     except (BlockedError, RobotsDisallowed) as e:
         kind = "blocked" if isinstance(e, BlockedError) else "robots"
         msg = ("被网站反爬拦截" if kind == "blocked" else "robots.txt 不允许") + f"：{e.url[:80]}"
@@ -200,17 +211,21 @@ def crawl_category(cfg: dict, cat: str, fetcher: Fetcher, seen: set | None = Non
         kind = "error"
         msg = f"{type(e).__name__}: {str(e)[:200]}"
         _log(f"[{rid}/{cat}] 出错：{msg}\n{traceback.format_exc(limit=3)}")
-    if kind not in ("ok", "partial"):  # 失败：已经抓到的部分照样保存（但不把没抓到的标记为下架）
+    if kind not in ("ok", "partial", "empty"):  # 失败：保存已取得的商品，不下架其他商品
         try:
             _write(rid, cat, items, started, False)
+            if items:
+                kind, msg = "partial", f"已保存 {len(items)} 个商品；{msg}；未抓到的商品保留原状态"
         except Exception as e2:
+            kind, msg = "error", f"保存失败：{type(e2).__name__}: {e2}；原始结果：{msg}"
             _log(f"[{rid}/{cat}] 保存失败：{e2}")
     try:
         with db.connect() as conn:
             db.set_category_status(conn, rid, cat, kind, sum(1 for lst in items if lst.category == cat), msg)
     except sqlite3.OperationalError:
         pass
-    _log(f"[{rid}/{_cat_name(cat)}] {'完成' if kind == 'ok' else '失败'}：{msg}（{time.time() - t0:.0f}s）")
+    label = {"ok": "完成", "partial": "部分完成", "empty": "零结果待核查"}.get(kind, "失败")
+    _log(f"[{rid}/{_cat_name(cat)}] {label}：{msg}（{time.time() - t0:.0f}s）")
     return {"cat": cat, "status": kind, "n": len(items), "msg": msg,
             "meta": getattr(adapter, "store_meta", None) or None}
 
@@ -238,8 +253,9 @@ def crawl_one(cfg: dict, fetcher: Fetcher, categories: list[str] | None = None) 
     elif len(oks) == len(results):
         status = "ok"
     else:
-        status = "partial" if oks else results[0]["status"]
-    msg = " · ".join(f"{_cat_name(r['cat'])} {r['n']}" + ("" if r["status"] == "ok" else "（失败）") for r in results)
+        status = "partial" if oks or any(r["status"] == "partial" for r in results) else results[0]["status"]
+    labels = {"partial": "部分覆盖", "empty": "零结果待核查", "blocked": "反爬拦截", "robots": "robots限制", "error": "错误"}
+    msg = " · ".join(f"{_cat_name(r['cat'])} {r['n']}" + ("" if r["status"] == "ok" else f"（{labels.get(r['status'], r['status'])}）") for r in results)
     meta = next((r["meta"] for r in results if r.get("meta")), None)
     try:
         with db.connect() as conn:
@@ -250,6 +266,17 @@ def crawl_one(cfg: dict, fetcher: Fetcher, categories: list[str] | None = None) 
     _log(f"[{rid}] 全部分类完成：{msg}")
     return {"id": rid, "status": status, "n": total, "requests": own_fetcher.request_count if own_fetcher else 0,
             "cats": [{k: v for k, v in r.items() if k != "meta"} for r in results]}
+
+
+def _auto_push() -> None:
+    """抓完自动推到 Turso（设置了 TURSO_DATABASE_URL / TURSO_AUTH_TOKEN 才做）；推送失败只记日志，下次会补上。"""
+    from . import turso
+    if not turso.configured():
+        return
+    try:
+        turso.push(log=_log)
+    except Exception as e:
+        _log(f"推送到 Turso 失败（下次抓完会自动补推）：{type(e).__name__}: {e}")
 
 
 def run_crawl(retailer_ids: list[str] | None = None, categories: list[str] | None = None) -> dict:
@@ -296,6 +323,7 @@ def run_crawl(retailer_ids: list[str] | None = None, categories: list[str] | Non
             conn.execute("UPDATE crawl_runs SET finished_at=?, status='done', summary_json=? WHERE id=?",
                          (db.now_iso(), json.dumps(summary, ensure_ascii=False), run_id))
         _log(f"全部完成：{sum(r['n'] for r in results)} 个商品，{n_requests} 次请求")
+        _auto_push()
         return summary
     finally:
         with _LOCK:

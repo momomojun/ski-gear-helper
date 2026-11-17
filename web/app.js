@@ -1297,11 +1297,14 @@ function ddHTML(r) {
       row("价格匹配", r.price_match || d.price_match) + row("结论", d.verdict_reason) : row("价格匹配", r.price_match)}</tbody></table>
     ${d?.sources?.length ? `<div class="linkrow"><span class="lbl">来源</span>${d.sources.slice(0, 8).map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" title="${esc(u)}">${i + 1}</a>`).join("")}</div>` : ""}</div>`;
 }
+function crawlStatusLabel(status) {
+  return { ok: "正常", partial: "部分覆盖", empty: "零结果待核查", blocked: "被反爬拦截", robots: "robots 不允许", error: "出错" }[status] || "未抓取";
+}
 function catsHTML(r) {
   const entries = Object.entries(r.cats || {});
   if (!entries.length) return "";
   return `<div class="linkrow" style="margin:12px 0 4px"><span class="lbl">各分类最近一次抓取</span>${entries.map(([c, v]) =>
-    `<span class="tag ${v.status === "ok" ? "" : "drop"}" title="${esc(v.msg)} · ${esc((v.at || "").replace("T", " ").slice(0, 16))}">${catIc(c, 13)}${esc(catShort(c))} ${v.n}${v.status === "ok" ? "" : " · 失败"}</span>`).join("")}</div>`;
+    `<span class="tag ${v.status === "ok" ? "" : "drop"}" title="${esc(v.msg)} · ${esc((v.at || "").replace("T", " ").slice(0, 16))}">${catIc(c, 13)}${esc(catShort(c))} ${v.n}${v.status === "ok" ? "" : " · " + crawlStatusLabel(v.status)}</span>`).join("")}</div>`;
 }
 async function renderTrust() {
   const items = [["clock", "域名注册时间"], ["layers", "历史存档是否中断"], ["lock", "HTTPS 证书"], ["pin", "实体地址 / 电话"],
@@ -1336,7 +1339,6 @@ async function renderTrust() {
     <div class="stat good"><dt>${ic("check", 14)}正在抓取</dt><dd>${enabled.length}</dd></div>
     <div class="stat"><dt>${ic("shield", 14)}平均可信度</dt><dd>${avg}</dd></div>
     <div class="stat deal"><dt>${ic("alert", 14)}人工调查“需谨慎”</dt><dd>${list.filter((r) => r.dd?.verdict === "caution").length}</dd></div></dl>`;
-  const st = { ok: "正常", partial: "部分分类失败", blocked: "被反爬拦截", robots: "robots 不允许", error: "出错" };
   $("#retailer-table").innerHTML = `<div class="rtable-wrap"><table class="rtable"><thead><tr><th>网站</th><th>类型</th><th>可信度</th><th>域名注册</th><th>店铺登记地</th><th>抓取状态</th><th>商品数</th><th>最近更新</th></tr></thead><tbody>
     ${list.map((r, i) => {
       const rep = r.report, f = rep?.facts || {};
@@ -1347,7 +1349,7 @@ async function renderTrust() {
         <td>${rep ? `<span class="pill lv-${rep.level}">${rep.score} · ${esc(rep.level_label)}</span>` : `<span class="muted small">${r.enabled ? "核验中…" : "未核验（已停用）"}</span>`}</td>
         <td class="small num">${f.domain_created ? f.domain_created.slice(0, 4) + " 年" : "—"}${f.wayback_first ? `<div class="muted">存档自 ${String(f.wayback_first).slice(0, 4)}</div>` : ""}</td>
         <td class="small">${esc(loc) || "—"}</td>
-        <td>${r.enabled ? `<span class="st ${r.status || ""}">${st[r.status] || "未抓取"}</span>` : '<span class="st">已停用</span>'}${r.enabled && r.status && r.status !== "ok" ? `<span class="st-msg">${esc(r.msg || "").slice(0, 60)}</span>` : ""}</td>
+        <td>${r.enabled ? `<span class="st ${r.status === "empty" ? "unverified" : r.status || ""}">${crawlStatusLabel(r.status)}</span>` : '<span class="st">已停用</span>'}${r.enabled && r.status && r.status !== "ok" ? `<span class="st-msg">${esc(r.msg || "").slice(0, 60)}</span>` : ""}</td>
         <td class="num">${r.n?.toLocaleString() ?? "—"}</td><td class="small muted">${ago(r.last_ok)}</td></tr>
         <tr class="expand hidden" id="rep-${i}"><td colspan="8">${catsHTML(r)}${ddHTML(r)}${rep ? `<div class="dd">${reportHTML(rep)}</div>` : ""}</td></tr>`;
     }).join("")}</tbody></table></div>`;
@@ -1611,7 +1613,7 @@ async function pollCrawl() {
       <span class="n">${done}/${rs.length}</span><button class="icon-btn" style="width:30px;height:30px" data-dismiss aria-label="关闭进度">${ic("x", 15)}</button></div>
     <div class="cp-bar"><i style="width:${rs.length ? ((done / rs.length) * 100).toFixed(1) : 0}%"></i></div>
     <div class="note" style="margin:0 0 4px">同站请求间隔至少 1.5 秒；耗时取决于本次分类和网站数量，可以关掉这个框继续浏览。</div>
-    <div class="cp-list">${rs.map(([id, r]) => `<div class="row"><span><span class="dot ${r.status}"></span>${esc(r.name || id)}</span><span class="muted">${r.n || 0}${r.status === "running" && r.msg ? " · " + esc(r.msg.replace("正在抓：", "")) : ""}${r.status === "error" || r.status === "blocked" ? " · " + esc((r.msg || "").slice(0, 24)) : ""}</span></div>`).join("")}</div>`;
+    <div class="cp-list">${rs.map(([id, r]) => `<div class="row"><span><span class="dot ${r.status === "empty" ? "unverified" : r.status}"></span>${esc(r.name || id)}</span><span class="muted">${r.n || 0}${r.status === "running" && r.msg ? " · " + esc(r.msg.replace("正在抓：", "")) : ""}${["error", "blocked", "robots", "partial", "empty"].includes(r.status) ? " · " + crawlStatusLabel(r.status) + " · " + esc((r.msg || "").slice(0, 24)) : ""}</span></div>`).join("")}</div>`;
   if (st.running) {
     if (!pop.dataset.dismissed) pop.classList.remove("hidden");
     setTimeout(pollCrawl, 2500);

@@ -15,7 +15,13 @@ from urllib.parse import urlencode, urlsplit
 
 from curl_cffi import requests as creq
 
-DEFAULT_HEADERS = {"Accept-Language": "en-US,en;q=0.9"}
+from .browser_fallback import fetch_with_browser, is_browser_available
+
+# 默认全局请求头：仅保留跨语言与区域偏好，避免在会话层写死静态 Chrome 版本或请求模式，
+# 从而让 curl_cffi(impersonate="chrome") 能够根据其 TLS 指纹自动生成完全一致的 Sec-Ch-Ua 等头部
+DEFAULT_HEADERS = {
+    "Accept-Language": "en-US,en;q=0.9,ja;q=0.8,zh-CN;q=0.7",
+}
 
 
 class FetchError(Exception):
@@ -129,12 +135,14 @@ def decode_html(resp) -> str:
 
 class Fetcher:
     def __init__(self, min_interval: float = 1.5, timeout: float = 30, retries: int = 2,
-                 respect_robots: bool = True, headers: dict | None = None):
+                 respect_robots: bool = True, headers: dict | None = None,
+                 browser_fallback: bool = True):
         self.min_interval = min_interval
         self.timeout = timeout
         self.retries = retries
         self.respect_robots = respect_robots
         self.headers = {**DEFAULT_HEADERS, **(headers or {})}
+        self.browser_fallback = browser_fallback
         self._hosts: dict[str, dict] = {}
         self._lock = threading.Lock()
         self.request_count = 0
@@ -150,13 +158,15 @@ class Fetcher:
 
     def _robots(self, scheme: str, host: str, st: dict) -> Robots:
         """robots.txt：200 → 按规则；404 等 → 没有限制；5xx → 全部禁止（RFC 9309）；
-        连 robots.txt 都被反爬拦截（Helly Hansen 403、Backcountry 202 挑战页）→ 整个网站当作“被拦截”，不再请求。"""
+        当 robots.txt 被 WAF 单独拦截（如 403、202 等）时，按 RFC 规范不视为全局阻断，
+        采用保守的抓取间隔（≥2.5s）允许后续页面请求正常尝试，由页面本身的响应判断是否真正被阻断。"""
         if st["robots"] is None:
             try:
                 r = st["session"].get(f"{scheme}://{host}/robots.txt", timeout=self.timeout)
                 if looks_blocked(r) or r.status_code in (202, 401, 403):
-                    st["robots_blocked"] = True
-                    st["robots"] = Robots("User-agent: *\nDisallow: /")
+                    # robots.txt 访问被 WAF 单独拦截或 403：不作为整站阻断，采用宽容模式 + 安全间隔
+                    st["robots"] = Robots("")
+                    st["robots"].crawl_delay = max(self.min_interval, 2.5)
                 elif r.status_code >= 500:
                     st["robots"] = Robots("User-agent: *\nDisallow: /")
                 else:
@@ -172,12 +182,27 @@ class Fetcher:
             url = url + ("&" if "?" in url else "?") + urlencode(params)
         parts = urlsplit(url)
         st = self._state(parts.netloc)
+
+        # 构建与请求类型匹配的真实浏览器上下文请求头（API 与普通 HTML 页面严格区分，避免被 Akamai/Cloudflare 识别特征冲突）
+        req_headers = dict(headers or {})
+        accept = req_headers.get("Accept", "").lower()
+        if "application/json" in accept or "json" in accept:
+            req_headers.setdefault("Sec-Fetch-Dest", "empty")
+            req_headers.setdefault("Sec-Fetch-Mode", "cors")
+            req_headers.setdefault("Sec-Fetch-Site", "same-origin")
+            req_headers.pop("Upgrade-Insecure-Requests", None)
+        else:
+            req_headers.setdefault("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8")
+            req_headers.setdefault("Upgrade-Insecure-Requests", "1")
+            req_headers.setdefault("Sec-Fetch-Dest", "document")
+            req_headers.setdefault("Sec-Fetch-Mode", "navigate")
+            req_headers.setdefault("Sec-Fetch-Site", "none")
+            req_headers.setdefault("Sec-Fetch-User", "?1")
+
         with st["lock"]:
             robots = None
             if check_robots and self.respect_robots:
                 robots = self._robots(parts.scheme, parts.netloc, st)
-                if st.get("robots_blocked"):
-                    raise BlockedError(url, None, "robots.txt 被反爬系统拦截")
                 path = (parts.path or "/") + (f"?{parts.query}" if parts.query else "")
                 if not robots.allowed(path):
                     raise RobotsDisallowed(url, msg="robots.txt disallows")
@@ -187,22 +212,45 @@ class Fetcher:
             for attempt in range(self.retries + 1):
                 wait = interval - (time.monotonic() - st["last"])
                 if wait > 0:
-                    time.sleep(wait + random.uniform(0, 0.4))
+                    time.sleep(wait + random.uniform(0.1, 0.5))
                 try:
-                    resp = st["session"].get(url, headers=headers, timeout=self.timeout,
+                    resp = st["session"].get(url, headers=req_headers, timeout=self.timeout,
                                              allow_redirects=allow_redirects)
                 except Exception as e:  # 网络错误
                     st["last"] = time.monotonic()
                     if attempt >= self.retries:
                         raise FetchError(url, None, str(e)[:160]) from e
-                    time.sleep(2 ** attempt * 2)
+                    time.sleep(2 ** attempt * 2 + random.uniform(0.2, 0.8))
                     continue
                 st["last"] = time.monotonic()
                 self.request_count += 1
                 if looks_blocked(resp):
+                    if self.browser_fallback and is_browser_available():
+                        try:
+                            b_html, b_cookies = fetch_with_browser(url, timeout=self.timeout)
+                            for ck_k, ck_v in b_cookies.items():
+                                st["session"].cookies.set(ck_k, ck_v, domain=parts.netloc)
+
+                            class _BrowserResp:
+                                def __init__(self, text, u):
+                                    self.text = text
+                                    self.content = text.encode("utf-8")
+                                    self.status_code = 200
+                                    self.url = u
+                                    self.headers = {"content-type": "text/html; charset=utf-8"}
+
+                                def json(self):
+                                    import json
+                                    return json.loads(self.text)
+
+                            candidate = _BrowserResp(b_html, url)
+                            if not looks_blocked(candidate):
+                                return candidate
+                        except Exception:
+                            pass
                     raise BlockedError(url, resp.status_code, "anti-bot challenge")
                 if resp.status_code in (429, 500, 502, 503, 504) and attempt < self.retries:
-                    time.sleep(2 ** attempt * 3)
+                    time.sleep(2 ** attempt * 3 + random.uniform(0.5, 1.5))
                     continue
                 if resp.status_code >= 400:
                     raise FetchError(url, resp.status_code)
@@ -210,7 +258,8 @@ class Fetcher:
         raise FetchError(url, None, "unreachable")
 
     def get_json(self, url: str, **kw):
-        return self.get(url, **kw).json()
+        headers = {"Accept": "application/json, text/plain, */*", **(kw.pop("headers", None) or {})}
+        return self.get(url, headers=headers, **kw).json()
 
     def get_html(self, url: str, **kw) -> str:
         return decode_html(self.get(url, **kw))
